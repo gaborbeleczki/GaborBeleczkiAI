@@ -1,24 +1,26 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
+# dependencies and builds
 node_modules
 dist
 dist-ssr
 *.local
+.vercel
 
-# Editor directories and files
+# Blender pipeline intermediates (regenerate with `npm run blender`)
+blender/out/
+*.blend1
+__pycache__/
+
+# QA scratch output (the report and small previews are kept)
+renders/frames/
+renders/qa/*.png
+renders/*.png
+
+# logs and editor files
+logs
+*.log
+npm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
 *.sw?

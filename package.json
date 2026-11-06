@@ -1,23 +1,37 @@
 {
-  "name": "gábor-béleczki---ai-profile",
+  "name": "gabor-beleczki-studio",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Gábor Béleczki — a Nordic studio in Budapest, modeled in Blender and rendered with Three.js, with a minimal static portfolio as the fallback.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "vite build && node scripts/build-pages.mjs",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc --noEmit",
+    "assets": "node scripts/optimize-assets.mjs",
+    "blender": "bash blender/run.sh",
+    "qa": "node scripts/qa/run-all.mjs"
   },
   "dependencies": {
-    "lucide-react": "^0.562.0",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "@google/genai": "^1.35.0"
+    "@fontsource-variable/inter": "5.3.0",
+    "three": "0.187.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
     "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@types/three": "0.187.0",
+    "marked": "18.1.3",
+    "meshoptimizer": "1.3.0",
+    "pixelmatch": "8.0.0",
+    "pngjs": "7.0.0",
+    "sharp": "0.35.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.6"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

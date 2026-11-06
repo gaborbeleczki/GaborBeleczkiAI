@@ -1,20 +1,76 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Gábor Béleczki · Studio
 
-# Run and deploy your AI Studio app
+A personal site in two layers:
 
-This contains everything you need to run your app locally.
+- **The studio** — a calm Nordic room in Budapest, modeled in Blender with Python, lit and baked with Cycles, and rendered live in the browser with Three.js. Folios on the shelf open chapters on the desk display; the window looks across the Danube to the castle; lamps switch between day and evening; a record player plays generated ambient music.
+- **The page** — a minimal single-column portfolio with the same content (Nordic palette, Apple-style type and controls). It is what crawlers, phones, reduced-motion users and browsers without WebGL 2 get, and it is always one click away.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1a3Ue7ds4CtXj_EAtbMK09rHEnXHxAyOg
+```
+content/            profile.ts (single source of content) · notes/*.md (blog posts)
+src/site/           static page: build-time HTML, styles, mode switching
+src/studio/         Three.js studio
+  core/             baked materials, window shader, camera rig, folios, turntable
+  screen/           display canvas + one module per folio (hello … contact)
+  ui/  audio/       frosted HUD, generative Web Audio soundtrack
+blender/            Python pipeline that builds, bakes, renders and exports the scene
+scripts/            asset optimisation, QA (Playwright) and video capture
+public/             baked atlases, city renders, glTF, stills, video
+```
 
-## Run Locally
+## Develop
 
-**Prerequisites:**  Node.js
+```bash
+npm install
+npm run dev
+```
 
+Open `http://localhost:5173/` (add `?studio` or `?page` to force a mode; `?day` / `?evening` for the light).
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm run build      # dist/: page, studio chunk, notes, CV, RSS, sitemap
+npm run preview
+npm run typecheck
+```
+
+## The Blender pipeline
+
+Blender 5.2 runs headless as a Python module (`pip install bpy==5.2.3`). One command regenerates every asset:
+
+```bash
+BLENDER_PY=/path/to/venv/bin/python npm run blender
+```
+
+| Step | Script | Output |
+| --- | --- | --- |
+| City view | `blender/city.py` | Budapest at dusk and by day (110° from the window), depth/water/lights data, tram sprites |
+| Scene | `blender/build_scene.py` | the room from primitives + procedural materials, merged into four bake groups with packed UV atlases; camera poses and click targets in `public/models/studio.json` |
+| Bake | `blender/bake.py` | per group: albedo (2048²) and light (1024², evening + day, denoised with OpenImageDenoise) |
+| Env maps | `blender/envmap.py` | small HDR panoramas that light the moving objects |
+| Stills | `blender/render_stills.py` | hero images, social card, Cycles references for the pixel diff |
+| Export | `blender/export.py` + `scripts/optimize-assets.mjs` | glTF → meshopt-compressed `public/models/studio.glb`, WebP textures |
+
+Open `blender/studio.blend` to look at or restyle the room in Blender; rerun the pipeline to bake the changes.
+
+The browser recombines the bake as `albedo × light` and cross-fades the two light maps, so day and evening share one colour atlas. Moving or glowing things (display, folios, record, tonearm, bulbs, candle) are lit live from the HDR panoramas. The window is a single shader that traces the viewer's ray into the city's depth map for parallax, twinkles the lights, shimmers the river and drives trams along both embankments.
+
+## Content
+
+Edit `content/profile.ts` — both the page and the studio's display read from it. Notes are Markdown files in `content/notes/` with a small front-matter block (`title`, `date`, `summary`); they become `/notes/…` pages and items in `/rss.xml`.
+
+## QA
+
+```bash
+npm run build && npm run qa        # report in renders/qa/report.md
+node scripts/qa/posters.mjs        # hero images + social card captured from the live studio
+node scripts/qa/video.mjs          # re-record public/media/studio-loop.{mp4,webm}
+```
+
+Headless Chromium (software WebGL) takes screenshots of every view and chapter, measures load and frame times, compares the WebGL render with the Cycles reference from the same camera, and runs hostile checks: no WebGL, a missing model, a lost graphics context, reduced motion, keyboard-only use and rapid input. Each must end somewhere sensible, usually the page.
+
+## Deploy
+
+Vercel builds it as a Vite static site (`vercel.json`): `npm run build`, output `dist/`, clean URLs, long-lived caching for hashed assets. Set `SITE_URL` in the project's environment variables to the final domain so canonical links, the sitemap and RSS use it.
+
+## Credits
+
+Everything in the scene — geometry, materials, the city, the print and the record sleeves — is generated by the scripts in `blender/`. The soundtrack is synthesised live with the Web Audio API. Type: the system font on Apple devices, otherwise [Inter](https://rsms.me/inter/) (SIL OFL). Rendering: [three.js](https://threejs.org) (MIT).
