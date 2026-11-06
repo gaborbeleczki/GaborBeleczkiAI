@@ -1783,3 +1783,17 @@ html[data-mode='page'] .studio {
     animation: none !important;
   }
 }
+
+.footer__credits {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.footer__credits a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line-2);
+  text-underline-offset: 2px;
+}

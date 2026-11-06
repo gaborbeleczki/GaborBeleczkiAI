@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { folios, profile, type FolioId } from '../../content/profile.ts';
-import { Ambient } from './audio/ambient.ts';
+import { Lounge } from './audio/lounge.ts';
 import { Dust } from './core/dust.ts';
 import { Folios } from './core/folios.ts';
 import { bakedMaterial, configureTexture, emitterMaterial, motionUniforms, type MotionUniforms } from './core/materials.ts';
@@ -41,8 +41,8 @@ const HINTS: Record<Focus, string> = {
   home: 'Pick a folio on the shelf · click the display, the window or a lamp',
   desk: 'Use the dock on the display · <kbd>←</kbd> <kbd>→</kbd> to browse · <kbd>Esc</kbd> to step back',
   shelf: 'Each folio is a chapter · click one to open it',
-  window: 'Budapest across the Danube · move to look around · watch for tram 2',
-  record: 'Studio sessions: generated ambient music · click again to stop',
+  window: 'Budapest across the Danube · move to look around · watch for tram 2<br><small>Photos: Wilfredor (CC0) · Yair-haklai (CC BY-SA 4.0), via Wikimedia Commons</small>',
+  record: 'Budapest sessions: lounge deep house, generated live · click again to stop',
 };
 
 export class Studio {
@@ -67,7 +67,7 @@ export class Studio {
   private sharpening?: Promise<boolean>;
   private folios?: Folios;
   private turntable?: Turntable;
-  private readonly ambient = new Ambient();
+  private readonly ambient = new Lounge();
   private envs: { evening?: THREE.Texture; day?: THREE.Texture } = {};
   private flame?: THREE.Sprite;
   private warmLight = new THREE.PointLight('#ffb36b', 0, 6, 1.6);
@@ -444,6 +444,26 @@ export class Studio {
         const m = this.screenMesh?.material as THREE.MeshBasicMaterial | undefined;
         const uv = this.screenMesh?.geometry.getAttribute('uv');
         return { has: !!this.screenMesh, type: m?.type, map: !!m?.map, uvCount: uv?.count ?? 0, uv0: uv ? [uv.getX(0), uv.getY(0), uv.getX(2), uv.getY(2)] : null, normalized: (uv as THREE.BufferAttribute | undefined)?.normalized };
+      },
+      // QA: render the soundtrack's opening offline and report its levels per second
+      music: async (seconds = 40) => {
+        const buf = await Lounge.render(seconds);
+        const per: { peak: number; rms: number }[] = [];
+        const sr = buf.sampleRate;
+        for (let s = 0; s < Math.floor(buf.duration); s++) {
+          let peak = 0;
+          let sum = 0;
+          for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+            const d = buf.getChannelData(ch).subarray(s * sr, (s + 1) * sr);
+            for (let i = 0; i < d.length; i++) {
+              const v = Math.abs(d[i]);
+              if (v > peak) peak = v;
+              sum += v * v;
+            }
+          }
+          per.push({ peak: Math.round(peak * 1000) / 1000, rms: Math.round(Math.sqrt(sum / (sr * buf.numberOfChannels)) * 1000) / 1000 });
+        }
+        return per;
       },
       loseContext: () => (this.renderer.getContext().getExtension('WEBGL_lose_context') as { loseContext(): void } | null)?.loseContext(),
     };

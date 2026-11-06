@@ -71,6 +71,11 @@ export function footer(): string {
       The studio was modeled in Blender 5.2 with Python, lit and baked with Cycles, and is rendered live with Three.js.
       Built with Claude Code. <a href="/notes/building-the-studio/">How it was made ${icon.chevron}</a>
     </p>
+    <p class="footer__credits">
+      Window photos: <a href="https://commons.wikimedia.org/wiki/File:Sz%C3%A9chenyi_Chain_Bridge_in_Budapest_at_night.jpg" rel="noopener" target="_blank">Széchenyi Chain Bridge at night</a> by Wilfredor (CC0) ·
+      <a href="https://commons.wikimedia.org/wiki/File:View_from_Buda_Castle.jpg" rel="noopener" target="_blank">View from Buda Castle</a> by Yair-haklai
+      (<a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener license" target="_blank">CC BY-SA 4.0</a>; cropped, a parked tram painted out, depth added — the edited image is shared under the same licence).
+    </p>
     <p class="footer__meta">
       <span>© ${new Date().getFullYear()} Gábor Béleczki · Budapest</span>
       <a href="/rss.xml">${icon.rss}RSS</a>
