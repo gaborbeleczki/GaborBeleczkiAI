@@ -1,6 +1,6 @@
 # QA report
 
-Generated 2026-11-06T07:49:40.072Z in 279s. Headless Chromium with software WebGL (SwiftShader).
+Generated 2026-11-06T23:36:55.783Z in 441s. Headless Chromium with software WebGL (SwiftShader).
 
 ## Screenshots
 
@@ -9,14 +9,14 @@ No console errors.
 
 ## Performance
 
-- Page: 1435 KB transferred (most of it the hero video, skipped on phones), load 632 ms, LCP 180 ms
-- Studio: 5564 KB transferred, ready in 8008 ms, frame time median 16.8 ms / p95 1316.6 ms (software WebGL in headless Chromium; the p95 is the one-time shader compile; re-measured on an idle machine)
-- dist: 6336 KB total (models 469 KB, textures 2680 KB, JS 727 KB)
+- Page: 2040 KB transferred, load 620 ms, LCP 156 ms
+- Studio: 12423 KB transferred, ready in 23613 ms, frame time median 16.7 ms / p95 2466.5 ms (software WebGL (SwiftShader) in headless Chromium)
+- dist: 14936 KB total (models 571 KB, textures 10334 KB, JS 813 KB)
 
 ## Pixel difference (WebGL vs Cycles reference, home camera)
 
-- evening: 9.23% pixels differ beyond threshold, mean |Δluma| 11.7 (WebGL 95.9 vs Cycles 90.8)
-- day: 12.5% pixels differ beyond threshold, mean |Δluma| 14.02 (WebGL 116.9 vs Cycles 109.5)
+- evening: 9.57% pixels differ beyond threshold, mean |Δluma| 10.57 (WebGL 96.4 vs Cycles 95)
+- day: 11.56% pixels differ beyond threshold, mean |Δluma| 10.65 (WebGL 116.4 vs Cycles 120.1)
 
 ## Adversarial checks
 
@@ -28,4 +28,7 @@ No console errors.
 - PASS WebGL context lost → page
 - PASS keyboard: skip link + focus order on the page
 - PASS keyboard: studio chapters menu
+- PASS game: plays with keys, pauses when you leave the desk
+- PASS music: 16 s offline render, no clipping, not silent
+- PASS page: seven animated case figures
 - PASS routes: /, /cv/, /notes/, note, rss, sitemap, robots

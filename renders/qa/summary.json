@@ -1,6 +1,6 @@
 {
-  "generated": "2026-11-06T07:49:40.072Z",
-  "seconds": 279,
+  "generated": "2026-11-06T23:36:55.783Z",
+  "seconds": 441,
   "screenshots": {
     "shots": [
       "page-desktop-top",
@@ -30,24 +30,24 @@
   "perf": {
     "errors": [],
     "page": {
-      "loadMs": 611,
-      "lcpMs": 160,
-      "transferKB": 1516
+      "loadMs": 620,
+      "lcpMs": 156,
+      "transferKB": 2040
     },
     "studio": {
-      "domLoadMs": 465,
-      "readyMs": 8216,
-      "transferKB": 5564,
-      "frames": 16,
+      "domLoadMs": 174,
+      "readyMs": 23613,
+      "transferKB": 12423,
+      "frames": 17,
       "frameMs": {
-        "median": 166.6,
-        "p95": 1133.4
+        "median": 16.7,
+        "p95": 2466.5
       },
       "renderer": {
         "focus": "home",
         "module": "hello",
         "screenReady": true,
-        "night": false,
+        "night": true,
         "dpr": 1,
         "size": [
           1280,
@@ -57,32 +57,32 @@
       "note": "software WebGL (SwiftShader) in headless Chromium"
     },
     "dist": {
-      "totalKB": 6336,
-      "modelsKB": 469,
-      "texturesKB": 2680,
-      "jsKB": 727
+      "totalKB": 14936,
+      "modelsKB": 571,
+      "texturesKB": 10334,
+      "jsKB": 813
     }
   },
   "pixeldiff": {
     "results": {
       "evening": {
-        "mismatchPct": 9.23,
-        "meanAbsLuma": 11.7,
-        "meanLumaWebGL": 95.9,
-        "meanLumaCycles": 90.8
+        "mismatchPct": 9.57,
+        "meanAbsLuma": 10.57,
+        "meanLumaWebGL": 96.4,
+        "meanLumaCycles": 95
       },
       "day": {
-        "mismatchPct": 12.5,
-        "meanAbsLuma": 14.02,
-        "meanLumaWebGL": 116.9,
-        "meanLumaCycles": 109.5
+        "mismatchPct": 11.56,
+        "meanAbsLuma": 10.65,
+        "meanLumaWebGL": 116.4,
+        "meanLumaCycles": 120.1
       }
     },
     "errors": []
   },
   "adversarial": {
-    "passed": 9,
-    "total": 9,
+    "passed": 12,
+    "total": 12,
     "checks": [
       {
         "name": "no WebGL → page by default",
@@ -124,7 +124,7 @@
           "focus": "home",
           "module": "career",
           "screenReady": true,
-          "night": false,
+          "night": true,
           "dpr": 1,
           "size": [
             1280,
@@ -163,11 +163,51 @@
           "focus": "desk",
           "module": "career",
           "screenReady": true,
-          "night": false,
+          "night": true,
           "dpr": 1,
           "size": [
             1280,
             720
+          ]
+        },
+        "errors": []
+      },
+      {
+        "name": "game: plays with keys, pauses when you leave the desk",
+        "pass": true,
+        "detail": {
+          "playing": {
+            "phase": "playing",
+            "x": 504.25000000000193
+          },
+          "left": {
+            "phase": "paused",
+            "x": 504.25000000000193
+          }
+        },
+        "errors": []
+      },
+      {
+        "name": "music: 16 s offline render, no clipping, not silent",
+        "pass": true,
+        "detail": {
+          "peak": 0.553,
+          "rms": 0.104
+        },
+        "errors": []
+      },
+      {
+        "name": "page: seven animated case figures",
+        "pass": true,
+        "detail": {
+          "animationsPerFigure": [
+            10,
+            59,
+            28,
+            105,
+            294,
+            120,
+            14
           ]
         },
         "errors": []
