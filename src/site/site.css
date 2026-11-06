@@ -1772,6 +1772,11 @@ html[data-mode='page'] .studio {
   .fig {
     padding: 14px 12px 12px;
   }
+  /* the drawing scales down with the screen; keep its small captions readable */
+  .fig__note {
+    font-size: 19px !important;
+    letter-spacing: 0.06em;
+  }
   .fig__labels {
     grid-template-columns: 1fr 1fr !important;
     row-gap: 10px;

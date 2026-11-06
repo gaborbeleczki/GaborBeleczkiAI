@@ -284,6 +284,8 @@ const fragment = /* glsl */ `
     vec2 k = vec2(1.0, cam.y) / (2.0 * cam.x);                                                        \\
     vec2 uvInf = 0.5 + n * k;                                                                         \\
     vec2 delta = (P.xy - n * P.z) * k;                                                                \\
+    /* mip selection from the smooth view direction: parallax jumps at edges would blur them */       \\
+    vec2 gx = dFdx(uvInf), gy = dFdy(uvInf);                                                          \\
     /* background: settle on the depth the ray meets */                                               \\
     vec2 uv = uvInf;                                                                                  \\
     vec3 dat;                                                                                         \\
@@ -303,17 +305,17 @@ const fragment = /* glsl */ `
     float n2 = noise(vec2(xw * 0.21 - time * 1.05, uv.y * 420.0 + 3.1));                              \\
     vec2 rip = vec2((n1 - 0.5) * 1.1 + (n2 - 0.5) * 0.7, (n2 - 0.5) * 0.9) * (2.2 / D) * water;       \\
     vec2 cuv = edge(uv + rip);                                                                        \\
-    vec3 base = texture2D(PLATE, cuv).rgb;                                                            \\
+    vec3 base = textureGrad(PLATE, cuv, gx, gy).rgb;                                                            \\
     /* sky: a slow drift of the clouds (two offsets cross-faded so it never jumps) */                 \\
     float sky = NIGHT ? 0.0 : smoothstep(0.53, 0.58, cuv.y) * step(dat.r, 0.002);                     \\
     if (sky > 0.0) {                                                                                  \\
       float ph = fract(time / 45.0);                                                                  \\
       vec2 o1 = vec2(ph * 0.014, 0.0), o2 = vec2(fract(ph + 0.5) * 0.014, 0.0);                       \\
-      vec3 drift = mix(texture2D(PLATE, edge(cuv - o1)).rgb, texture2D(PLATE, edge(cuv - o2)).rgb, abs(ph * 2.0 - 1.0)); \\
+      vec3 drift = mix(textureGrad(PLATE, edge(cuv - o1), gx, gy).rgb, textureGrad(PLATE, edge(cuv - o2), gx, gy).rgb, abs(ph * 2.0 - 1.0)); \\
       base = mix(base, drift, sky);                                                                   \\
     }                                                                                                 \\
     /* where the photo has a tree in front, use the guessed background instead */                     \\
-    vec3 col = mix(base, texture2D(FILL, cuv).rgb, coverOf(dat));                                     \\
+    vec3 col = mix(base, textureGrad(FILL, cuv, gx, gy).rgb, coverOf(dat));                                     \\
     if (NIGHT) {                                                                                      \\
       float tw = noise(uv * vec2(820.0, 460.0) + vec2(time * 1.7, -time * 1.1));                      \\
       col *= 1.0 + spark * (tw - 0.45) * 0.8;                                                         \\
@@ -334,7 +336,7 @@ const fragment = /* glsl */ `
       sin(time * 1.7 + uf.x * 13.0) * 0.35) * FG.y * wind * gust * sw;                                \\
     vec2 ufs = edge(uf + bend * vec2(1.0, cam.y));                                                    \\
     float cover = coverOf(texture2D(DATA, ufs).rgb);                                                  \\
-    col = mix(col, texture2D(PLATE, ufs).rgb, cover);                                                 \\
+    col = mix(col, textureGrad(PLATE, ufs, gx, gy).rgb, cover);                                                 \\
     return col;                                                                                       \\
   }
 
