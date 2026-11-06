@@ -4,3 +4,4 @@ renders/
 node_modules/
 dist/
 .git/
+.env*

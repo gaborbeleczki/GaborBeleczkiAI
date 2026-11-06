@@ -6,7 +6,7 @@
   "description": "Gábor Béleczki — a Nordic studio in Budapest, modeled in Blender and rendered with Three.js, with a minimal static portfolio as the fallback.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/build-pages.mjs",
+    "build": "vite build",
     "preview": "vite preview --port 4173",
     "typecheck": "tsc --noEmit",
     "assets": "node scripts/optimize-assets.mjs",
@@ -32,6 +32,6 @@
     "vite": "8.3.6"
   },
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   }
 }
