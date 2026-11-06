@@ -180,6 +180,8 @@ function playHeroVideo(): void {
   if (!video || reduceMotion) return;
   const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   if (conn?.saveData) return;
+  // phones keep the still: the clip is 1.5 MB and the frame is small
+  if (matchMedia('(max-width: 640px)').matches) return;
   video.preload = 'auto';
   video.addEventListener('playing', () => video.classList.add('is-playing'), { once: true });
   video.play().catch(() => {

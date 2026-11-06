@@ -92,6 +92,22 @@ export class Screen {
     return this.moduleId;
   }
 
+  /** Load every chapter in the background (a few KB each) so switching is instant. */
+  async prefetch(): Promise<void> {
+    for (const id of Object.keys(LOADERS) as FolioId[]) {
+      if (this.cache.has(id)) continue;
+      try {
+        this.cache.set(id, await LOADERS[id]());
+      } catch {
+        /* offline: it will load on demand */
+      }
+    }
+  }
+
+  get ready(): boolean {
+    return this.loading === null;
+  }
+
   setNight(night: boolean): void {
     if (this.night !== night) {
       this.night = night;

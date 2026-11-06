@@ -1,0 +1,6 @@
+# Only the site sources and public assets are needed to build on Vercel.
+blender/
+renders/
+node_modules/
+dist/
+.git/

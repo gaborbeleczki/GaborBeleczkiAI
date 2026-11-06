@@ -1,0 +1,192 @@
+{
+  "generated": "2026-11-06T07:49:40.072Z",
+  "seconds": 279,
+  "screenshots": {
+    "shots": [
+      "page-desktop-top",
+      "page-desktop-full",
+      "cv-desktop",
+      "note-desktop",
+      "page-phone-top",
+      "page-phone-full",
+      "page-dark-top",
+      "studio-evening-home",
+      "studio-folio-hello",
+      "studio-folio-approach",
+      "studio-folio-role",
+      "studio-folio-work",
+      "studio-folio-career",
+      "studio-folio-toolkit",
+      "studio-folio-faq",
+      "studio-folio-contact",
+      "studio-shelf",
+      "studio-record",
+      "studio-evening-window",
+      "studio-day-home",
+      "studio-day-window"
+    ],
+    "errors": []
+  },
+  "perf": {
+    "errors": [],
+    "page": {
+      "loadMs": 611,
+      "lcpMs": 160,
+      "transferKB": 1516
+    },
+    "studio": {
+      "domLoadMs": 465,
+      "readyMs": 8216,
+      "transferKB": 5564,
+      "frames": 16,
+      "frameMs": {
+        "median": 166.6,
+        "p95": 1133.4
+      },
+      "renderer": {
+        "focus": "home",
+        "module": "hello",
+        "screenReady": true,
+        "night": false,
+        "dpr": 1,
+        "size": [
+          1280,
+          720
+        ]
+      },
+      "note": "software WebGL (SwiftShader) in headless Chromium"
+    },
+    "dist": {
+      "totalKB": 6336,
+      "modelsKB": 469,
+      "texturesKB": 2680,
+      "jsKB": 727
+    }
+  },
+  "pixeldiff": {
+    "results": {
+      "evening": {
+        "mismatchPct": 9.23,
+        "meanAbsLuma": 11.7,
+        "meanLumaWebGL": 95.9,
+        "meanLumaCycles": 90.8
+      },
+      "day": {
+        "mismatchPct": 12.5,
+        "meanAbsLuma": 14.02,
+        "meanLumaWebGL": 116.9,
+        "meanLumaCycles": 109.5
+      }
+    },
+    "errors": []
+  },
+  "adversarial": {
+    "passed": 9,
+    "total": 9,
+    "checks": [
+      {
+        "name": "no WebGL → page by default",
+        "pass": true,
+        "detail": {
+          "mode": "page",
+          "why": "webgl2"
+        },
+        "errors": []
+      },
+      {
+        "name": "no WebGL + ?studio → falls back to page with a notice",
+        "pass": true,
+        "detail": {
+          "toast": "The 3D studio could not start on this device. Showing the page instead."
+        },
+        "errors": []
+      },
+      {
+        "name": "prefers-reduced-motion → page by default",
+        "pass": true,
+        "detail": {
+          "mode": "page"
+        },
+        "errors": []
+      },
+      {
+        "name": "studio.glb missing → page with notice",
+        "pass": true,
+        "detail": {
+          "toast": "The 3D studio could not start on this device. Showing the page instead."
+        },
+        "errors": []
+      },
+      {
+        "name": "rapid input: keys 0-7, clicks, resizes",
+        "pass": true,
+        "detail": {
+          "focus": "home",
+          "module": "career",
+          "screenReady": true,
+          "night": false,
+          "dpr": 1,
+          "size": [
+            1280,
+            720
+          ]
+        },
+        "errors": []
+      },
+      {
+        "name": "WebGL context lost → page",
+        "pass": true,
+        "detail": {
+          "mode": "page"
+        },
+        "errors": []
+      },
+      {
+        "name": "keyboard: skip link + focus order on the page",
+        "pass": true,
+        "detail": {
+          "tabStops": [
+            "Skip to content",
+            "GB\n      Gábor Béleczki",
+            "Approach",
+            "Role",
+            "Work",
+            "Career"
+          ]
+        },
+        "errors": []
+      },
+      {
+        "name": "keyboard: studio chapters menu",
+        "pass": true,
+        "detail": {
+          "focus": "desk",
+          "module": "career",
+          "screenReady": true,
+          "night": false,
+          "dpr": 1,
+          "size": [
+            1280,
+            720
+          ]
+        },
+        "errors": []
+      },
+      {
+        "name": "routes: /, /cv/, /notes/, note, rss, sitemap, robots",
+        "pass": true,
+        "detail": {
+          "/": 200,
+          "/cv/": 200,
+          "/notes/": 200,
+          "/notes/building-the-studio/": 200,
+          "/rss.xml": 200,
+          "/sitemap.xml": 200,
+          "/robots.txt": 200,
+          "/models/studio.json": 200
+        },
+        "errors": []
+      }
+    ]
+  }
+}

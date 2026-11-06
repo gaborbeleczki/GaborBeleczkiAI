@@ -110,7 +110,6 @@ function hero(): string {
   <figure class="hero__media reveal">
     <div class="hero__frame">
       <video class="hero__video" autoplay muted loop playsinline preload="none" poster="/img/studio-evening.webp" aria-hidden="true" tabindex="-1">
-        <source src="/media/studio-loop.webm" type="video/webm" />
         <source src="/media/studio-loop.mp4" type="video/mp4" />
       </video>
       <img class="hero__img" src="/img/studio-evening.webp" width="1600" height="900" alt="A calm Nordic studio at dusk: an oak desk under a wide window that looks across the Danube to Buda Castle, folios on a shelf, a lounge chair and warm lamps." fetchpriority="high" />

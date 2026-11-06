@@ -1,6 +1,6 @@
 // Record a short looping clip of the studio for the static page's hero (and as a demo):
 // frames are stepped deterministically through window.__studio, then encoded with FFmpeg.
-//   node scripts/qa/video.mjs   ->  public/media/studio-loop.{mp4,webm}
+//   node scripts/qa/video.mjs   ->  public/media/studio-loop.mp4
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -38,9 +38,9 @@ export async function video(base) {
   fs.mkdirSync(out, { recursive: true });
   const input = ['-y', '-framerate', String(FPS), '-i', path.join(frames, 'f%04d.png')];
   execFileSync('ffmpeg', [...input, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '24', '-preset', 'slow', '-movflags', '+faststart', '-an', path.join(out, 'studio-loop.mp4')], { stdio: 'ignore' });
-  execFileSync('ffmpeg', [...input, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '38', '-row-mt', '1', '-an', path.join(out, 'studio-loop.webm')], { stdio: 'ignore' });
+  // H.264 plays everywhere and came out smaller than VP9 for this clip, so it is the only source
   const size = (f) => Math.round(fs.statSync(path.join(out, f)).size / 1024);
-  return { frames: total, mp4KB: size('studio-loop.mp4'), webmKB: size('studio-loop.webm') };
+  return { frames: total, mp4KB: size('studio-loop.mp4') };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

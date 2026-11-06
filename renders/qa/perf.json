@@ -1,0 +1,36 @@
+{
+  "errors": [],
+  "page": {
+    "loadMs": 632,
+    "lcpMs": 180,
+    "transferKB": 1435
+  },
+  "studio": {
+    "domLoadMs": 155,
+    "readyMs": 8008,
+    "transferKB": 5564,
+    "frames": 15,
+    "frameMs": {
+      "median": 16.8,
+      "p95": 1316.6
+    },
+    "renderer": {
+      "focus": "home",
+      "module": "hello",
+      "screenReady": true,
+      "night": false,
+      "dpr": 1,
+      "size": [
+        1280,
+        720
+      ]
+    },
+    "note": "software WebGL (SwiftShader) in headless Chromium"
+  },
+  "dist": {
+    "totalKB": 6336,
+    "modelsKB": 469,
+    "texturesKB": 2680,
+    "jsKB": 727
+  }
+}

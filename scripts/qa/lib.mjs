@@ -79,6 +79,7 @@ export function watch(page, bucket) {
 
 export async function waitForStudio(page, timeout = 120000) {
   await page.waitForFunction(() => window.__studio && window.__studio.ready, null, { timeout });
+  await page.evaluate(() => window.__studio.prefetched());
 }
 
 export function writeJson(name, data) {

@@ -46,7 +46,7 @@ export class Studio {
   private readonly scene = new THREE.Scene();
   private rig!: CameraRig;
   private readonly hud: Hud;
-  private readonly clock = new THREE.Clock();
+  private readonly timer = new THREE.Timer();
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2(2, 2);
   private readonly reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -94,7 +94,9 @@ export class Studio {
     this.renderer.setPixelRatio(this.dpr);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.AgXToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
+    // calibrated against the Cycles reference renders (scripts/qa/pixeldiff.mjs): three.js AgX
+    // reads ~18% brighter than Blender's AgX at the same exposure
+    this.renderer.toneMappingExposure = 0.82;
     const canvas = this.renderer.domElement;
     canvas.className = 'studio__gl';
     canvas.tabIndex = 0;
@@ -331,6 +333,7 @@ export class Studio {
     this.host.classList.add('is-ready');
     this.hud.announce(`Studio loaded. ${HINTS.home}. Press 0 to 7 to open a chapter, L for light, M for music.`);
     this.exposeHooks();
+    void this.screen.prefetch();
     if (!this.capture) this.resume();
     canvas.focus({ preventScroll: true });
   }
@@ -339,7 +342,9 @@ export class Studio {
   private exposeHooks(): void {
     const api = {
       ready: true,
-      info: () => ({ focus: this.focus, module: this.screen.current, night: this.night, dpr: this.dpr, size: [this.renderer.domElement.width, this.renderer.domElement.height] }),
+      info: () => ({ focus: this.focus, module: this.screen.current, screenReady: this.screen.ready, night: this.night, dpr: this.dpr, size: [this.renderer.domElement.width, this.renderer.domElement.height] }),
+      prefetched: () => this.screen.prefetch().then(() => true),
+      exposure: (v: number) => (this.renderer.toneMappingExposure = v),
       open: (id: FolioId) => this.openFolio(id),
       focus: (f: Focus) => this.setFocus(f),
       night: (n: boolean) => this.setNight(n),
@@ -368,7 +373,7 @@ export class Studio {
   private resume(): void {
     if (this.running || this.disposed) return;
     this.running = true;
-    this.clock.getDelta();
+    this.timer.update();
     const loop = () => {
       if (!this.running) return;
       this.raf = requestAnimationFrame(loop);
@@ -400,7 +405,8 @@ export class Studio {
   // ------------------------------------------------------------------ frame
 
   private frame(fixedDt?: number, draw = true): void {
-    const dt = fixedDt ?? Math.min(this.clock.getDelta(), 1 / 20);
+    if (fixedDt === undefined) this.timer.update();
+    const dt = fixedDt ?? Math.min(this.timer.getDelta(), 1 / 20);
     this.time += dt;
     if (this.drift) {
       // a slow, looping glance around the room for the page's hero video (period 12 s)
