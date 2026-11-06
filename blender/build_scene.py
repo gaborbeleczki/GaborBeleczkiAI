@@ -17,12 +17,12 @@ import bpy  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
 from lib import art, furniture as F, lighting as L, materials as M, props as P, room as R  # noqa: E402
-from lib.util import apply_modifiers, blender_to_three, collection, empty, join, reset_scene, tag  # noqa: E402
+from lib.util import apply_modifiers, blender_to_three, collection, empty, join, reset_scene, tag, write_sway  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 OUT = os.path.join(ROOT, 'blender', 'out')
 PUBLIC = os.path.join(ROOT, 'public')
-CITY_DIR = os.path.join(OUT, 'city')
+WINDOW_PLATE = os.path.join(ROOT, 'public', 'textures', 'window_evening.webp')
 
 BAKE_GROUPS = ['floor', 'walls', 'furniture', 'props']
 ATLAS_PRIORITY = {
@@ -70,8 +70,8 @@ def build():
     side = P.side_table_things(c_props)
     P.framed_print(c_props, arts['print'])
 
-    # ---- city backdrop (emissive plane behind the window; lights the room and shows in stills)
-    city_img = os.path.join(CITY_DIR, 'city_evening.png')
+    # ---- city backdrop: the Budapest photo on an emissive plane behind the window (stills only)
+    city_img = WINDOW_PLATE
     if os.path.exists(city_img):
         mat = M.image_emission('city_evening', city_img, 1.0)
     else:
@@ -86,7 +86,12 @@ def build():
         lp[uv].uv = co
     from lib.util import mesh_object
     backdrop = mesh_object('city_backdrop', bm, c_env, mat)
+    # seen by the camera (stills) but not part of the room's lighting: daylight comes from the sky
     backdrop.visible_shadow = False
+    backdrop.visible_diffuse = False
+    backdrop.visible_glossy = False
+    backdrop.visible_transmission = False
+    backdrop.visible_volume_scatter = False
 
     # ---- hit areas for the browser (invisible)
     P.hit_box('hit_window', (R.WIN_X1 - R.WIN_X0, 0.05, R.WIN_Z1 - R.WIN_Z0), (0, R.Y1 + 0.08, (R.WIN_Z0 + R.WIN_Z1) / 2), c_hit, 'window', 'Window · Budapest')
@@ -121,6 +126,22 @@ def build():
         'candle': side['flame'],
     }
 
+    # ---- per-vertex motion data (curtains breathe, leaves sway, the pendant swings)
+    bpy.context.view_layer.update()
+    pendant_top = 2.85
+    pendant_bottom = pendant['light_pos'][2] - 0.09
+    for ob in [o for o in bpy.data.objects if o.get('sway')]:
+        kind = ob['sway']
+        ob = apply_modifiers(ob)
+        if kind == 'curtain':
+            top, bottom = float(ob['sway_top']), float(ob['sway_bottom'])
+            write_sway(ob, kind, lambda c: (top - c.z) / (top - bottom), lambda c: c.x * 0.35)
+        elif kind == 'leaf':
+            base, height = float(ob['sway_base']), float(ob['sway_height'])
+            write_sway(ob, kind, lambda c: (c.z - base) / height, lambda c: c.x * 3.1 + c.y * 1.7 + c.z * 2.3)
+        elif kind == 'pendant':
+            write_sway(ob, kind, lambda c: (pendant_top - c.z) / (pendant_top - pendant_bottom), lambda c: 0.0)
+
     # ---- finalize bake groups: apply modifiers, merge, unwrap into one atlas each
     bpy.context.view_layer.update()
     for g in BAKE_GROUPS:
@@ -129,6 +150,7 @@ def build():
         merged = join(objs, f'bake_{g}', coll)
         tag(merged, bake=g)
         unwrap(merged, g)
+        merged.data.color_attributes.active_color = merged.data.color_attributes['sway']
     # tidy empties used as parents
     for ob in list(bpy.data.objects):
         if ob.type == 'EMPTY' and not ob.name.startswith('CAM_') and not ob.children:
@@ -153,6 +175,7 @@ def build():
         'folioSize': [0.245, 0.315, 0.078],
         'lights': {k: blender_to_three(v) for k, v in anchors.items() if k != 'desk_lamp_aim'},
         'flame': blender_to_three(side['flame']),
+        'pendantPivot': blender_to_three((pendant['light_pos'][0], pendant['light_pos'][1], 2.85)),
         'tonearm': {'pivot': blender_to_three(turntable['pivot'])},
         'window': {
             'center': blender_to_three((0, R.GLASS_Y, (R.WIN_Z0 + R.WIN_Z1) / 2)),

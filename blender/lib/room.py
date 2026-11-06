@@ -138,6 +138,7 @@ def curtain(name: str, xa: float, xb: float, coll) -> bpy.types.Object:
         for i in range(nx):
             bm.faces.new((grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]))
     ob = mesh_object(name, bm, coll, M.lampshade('#EFE9DD', 'linen_sheer'))
+    tag(ob, sway='curtain', sway_top=top, sway_bottom=bottom)
     mod = ob.modifiers.new('Solidify', 'SOLIDIFY')
     mod.thickness = 0.004
     smooth(ob)

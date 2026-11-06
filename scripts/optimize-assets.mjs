@@ -1,7 +1,7 @@
 // Optimise the Blender export for the web and copy rendered images into public/.
 //   node scripts/optimize-assets.mjs
 // - studio_raw.glb -> public/models/studio.glb (weld, quantise, meshopt, no normals on baked meshes)
-// - city renders + tram sprites -> public/textures/*.webp
+// - baked atlases -> small *_lo.webp previews (shown while the full textures stream in)
 // - Cycles stills -> public/img/*.webp|jpg (hero, OG card)
 
 import fs from 'node:fs';
@@ -45,23 +45,18 @@ async function optimizeGlb() {
   console.log(`[assets] studio.glb ${(fs.statSync(src).size / 1e6).toFixed(2)} MB -> ${(fs.statSync(dst).size / 1e6).toFixed(2)} MB`);
 }
 
-async function cityTextures() {
-  const dir = out('blender/out/city');
-  if (!exists(dir)) return;
-  const jobs = [
-    ['city_evening.png', 'city_evening.webp', { quality: 86 }],
-    ['city_day.png', 'city_day.webp', { quality: 86 }],
-    ['city_data.png', 'city_data.webp', { lossless: true }],
-    ['tram_evening.png', 'tram_evening.webp', { quality: 90, alphaQuality: 100 }],
-    ['tram_day.png', 'tram_day.webp', { quality: 90, alphaQuality: 100 }],
-  ];
-  for (const [from, to, opts] of jobs) {
-    const p = path.join(dir, from);
-    if (!exists(p)) continue;
-    await sharp(p).webp({ effort: 6, ...opts }).toFile(out('public/textures', to));
+async function atlasPreviews() {
+  // The studio shows these first (a few hundred KB in all), then swaps in the full atlases.
+  const dir = out('public/textures');
+  const sizes = { albedo: 1024, light_evening: 512, light_day: 512 };
+  for (const g of ['floor', 'walls', 'furniture', 'props']) {
+    for (const [kind, px] of Object.entries(sizes)) {
+      const src = path.join(dir, `${g}_${kind}.webp`);
+      if (!exists(src)) continue;
+      await sharp(src).resize(px, px).webp({ quality: 80, effort: 6 }).toFile(path.join(dir, `${g}_${kind}_lo.webp`));
+    }
   }
-  if (exists(path.join(dir, 'city.json'))) fs.copyFileSync(path.join(dir, 'city.json'), out('public/models/city.json'));
-  console.log('[assets] city textures written');
+  console.log('[assets] atlas previews written');
 }
 
 async function stills() {
@@ -90,6 +85,6 @@ fs.mkdirSync(out('public/models'), { recursive: true });
 fs.mkdirSync(out('public/textures'), { recursive: true });
 fs.mkdirSync(out('public/img'), { recursive: true });
 await optimizeGlb();
-await cityTextures();
+await atlasPreviews();
 await stills();
 await envMaps();

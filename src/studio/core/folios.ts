@@ -1,16 +1,19 @@
 import * as THREE from 'three';
 import { folios as FOLIOS, type FolioId } from '../../../content/profile.ts';
+import { Glide, Spring } from './physics.ts';
 
 interface FolioState {
   id: FolioId;
   mesh: THREE.Object3D;
   restPos: THREE.Vector3;
   restQuat: THREE.Quaternion;
-  hover: number;
-  hoverGoal: number;
-  /** 0 = on the shelf, 1 = lying on the desk */
-  travel: number;
-  travelGoal: number;
+  /** pulled out a little under the pointer; a light spring, so it springs back with a wobble */
+  hover: Spring;
+  /** 0 = on the shelf, 1 = lying on the desk (soft start and landing) */
+  travel: Glide;
+  /** a small rock when it lands on the desk or slides home into the shelf */
+  rock: Spring;
+  landed: boolean;
 }
 
 const DARK = new Set(['#1D2D3D', '#416180', '#C8432B']);
@@ -81,48 +84,61 @@ export class Folios {
         mesh,
         restPos: mesh.position.clone(),
         restQuat: mesh.quaternion.clone(),
-        hover: 0,
-        hoverGoal: 0,
-        travel: 0,
-        travelGoal: 0,
+        hover: new Spring(0, 3.4, 0.42),
+        travel: new Glide(0, 0.95),
+        rock: new Spring(0, 3.2, 0.22),
+        landed: false,
       });
     });
   }
 
   setHover(id: FolioId | null): void {
-    for (const f of this.list) f.hoverGoal = f.id === id && f.travelGoal === 0 ? 1 : 0;
+    for (const f of this.list) f.hover.target = f.id === id && f.travel.goal === 0 ? 1 : 0;
   }
 
   select(id: FolioId | null): void {
     if (this.active === id) return;
     this.active = id;
-    for (const f of this.list) f.travelGoal = f.id === id ? 1 : 0;
+    for (const f of this.list) {
+      f.travel.to(f.id === id ? 1 : 0);
+      if (this.reduceMotion) f.travel.snap(f.travel.goal);
+    }
   }
 
   get busy(): boolean {
-    return this.list.some((f) => Math.abs(f.travel - f.travelGoal) > 1e-3 || Math.abs(f.hover - f.hoverGoal) > 1e-3);
+    return this.list.some((f) => !f.travel.settled || !f.hover.settled || !f.rock.settled);
   }
 
-  update(dt: number): void {
+  /** Physics step (fixed rate). */
+  step(h: number): void {
     for (const f of this.list) {
-      f.hover = THREE.MathUtils.damp(f.hover, f.hoverGoal, 10, dt);
-      const speed = this.reduceMotion ? 100 : 1 / 1.25;
-      if (f.travel < f.travelGoal) f.travel = Math.min(f.travelGoal, f.travel + dt * speed);
-      else if (f.travel > f.travelGoal) f.travel = Math.max(f.travelGoal, f.travel - dt * speed);
-      this.place(f);
+      f.hover.step(h);
+      f.travel.step(h);
+      f.rock.step(h);
+      const t = f.travel.value;
+      // landing on the desk, or sliding back home: a rock proportional to the arrival speed
+      const atEnd = f.travel.goal === 1 ? t > 0.985 : t < 0.015;
+      if (atEnd && !f.landed && !this.reduceMotion) f.rock.velocity += (f.travel.goal === 1 ? 1 : -0.6) * Math.min(4, 2 + Math.abs(f.travel.velocity) * 3);
+      f.landed = atEnd;
     }
+  }
+
+  update(): void {
+    for (const f of this.list) this.place(f);
   }
 
   private place(f: FolioState): void {
     const out = new THREE.Vector3(1, 0, 0).applyQuaternion(f.restQuat);
-    const pulled = f.restPos.clone().addScaledVector(out, 0.035 * f.hover);
-    if (f.travel <= 0) {
+    const pulled = f.restPos.clone().addScaledVector(out, 0.035 * Math.max(-0.2, f.hover.value));
+    const travel = THREE.MathUtils.clamp(f.travel.value, 0, 1);
+    const rock = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), f.rock.value * 0.035);
+    if (travel <= 1e-4) {
       f.mesh.position.copy(pulled);
-      f.mesh.quaternion.copy(f.restQuat);
+      f.mesh.quaternion.copy(f.restQuat).multiply(rock);
       return;
     }
     // slide out of the shelf first (0..0.25), then arc over to the desk (0.25..1)
-    const t = f.travel;
+    const t = travel;
     const slide = Math.min(1, t / 0.25);
     const outPos = f.restPos.clone().addScaledVector(out, 0.035 + 0.2 * ease(slide)).add(new THREE.Vector3(0, 0.02 * slide, 0));
     if (t <= 0.25) {
@@ -135,6 +151,6 @@ export class Folios {
     const a = outPos.clone().lerp(ctrl, k);
     const b = ctrl.clone().lerp(this.deskPos, k);
     f.mesh.position.copy(a.lerp(b, k));
-    f.mesh.quaternion.copy(f.restQuat).slerp(this.deskQuat, k);
+    f.mesh.quaternion.copy(f.restQuat).slerp(this.deskQuat, k).multiply(rock);
   }
 }

@@ -61,9 +61,9 @@ def camera(name: str, res: tuple[int, int], fit=None):
 
 
 def city_backdrop(state: str):
-    """Show the matching city render behind the window (the scene is saved with the evening one)."""
+    """Show the matching Budapest photo behind the window (the scene is saved with the evening one)."""
     m = bpy.data.materials.get('city_evening')
-    path = os.path.join(OUT, 'city', f'city_{state}.png')
+    path = os.path.join(ROOT, 'public', 'textures', f'window_{state}.webp')
     if not m or not os.path.exists(path):
         return
     for n in m.node_tree.nodes:

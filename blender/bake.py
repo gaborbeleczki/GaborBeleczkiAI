@@ -32,9 +32,14 @@ TEX_DIR = os.path.join(ROOT, 'public', 'textures')
 
 GROUPS = os.environ.get('BAKE_GROUPS', 'floor,walls,furniture,props').split(',')
 STATES = os.environ.get('BAKE_STATES', 'evening,day').split(',')
-LIGHT_SAMPLES = int(os.environ.get('BAKE_SAMPLES', '192'))
-ALBEDO_RES = int(os.environ.get('ALBEDO_RES', '2048'))
-LIGHT_RES = int(os.environ.get('LIGHT_RES', '1024'))
+LIGHT_SAMPLES = int(os.environ.get('BAKE_SAMPLES', '80'))
+# albedo carries the wood grain, fabric weave and print detail; light is smooth and denoised
+ALBEDO_RES = {'floor': 4096, 'walls': 2048, 'furniture': 4096, 'props': 4096}
+LIGHT_RES = {'floor': 2048, 'walls': 2048, 'furniture': 2048, 'props': 2048}
+if os.environ.get('ALBEDO_RES'):
+    ALBEDO_RES = {g: int(os.environ['ALBEDO_RES']) for g in ALBEDO_RES}
+if os.environ.get('LIGHT_RES'):
+    LIGHT_RES = {g: int(os.environ['LIGHT_RES']) for g in LIGHT_RES}
 SKIP_ALBEDO = os.environ.get('SKIP_ALBEDO') == '1'
 
 
@@ -203,15 +208,15 @@ def main():
         if not SKIP_ALBEDO:
             scene_setup(12)
             L.evening(anchors)
-            img = target_image(f'{g}_albedo', ALBEDO_RES)
-            bake(ob, 'albedo', img, margin=16)
+            img = target_image(f'{g}_albedo', ALBEDO_RES[g])
+            bake(ob, 'albedo', img, margin=ALBEDO_RES[g] // 128)
             alb = pixels(img)
             save_webp(srgb_encode(alb), os.path.join(TEX_DIR, f'{g}_albedo.webp'), quality=88)
         for state in STATES:
             scene_setup(LIGHT_SAMPLES)
             (L.evening if state == 'evening' else L.day)(anchors)
-            img = target_image(f'{g}_light_{state}', LIGHT_RES)
-            bake(ob, 'light', img, margin=12)
+            img = target_image(f'{g}_light_{state}', LIGHT_RES[g])
+            bake(ob, 'light', img, margin=LIGHT_RES[g] // 128)
             raw = pixels(img)
             np.save(os.path.join(BAKE_DIR, f'{g}_light_{state}_raw.npy'), raw.astype(np.float16))
             den = denoise(img)

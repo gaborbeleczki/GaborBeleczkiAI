@@ -1,0 +1,17 @@
+{
+  "shots": [
+    "window-evening-left.png",
+    "window-evening-center.png",
+    "window-evening-right.png",
+    "window-evening-up.png",
+    "window-evening-later.png",
+    "window-evening-home.png",
+    "window-day-left.png",
+    "window-day-center.png",
+    "window-day-right.png",
+    "window-day-up.png",
+    "window-day-later.png",
+    "window-day-home.png"
+  ],
+  "errors": []
+}

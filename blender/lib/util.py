@@ -81,7 +81,7 @@ def add_bevel(ob: bpy.types.Object, width: float, segments: int = 3, angle: floa
     mod.use_clamp_overlap = True
 
 
-def cylinder(name: str, r: float, h: float, loc, coll, mat=None, segs: int = 32, bevel: float = 0.0, r_top: float | None = None) -> bpy.types.Object:
+def cylinder(name: str, r: float, h: float, loc, coll, mat=None, segs: int = 64, bevel: float = 0.0, r_top: float | None = None) -> bpy.types.Object:
     bm = bmesh.new()
     bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=segs, radius1=r, radius2=r if r_top is None else r_top, depth=h)
     ob = mesh_object(name, bm, coll, mat)
@@ -92,7 +92,7 @@ def cylinder(name: str, r: float, h: float, loc, coll, mat=None, segs: int = 32,
     return ob
 
 
-def sphere(name: str, r: float, loc, coll, mat=None, segs: int = 24, rings: int = 16, scale=(1, 1, 1)) -> bpy.types.Object:
+def sphere(name: str, r: float, loc, coll, mat=None, segs: int = 36, rings: int = 24, scale=(1, 1, 1)) -> bpy.types.Object:
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=segs, v_segments=rings, radius=r)
     bmesh.ops.scale(bm, vec=Vector(scale), verts=bm.verts)
@@ -102,7 +102,7 @@ def sphere(name: str, r: float, loc, coll, mat=None, segs: int = 24, rings: int 
     return ob
 
 
-def revolve(name: str, profile: Sequence[tuple[float, float]], coll, mat=None, loc=(0, 0, 0), segs: int = 48,
+def revolve(name: str, profile: Sequence[tuple[float, float]], coll, mat=None, loc=(0, 0, 0), segs: int = 96,
             cap_bottom: bool = True, cap_top: bool = False) -> bpy.types.Object:
     """Lathe a (radius, z) profile around Z. Profiles run bottom to top."""
     bm = bmesh.new()
@@ -133,12 +133,12 @@ def revolve(name: str, profile: Sequence[tuple[float, float]], coll, mat=None, l
     return ob
 
 
-def tube_along(name: str, points: Sequence[Sequence[float]], radius: float, coll, mat=None, segs: int = 12) -> bpy.types.Object:
+def tube_along(name: str, points: Sequence[Sequence[float]], radius: float, coll, mat=None, segs: int = 16) -> bpy.types.Object:
     """A round tube along a polyline (lamp arms, chair spindles, bridge cables)."""
     crv = bpy.data.curves.new(name + '_crv', 'CURVE')
     crv.dimensions = '3D'
     crv.bevel_depth = radius
-    crv.bevel_resolution = max(1, segs // 4)
+    crv.bevel_resolution = max(2, segs // 3)
     crv.use_fill_caps = True
     spline = crv.splines.new('POLY')
     spline.points.add(len(points) - 1)
@@ -205,8 +205,9 @@ def apply_modifiers(ob: bpy.types.Object) -> bpy.types.Object:
 def join(objs: Iterable[bpy.types.Object], name: str, coll: bpy.types.Collection) -> bpy.types.Object:
     """Merge meshes (world transforms applied) into one object, keeping material slots."""
     objs = [apply_modifiers(o) for o in objs]
-    # identical UV layer sets on every mesh so bmesh merges them by name
+    # identical UV layer and colour attribute sets on every mesh so bmesh merges them by name
     for ob in objs:
+        ensure_sway(ob.data)
         if 'ArtUV' not in ob.data.uv_layers:
             ob.data.uv_layers.new(name='ArtUV')
         for layer in list(ob.data.uv_layers):
@@ -241,6 +242,29 @@ def join(objs: Iterable[bpy.types.Object], name: str, coll: bpy.types.Collection
     for ob in objs:
         bpy.data.objects.remove(ob, do_unlink=True)
     return out
+
+
+SWAY_KIND = {'curtain': 0.25, 'leaf': 0.5, 'pendant': 0.75}
+
+
+def ensure_sway(me: bpy.types.Mesh) -> None:
+    """Per-vertex motion data for the browser: R = weight, G = kind, B = phase (A unused)."""
+    if 'sway' not in me.color_attributes:
+        attr = me.color_attributes.new('sway', 'FLOAT_COLOR', 'POINT')
+        for d in attr.data:
+            d.color = (0.0, 0.0, 0.0, 1.0)
+
+
+def write_sway(ob: bpy.types.Object, kind: str, weight_fn, phase_fn) -> None:
+    """Fill the sway attribute from world-space vertex positions (modifiers already applied)."""
+    me = ob.data
+    ensure_sway(me)
+    attr = me.color_attributes['sway']
+    mw = ob.matrix_world
+    code = SWAY_KIND[kind]
+    for v, d in zip(me.vertices, attr.data):
+        co = mw @ v.co
+        d.color = (max(0.0, min(1.0, weight_fn(co))), code, phase_fn(co) % 1.0, 1.0)
 
 
 def set_origin_to_bounds_center(ob: bpy.types.Object) -> None:

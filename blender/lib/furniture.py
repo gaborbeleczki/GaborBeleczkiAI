@@ -128,15 +128,15 @@ def build_lounge_chair(coll, loc=(1.68, 1.42), facing=(-0.55, -0.84)) -> list:
     back.rotation_euler.x = math.radians(-14)
     for c in (seat, back):
         sub = c.modifiers.new('Sub', 'SUBSURF')
-        sub.levels = 1
-        sub.render_levels = 1
+        sub.levels = 2
+        sub.render_levels = 2
         smooth(c)
     parts += [seat, back]
     # folded wool throw over the right armrest
     throw = box('lc_throw', (0.2, 0.46, 0.05), (W / 2 - 0.03, 0.06, 0.6), coll, M.wool('#B5483A', 'wool_lingon', 160.0), bevel=0.02, segments=4)
     throw.rotation_euler.y = math.radians(8)
     sub = throw.modifiers.new('Sub', 'SUBSURF')
-    sub.levels = 1
+    sub.levels = 2
     smooth(throw)
     parts.append(throw)
     parent_all(parts, parent)
@@ -237,6 +237,8 @@ def build_pendant(coll, coll_dyn, loc=(-0.15, 1.62), bottom=1.93) -> dict:
     parts = [shade, cord, rose]
     for p in parts:
         tag(p, bake='furniture')
+    for p in (shade, cord):
+        tag(p, sway='pendant')
     return {'parts': parts, 'light_pos': (loc[0], loc[1], bottom + 0.09)}
 
 

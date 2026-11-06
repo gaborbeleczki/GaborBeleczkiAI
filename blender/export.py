@@ -57,7 +57,7 @@ def main():
         export_lights=False,
         export_animations=False,
         export_image_format='NONE',
-        export_vertex_color='NONE',
+        export_vertex_color='ACTIVE',
     )
     print(f'[export] {len(keep)} objects -> {path} ({os.path.getsize(path) / 1e6:.2f} MB)')
 

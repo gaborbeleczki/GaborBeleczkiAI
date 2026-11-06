@@ -38,6 +38,8 @@ export class Screen {
   private readonly regions = new Regions();
   private module: ScreenModule | null = null;
   private moduleId: FolioId = 'hello';
+  private animDirty = false;
+  private drawnAt = -1;
   private fade = 1;
   private dirty = true;
   private hoverId: string | null = null;
@@ -172,15 +174,18 @@ export class Screen {
       this.fade = Math.min(1, this.fade + dt / 0.35);
       this.dirty = true;
     }
-    if (this.module?.update(dt, this.time)) this.dirty = true;
+    // continuous animations (figures, the game) redraw at up to 30 fps; input redraws at once
+    if (this.module?.update(dt, this.time)) this.animDirty = true;
     const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Budapest' });
     if (now !== this.clock) {
       this.clock = now;
       this.dirty = true;
     }
-    if (this.dirty) {
+    if (this.dirty || (this.animDirty && this.time - this.drawnAt >= 1 / 30)) {
       this.draw();
       this.dirty = false;
+      this.animDirty = false;
+      this.drawnAt = this.time;
       this.texture.needsUpdate = true;
     }
   }

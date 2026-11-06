@@ -167,6 +167,11 @@
     0.675,
     -0.9
   ],
+  "pendantPivot": [
+    -0.15,
+    2.85,
+    -1.62
+  ],
   "tonearm": {
     "pivot": [
       -2.243,
@@ -198,34 +203,34 @@
   "bake": {
     "floor": {
       "evening": {
-        "lmax": 1.3027
+        "lmax": 1.3883
       },
       "day": {
-        "lmax": 1.0993
+        "lmax": 1.0952
       }
     },
     "walls": {
       "evening": {
-        "lmax": 2.0176
+        "lmax": 2.1075
       },
       "day": {
-        "lmax": 1.6348
+        "lmax": 2.6432
       }
     },
     "furniture": {
       "evening": {
-        "lmax": 6.0
+        "lmax": 5.9045
       },
       "day": {
-        "lmax": 1.7067
+        "lmax": 1.9047
       }
     },
     "props": {
       "evening": {
-        "lmax": 2.1942
+        "lmax": 2.1282
       },
       "day": {
-        "lmax": 1.9669
+        "lmax": 2.4469
       }
     }
   }

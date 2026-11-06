@@ -266,6 +266,7 @@ def pilea(name, loc, coll, size=1.0) -> list:
         tip = origin + dirv * L
         leaf_mesh(bm, 0.05 * size, 0.05 * size, tip, Vector((dirv.x, dirv.y, 0.2)).normalized(), Vector((0, 0, 1)), cup=0.5, droop=0.05)
     ob = mesh_object(name, bm, coll, M.leaf('#4F6B45', 'leaf_pilea'))
+    tag(ob, sway='leaf', sway_base=float(origin.z), sway_height=0.16 * size)
     sol = ob.modifiers.new('Solid', 'SOLIDIFY')
     sol.thickness = 0.0015
     smooth(ob)
@@ -308,6 +309,7 @@ def big_plant(coll, loc=(-2.2, 1.86)) -> list:
             L = RNG.uniform(0.2, 0.3)
             leaf_mesh(bm, L, L * 0.62, base, out, Vector((0, 0, 1)), cup=0.35, droop=0.35)
     leaves = mesh_object('big_leaves', bm, coll, M.leaf('#4B6A43', 'leaf_ficus'))
+    tag(leaves, sway='leaf', sway_base=0.6, sway_height=1.4)
     sol = leaves.modifiers.new('Solid', 'SOLIDIFY')
     sol.thickness = 0.002
     smooth(leaves)

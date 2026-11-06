@@ -80,6 +80,8 @@ export function watch(page, bucket) {
 export async function waitForStudio(page, timeout = 120000) {
   await page.waitForFunction(() => window.__studio && window.__studio.ready, null, { timeout });
   await page.evaluate(() => window.__studio.prefetched());
+  // the sharp window photos load after the first frames
+  await page.evaluate(() => (window.__studio.sharpened ? window.__studio.sharpened() : true));
 }
 
 export function writeJson(name, data) {

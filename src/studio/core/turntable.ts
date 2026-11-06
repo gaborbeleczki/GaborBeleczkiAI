@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Spring } from './physics.ts';
 
 function vinylTexture(): THREE.CanvasTexture {
   const s = 512;
@@ -50,14 +51,22 @@ function vinylTexture(): THREE.CanvasTexture {
   return t;
 }
 
+/**
+ * Belt-driven record player. The platter has inertia: the motor pulls it up to 33⅓ rpm through
+ * the belt, and when stopped it coasts down against bearing friction. The tonearm swings on a
+ * spring, lifts while it travels (cueing) and settles into the groove, then tracks inwards.
+ */
 export class Turntable {
   private playing = false;
-  private speed = 0;
-  private arm = 0; // 0 = rest, 1 = on the record
+  private omega = 0; // rad/s
   private progress = 0;
+  private readonly arm: Spring;
+  private readonly lift = new Spring(0, 2.2, 0.9);
+  private wobble = 0;
   private readonly REST = THREE.MathUtils.degToRad(25);
   private readonly START = THREE.MathUtils.degToRad(11);
   private readonly END = THREE.MathUtils.degToRad(1);
+  private static readonly RPM33 = (33.333 / 60) * Math.PI * 2;
 
   constructor(
     private readonly platter: THREE.Object3D | undefined,
@@ -66,7 +75,7 @@ export class Turntable {
   ) {
     if (record) {
       const top = new THREE.Mesh(
-        new THREE.CircleGeometry(0.1475, 96),
+        new THREE.CircleGeometry(0.1475, 128),
         new THREE.MeshStandardMaterial({ map: vinylTexture(), roughness: 0.35, metalness: 0.05 }),
       );
       top.rotation.x = -Math.PI / 2;
@@ -74,6 +83,7 @@ export class Turntable {
       top.raycast = () => {};
       record.add(top);
     }
+    this.arm = new Spring(this.REST, 0.9, 0.85);
     if (tonearm) tonearm.rotation.y = this.REST;
   }
 
@@ -87,18 +97,34 @@ export class Turntable {
   }
 
   get busy(): boolean {
-    return this.playing || this.speed > 0.001 || (this.arm > 0.001 && this.arm < 0.999);
+    return this.playing || this.omega > 0.001 || !this.arm.settled || !this.lift.settled;
   }
 
-  update(dt: number): void {
-    const target = this.playing ? 1 : 0;
-    // platter spins up/down like a belt drive (33⅓ rpm = 3.49 rad/s)
-    this.speed = THREE.MathUtils.damp(this.speed, target * 3.49, this.playing ? 1.4 : 0.9, dt);
-    if (this.platter) this.platter.rotation.y -= this.speed * dt;
-    if (this.record) this.record.rotation.y -= this.speed * dt;
-    this.arm = THREE.MathUtils.damp(this.arm, target, 2.2, dt);
-    if (this.playing) this.progress = Math.min(1, this.progress + dt / 240);
-    const play = THREE.MathUtils.lerp(this.START, this.END, this.progress);
-    if (this.tonearm) this.tonearm.rotation.y = THREE.MathUtils.lerp(this.REST, play, this.arm);
+  /** Physics step (fixed rate). */
+  step(h: number): void {
+    // platter: belt torque towards 33⅓ when the motor runs, friction otherwise
+    if (this.playing) this.omega += (Turntable.RPM33 - this.omega) * 1.6 * h;
+    else this.omega = Math.max(0, this.omega - (0.55 + this.omega * 0.35) * h);
+    this.wobble += h;
+    const flutter = this.playing ? 1 + Math.sin(this.wobble * 2.1) * 0.002 : 1;
+    const d = this.omega * flutter * h;
+    if (this.platter) this.platter.rotation.y -= d;
+    if (this.record) this.record.rotation.y -= d;
+    // tonearm: swing to the lead-in once the platter is up to speed, then follow the groove
+    const upToSpeed = this.omega > Turntable.RPM33 * 0.85;
+    if (this.playing && upToSpeed) this.progress = Math.min(1, this.progress + h / 240);
+    const goal = this.playing && upToSpeed ? THREE.MathUtils.lerp(this.START, this.END, this.progress) : this.REST;
+    this.arm.target = goal;
+    this.arm.step(h);
+    // cue lever: up while the arm travels, down when it has (nearly) arrived
+    this.lift.target = Math.abs(this.arm.value - goal) > THREE.MathUtils.degToRad(1.2) ? 1 : 0;
+    this.lift.step(h);
+  }
+
+  update(): void {
+    if (this.tonearm) {
+      this.tonearm.rotation.y = this.arm.value;
+      this.tonearm.rotation.x = -THREE.MathUtils.degToRad(2.2) * THREE.MathUtils.clamp(this.lift.value, 0, 1.2);
+    }
   }
 }

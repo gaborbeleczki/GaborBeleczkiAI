@@ -4,11 +4,14 @@ import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { folios, profile, type FolioId } from '../../content/profile.ts';
 import { Ambient } from './audio/ambient.ts';
+import { Dust } from './core/dust.ts';
 import { Folios } from './core/folios.ts';
-import { bakedMaterial, configureTexture, emitterMaterial } from './core/materials.ts';
-import { CameraRig, type Pose } from './core/rig.ts';
+import { bakedMaterial, configureTexture, emitterMaterial, motionUniforms, type MotionUniforms } from './core/materials.ts';
+import { Pendant } from './core/pendant.ts';
+import { FixedStep, Wander } from './core/physics.ts';
+import { CameraRig, LOOKS, type Pose } from './core/rig.ts';
 import { Turntable } from './core/turntable.ts';
-import { WindowView, type CityMeta } from './core/window.ts';
+import { WindowView, type WindowMeta, type WindowTextures } from './core/window.ts';
 import { Screen } from './screen/screen.ts';
 import { Hud } from './ui/hud.ts';
 
@@ -19,6 +22,7 @@ interface StudioMeta {
   folioSize: [number, number, number];
   lights: Record<string, number[]>;
   flame: number[];
+  pendantPivot?: number[];
   window: { center: number[]; size: [number, number] };
   atlases: string[];
   bake: Record<string, Record<string, { lmax: number }>>;
@@ -37,7 +41,7 @@ const HINTS: Record<Focus, string> = {
   home: 'Pick a folio on the shelf · click the display, the window or a lamp',
   desk: 'Use the dock on the display · <kbd>←</kbd> <kbd>→</kbd> to browse · <kbd>Esc</kbd> to step back',
   shelf: 'Each folio is a chapter · click one to open it',
-  window: 'Budapest, across the Danube · watch for the trams',
+  window: 'Budapest across the Danube · move to look around · watch for tram 2',
   record: 'Studio sessions: generated ambient music · click again to stop',
 };
 
@@ -59,6 +63,8 @@ export class Studio {
   private screen!: Screen;
   private screenMesh?: THREE.Mesh;
   private windowView?: WindowView;
+  private windowMeta?: WindowMeta;
+  private sharpening?: Promise<boolean>;
   private folios?: Folios;
   private turntable?: Turntable;
   private readonly ambient = new Ambient();
@@ -77,9 +83,17 @@ export class Studio {
   private hovered: THREE.Object3D | null = null;
   private time = 0;
   private frameTimes: number[] = [];
-  private dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+  private dpr = Math.min(window.devicePixelRatio || 1, 2);
   private contextLostTimer = 0;
   private readonly cleanups: (() => void)[] = [];
+  private readonly stepper = new FixedStep();
+  private motion!: MotionUniforms;
+  private pendant?: Pendant;
+  private dust?: Dust;
+  private lampPositions: THREE.Vector3[] = [];
+  private readonly breeze = new Wander(0.08);
+  private readonly air = new THREE.Vector3();
+  private readonly lastEye = new THREE.Vector3();
   private readonly capture = /[?&]capture\b/.test(location.search);
   private drift = 0;
 
@@ -132,8 +146,9 @@ export class Studio {
       if (!r.ok) throw new Error('studio.json');
       return r.json();
     });
-    const city: CityMeta = await fetch('/models/city.json').then((r) => r.json());
+    const view: WindowMeta = await fetch('/models/window.json').then((r) => r.json());
     this.meta = meta;
+    this.windowMeta = view;
     for (const [k, p] of Object.entries(meta.poses)) this.poses[k] = { pos: v3(p.pos), target: v3(p.target), fit: p.fit };
 
     const tl = new THREE.TextureLoader(manager);
@@ -144,27 +159,35 @@ export class Studio {
     const hdr = new HDRLoader(manager);
     const loadHdr = (url: string) => new Promise<THREE.Texture>((res, rej) => hdr.load(url, res, undefined, rej));
 
+    // small previews of the bake first; sharpen() swaps in the full 4K/2K atlases
     const atlasJobs = meta.atlases.map(async (g) => {
       const [albedo, evening, day] = await Promise.all([
-        tex(`/textures/${g}_albedo.webp`, true, false),
-        tex(`/textures/${g}_light_evening.webp`, true, false),
-        tex(`/textures/${g}_light_day.webp`, true, false),
+        tex(`/textures/${g}_albedo_lo.webp`, true, false),
+        tex(`/textures/${g}_light_evening_lo.webp`, true, false),
+        tex(`/textures/${g}_light_day_lo.webp`, true, false),
       ]);
       return [g, { albedo, evening, day }] as const;
     });
-    const [gltf, atlases, cityE, cityD, cityData, tramE, tramD, envE, envD] = await Promise.all([
+    // the window: small plates first, the sharp ones arrive after the first frames (sharpenWindow)
+    const windowSet = async (state: 'evening' | 'day'): Promise<WindowTextures> => {
+      const [plate, data, fill] = await Promise.all([
+        tex(`/textures/window_${state}_lo.webp`, true, true),
+        tex(`/textures/window_${state}_data.png`, false, true),
+        tex(`/textures/window_${state}_fill.webp`, true, true),
+      ]);
+      data.generateMipmaps = false;
+      data.minFilter = THREE.LinearFilter;
+      data.anisotropy = 1;
+      return { plate, data, fill };
+    };
+    const [gltf, atlases, winE, winD, envE, envD] = await Promise.all([
       gltfLoader.loadAsync('/models/studio.glb'),
       Promise.all(atlasJobs),
-      tex('/textures/city_evening.webp', true, true),
-      tex('/textures/city_day.webp', true, true),
-      tex('/textures/city_data.webp', false, true),
-      tex('/textures/tram_evening.webp', true, true),
-      tex('/textures/tram_day.webp', true, true),
+      windowSet('evening'),
+      windowSet('day'),
       loadHdr('/textures/room_evening.hdr').catch(() => null),
       loadHdr('/textures/room_day.hdr').catch(() => null),
     ]);
-    cityData.generateMipmaps = false;
-    cityData.minFilter = THREE.LinearFilter;
 
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     if (envE) {
@@ -181,6 +204,7 @@ export class Studio {
 
     const sets = new Map(atlases);
     const root = gltf.scene;
+    this.motion = motionUniforms(v3(meta.pendantPivot ?? [-0.15, 2.85, -1.62]));
     root.traverse((o) => {
       const mesh = o as THREE.Mesh;
       const ud = o.userData || {};
@@ -188,15 +212,27 @@ export class Studio {
         const g = o.name.slice(5);
         const set = sets.get(g);
         const scales = meta.bake?.[g] ?? {};
+        // Blender's per-vertex 'sway' attribute arrives as glTF COLOR_0
+        const geo = mesh.geometry;
+        const sway = geo.getAttribute('color');
+        if (sway) {
+          geo.setAttribute('sway', sway);
+          geo.deleteAttribute('color');
+        }
         if (set) {
-          const m = bakedMaterial({
-            albedo: set.albedo,
-            evening: set.evening,
-            day: set.day,
-            scaleEvening: scales.evening?.lmax ?? 1,
-            scaleDay: scales.day?.lmax ?? 1,
-          });
+          const m = bakedMaterial(
+            {
+              albedo: set.albedo,
+              evening: set.evening,
+              day: set.day,
+              scaleEvening: scales.evening?.lmax ?? 1,
+              scaleDay: scales.day?.lmax ?? 1,
+            },
+            this.motion,
+            !!sway,
+          );
           mesh.material = m;
+          m.userData.atlas = g;
           this.baked.push(m);
         }
         mesh.matrixAutoUpdate = false;
@@ -242,12 +278,9 @@ export class Studio {
     this.windowView = new WindowView({
       center: v3(meta.window.center),
       size: meta.window.size,
-      meta: city,
-      cityEvening: cityE,
-      cityDay: cityD,
-      data: cityData,
-      tramEvening: tramE,
-      tramDay: tramD,
+      meta: view,
+      evening: winE,
+      day: winD,
     });
     this.scene.add(this.windowView.mesh);
 
@@ -269,9 +302,22 @@ export class Studio {
     this.scene.add(this.warmLight);
     this.sunLight.position.set(-3, 4, -6);
     this.scene.add(this.sunLight);
+
+    // the pendant swings on its cord; the glowing diffuser and the live light go with it
+    this.pendant = new Pendant(this.motion.pivot.value, this.motion, [root.getObjectByName('pendant_diffuser'), root.getObjectByName('hit_pendant')], this.warmLight);
+    this.pendant.calm = this.reduceMotion;
+    this.lampPositions = ['pendant', 'desk_lamp', 'floor_lamp'].map((k) => v3(meta.lights[k] ?? [0, 2, -1.6]));
+    if (!this.reduceMotion) {
+      this.dust = new Dust(new THREE.Box3(new THREE.Vector3(-1.7, 0.75, -2.3), new THREE.Vector3(1.9, 2.45, 0.6)), this.lampPositions, {
+        center: v3(meta.window.center),
+        size: meta.window.size,
+      });
+      this.scene.add(this.dust.points);
+    }
     this.applyState(this.dayT);
 
     this.rig = new CameraRig(this.poses.home);
+    this.rig.calm = this.reduceMotion || this.capture;
     const start = this.poses.home;
     // arrive with a short dolly
     const from: Pose = { pos: start.pos.clone().add(new THREE.Vector3(0.5, 0.18, 0.9)), target: start.target.clone(), fit: start.fit };
@@ -299,6 +345,39 @@ export class Studio {
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
+  }
+
+  /**
+   * Full-resolution textures, swapped in once the studio is on screen: the bake atlases (the
+   * current light first), then the window photos. Until then the small previews stand in.
+   */
+  private async sharpen(): Promise<boolean> {
+    const loader = new THREE.TextureLoader();
+    const aniso = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
+    const load = async (url: string, flipY: boolean) => configureTexture(await loader.loadAsync(url), { srgb: true, flipY, aniso });
+    const states: ('evening' | 'day')[] = this.night ? ['evening', 'day'] : ['day', 'evening'];
+    try {
+      for (const m of this.baked) {
+        const g = m.userData.atlas as string;
+        const [albedo, light] = await Promise.all([load(`/textures/${g}_albedo.webp`, false), load(`/textures/${g}_light_${states[0]}.webp`, false)]);
+        this.swapTexture(m, 'albedoMap', albedo);
+        this.swapTexture(m, states[0] === 'evening' ? 'lightA' : 'lightB', light);
+      }
+      for (const state of states) this.windowView?.setTextures(state, { plate: await load(`/textures/window_${state}.webp`, true) });
+      for (const m of this.baked) {
+        const g = m.userData.atlas as string;
+        this.swapTexture(m, states[1] === 'evening' ? 'lightA' : 'lightB', await load(`/textures/${g}_light_${states[1]}.webp`, false));
+      }
+      return true;
+    } catch {
+      return false; // the previews stay; nothing else depends on this
+    }
+  }
+
+  private swapTexture(m: THREE.ShaderMaterial, uniform: string, tex: THREE.Texture): void {
+    const old = m.uniforms[uniform].value as THREE.Texture | null;
+    m.uniforms[uniform].value = tex;
+    if (old && old !== tex) old.dispose();
   }
 
   // ------------------------------------------------------------------ lifecycle
@@ -334,6 +413,7 @@ export class Studio {
     this.hud.announce(`Studio loaded. ${HINTS.home}. Press 0 to 7 to open a chapter, L for light, M for music.`);
     this.exposeHooks();
     void this.screen.prefetch();
+    this.sharpening = this.sharpen();
     if (!this.capture) this.resume();
     canvas.focus({ preventScroll: true });
   }
@@ -344,6 +424,8 @@ export class Studio {
       ready: true,
       info: () => ({ focus: this.focus, module: this.screen.current, screenReady: this.screen.ready, night: this.night, dpr: this.dpr, size: [this.renderer.domElement.width, this.renderer.domElement.height] }),
       prefetched: () => this.screen.prefetch().then(() => true),
+      sharpened: () => this.sharpening ?? Promise.resolve(false),
+      window: (state: 'evening' | 'day', v: { hfov?: number; yaw?: number; pitch?: number; gain?: number }) => this.windowView?.frame(state, v),
       exposure: (v: number) => (this.renderer.toneMappingExposure = v),
       open: (id: FolioId) => this.openFolio(id),
       focus: (f: Focus) => this.setFocus(f),
@@ -413,7 +495,14 @@ export class Studio {
       const a = (this.time / 12) * Math.PI * 2;
       this.rig.setPointer(Math.sin(a) * 0.55, Math.sin(a * 2) * 0.18);
     }
-    this.rig.update(dt);
+    // physics at a fixed 120 Hz: camera, folios, record player, pendant, dust
+    this.stepper.advance(dt, (h) => this.physics(h));
+    this.rig.apply();
+    this.folios?.update();
+    this.turntable?.update();
+    this.pendant?.apply();
+    this.dust?.update(this.dayT, this.dpr);
+    this.motion.time.value = this.reduceMotion ? 0 : this.time;
     // day/evening cross-fade
     if (this.dayT !== this.dayGoal) {
       const step = this.reduceMotion ? 1 : dt / 1.6;
@@ -421,8 +510,6 @@ export class Studio {
       this.applyState(this.dayT);
     }
     this.windowView?.update(dt, this.time, this.rig.camera, this.reduceMotion);
-    this.folios?.update(dt);
-    this.turntable?.update(dt);
     this.screen.update(dt);
     if (this.flame) {
       const f = this.reduceMotion ? 1 : 0.85 + 0.15 * Math.sin(this.time * 13.1) * Math.sin(this.time * 7.3 + 1.3);
@@ -434,13 +521,34 @@ export class Studio {
     if (!this.capture) this.adapt(dt);
   }
 
+  private physics(h: number): void {
+    this.rig.step(h);
+    this.folios?.step(h);
+    this.turntable?.step(h);
+    // air the camera pushes along, felt by the pendant when it passes close
+    const eye = this.rig.camera.position;
+    const lamp = this.lampPositions[0];
+    if (lamp) {
+      this.air.subVectors(eye, this.lastEye).divideScalar(h);
+      const near = Math.max(0, 1 - eye.distanceTo(lamp) / 1.6);
+      this.air.multiplyScalar(near * near * 0.6);
+      this.air.y = 0;
+    }
+    this.lastEye.copy(eye);
+    this.pendant?.step(h, this.air);
+    // a breeze from the window: curtains and leaves
+    const b = this.reduceMotion ? 0 : 0.5 + 0.5 * this.breeze.step(h);
+    this.motion.wind.value = b * b;
+    this.dust?.step(h, this.lampPositions, 1 - this.dayT);
+  }
+
   /** Lower the pixel ratio when frames run long; raise it back carefully. */
   private adapt(dt: number): void {
     this.frameTimes.push(dt);
     if (this.frameTimes.length < 90) return;
     const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
     this.frameTimes.length = 0;
-    const max = Math.min(window.devicePixelRatio || 1, 1.75);
+    const max = Math.min(window.devicePixelRatio || 1, 2);
     if (avg > 1 / 40 && this.dpr > 0.75) this.dpr = Math.max(0.75, this.dpr - 0.25);
     else if (avg < 1 / 58 && this.dpr < max) this.dpr = Math.min(max, this.dpr + 0.25);
     else return;
@@ -470,6 +578,7 @@ export class Studio {
 
   private setNight(night: boolean): void {
     this.night = night;
+    this.pendant?.nudge(0.8);
     this.dayGoal = night ? 0 : 1;
     this.hud.setNight(night);
     this.hud.announce(night ? 'Evening. The lamps are on.' : 'Daylight.');
@@ -488,10 +597,10 @@ export class Studio {
     this.focus = f;
     const pose = this.poses[f] ?? this.poses.home;
     this.rig.goTo(pose, f === 'home' ? 1.5 : 1.25);
-    this.rig.lookStrength = f === 'home' ? 1 : f === 'desk' ? 0.12 : 0.45;
+    this.rig.setLook(LOOKS[f] ?? LOOKS.home);
     this.hud.setFocused(f !== 'home');
     this.hud.setHint(HINTS[f]);
-    if (f === 'window') this.windowView?.hurryTram();
+    if (f === 'window') this.windowView?.hurry();
     if (f !== 'desk') this.renderer.domElement.style.cursor = 'default';
   }
 

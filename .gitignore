@@ -25,3 +25,6 @@ npm-debug.log*
 .DS_Store
 *.sw?
 .env*
+
+# source photos for the window (re-download with blender/fetch_photos.py)
+blender/assets/photos/
