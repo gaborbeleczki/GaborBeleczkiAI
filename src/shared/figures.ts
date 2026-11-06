@@ -25,6 +25,8 @@ export interface Motion {
   fadeOut: number;
   /** optional colour change along the way: from colour, to colour, between fractions a..b */
   recolor?: { to: string; a: number; b: number };
+  /** move during the first `travel` of each loop, then stay hidden until the next one */
+  travel?: number;
 }
 
 export interface Anim {
@@ -295,25 +297,23 @@ function evaluate(T: Theme, H = 200): Figure {
   // four tools pass three lenses (capability, fit, risk); what clears them is piloted, then decided
   const W = 640;
   const tools = ['ChatGPT', 'Claude', 'M365 Copilot', 'Copilot Studio'];
-  const ys = tools.map((_, i) => 40 + i * ((H - 80) / 3));
-  const gates = [210, 300, 390];
-  const pilotX = 480;
-  const decX = 580;
-  const mid = H / 2;
+  const ys = tools.map((_, i) => 44 + i * ((H - 84) / 3));
+  const nodeX = 150;
+  const gates = [250, 330, 410];
+  const pilotX = 496;
+  const decX = 594;
+  const mid = H / 2 + 2;
   const shapes: Shape[] = [];
-  gates.forEach((x) => shapes.push({ k: 'path', d: `M${x},${18} V${H - 18}`, p: { stroke: T.div, dash: [3, 4] } }));
-  // routes: each tool to the pilot node
-  ys.forEach((y) => {
-    shapes.push({ k: 'path', d: `M96,${f1(y)} H${gates[2] + 30} L${pilotX - 22},${f1(mid)}`, p: { stroke: T.axis, width: 1 } });
-  });
+  gates.forEach((x) => shapes.push({ k: 'path', d: `M${x},${22} V${H - 14}`, p: { stroke: T.div, dash: [3, 4] } }));
+  ys.forEach((y) => shapes.push({ k: 'path', d: `M${nodeX + 10},${f1(y)} H${gates[2] + 26} L${pilotX - 22},${f1(mid)}`, p: { stroke: T.axis, width: 1 } }));
   shapes.push({ k: 'path', d: `M${pilotX},${mid} H${decX}`, p: { stroke: T.ink, width: 1.5 } });
   const rnd = lcg(5);
   ys.forEach((y, i) => {
     for (let j = 0; j < 3; j++) {
       // some stop at a lens, some go through to the pilot and on to the decision
       const stop = [gates[0], gates[1], gates[2], decX][Math.floor(rnd() * 4)];
-      const route: Pt[] = stop === decX ? [[96, y], [gates[2] + 30, y], [pilotX - 22, mid], [decX - 18, mid]] : [[96, y], [stop, y]];
-      const dur = stop === decX ? 6 : 1.4 + ((stop - 96) / 300) * 2.6;
+      const route: Pt[] = stop === decX ? [[nodeX + 10, y], [gates[2] + 26, y], [pilotX - 22, mid], [decX - 18, mid]] : [[nodeX + 10, y], [stop, y]];
+      const dur = stop === decX ? 6 : 1.4 + ((stop - nodeX) / 260) * 2.6;
       shapes.push({
         k: 'rect',
         x: -3.5,
@@ -325,10 +325,8 @@ function evaluate(T: Theme, H = 200): Figure {
       });
     }
   });
-  // tool nodes
-  ys.forEach((y) => shapes.push({ k: 'circle', x: 80, y, r: 9, p: { fill: T.node, stroke: T.ink, width: 1.5 } }));
-  ys.forEach((y) => shapes.push({ k: 'circle', x: 80, y, r: 3, p: { fill: T.ink } }));
-  // pilot (diamond) and decision (ring)
+  ys.forEach((y) => shapes.push({ k: 'circle', x: nodeX, y, r: 9, p: { fill: T.node, stroke: T.ink, width: 1.5 } }));
+  ys.forEach((y) => shapes.push({ k: 'circle', x: nodeX, y, r: 3, p: { fill: T.ink } }));
   shapes.push({ k: 'rect', x: pilotX - 16, y: mid - 16, w: 32, h: 32, rot: 45, p: { fill: T.node, stroke: T.ink, width: 1.5 } });
   shapes.push({ k: 'path', d: `M${pilotX - 7},${mid} L${pilotX - 2},${mid + 5} L${pilotX + 7},${mid - 5}`, p: { stroke: T.ink, width: 1.8 } });
   shapes.push({ k: 'circle', x: decX, y: mid, r: 18, p: { fill: T.node, stroke: T.ink, width: 1.5 } });
@@ -341,10 +339,11 @@ function evaluate(T: Theme, H = 200): Figure {
     h: H,
     shapes,
     notes: [
-      ...tools.map((t, i): Note => ({ x: 64, y: ys[i], text: t, color: T.ann, ax: 1, size: 10.5 })),
-      { x: gates[0], y: 8, text: 'Capability', color: T.ink, ax: 0.5, size: 10.5 },
-      { x: gates[1], y: 8, text: 'Fit', color: T.ink, ax: 0.5, size: 10.5 },
-      { x: gates[2], y: 8, text: 'Risk', color: T.ink, ax: 0.5, size: 10.5 },
+      ...tools.map((t, i): Note => ({ x: nodeX - 18, y: ys[i], text: t, color: T.ann, ax: 1, size: 10.5 })),
+      { x: gates[0], y: 6, text: 'Capability', color: T.ink, ax: 0.5, ay: 0, size: 10.5 },
+      { x: gates[1], y: 6, text: 'Fit', color: T.ink, ax: 0.5, ay: 0, size: 10.5 },
+      { x: gates[2], y: 6, text: 'Risk', color: T.ink, ax: 0.5, ay: 0, size: 10.5 },
+      { x: pilotX, y: mid + 28, text: 'Pilot', color: T.ann, ax: 0.5, ay: 0, size: 10.5 },
     ],
     labels: [
       { t: 'Tools', d: 'Four assistants and agent builders' },
@@ -537,8 +536,10 @@ function coach(T: Theme, H = 200): Figure {
       shapes.push({ k: 'rect', x: x - 3, y: y - 3, w: 6, h: 6, p: { fill: j % 3 === 0 ? T.ink : T.soft }, a: { fade: { delay: 0.6 + k * 0.2 + j * 0.04, dur: 0.4 } } });
     }
   });
-  // every session sends a token up to each region
-  for (let i = 0; i < n; i += 2) {
+  // a playhead walks the half-year; at each session a token rises to every region
+  const period = 13;
+  shapes.push({ k: 'circle', x: 0, y: 0, r: 6, p: { fill: T.red }, a: { motion: { path: [[sx(0), axisY], [sx(n - 1), axisY]], dur: period, begin: 0, fadeIn: 0.02, fadeOut: 0.98 } } });
+  for (let i = 0; i < n; i++) {
     regions.forEach((r, k) => {
       shapes.push({
         k: 'rect',
@@ -547,7 +548,7 @@ function coach(T: Theme, H = 200): Figure {
         w: 6,
         h: 6,
         p: { fill: k === 1 ? T.red : T.tok },
-        a: { motion: { path: [[sx(i), axisY - 6], [sx(i), axisY - 34], [r.x, ry + 30]], dur: 3.2, begin: -((i * 0.8 + k * 0.5) % 6.4), fadeIn: 0.08, fadeOut: 0.86 } },
+        a: { motion: { path: [[sx(i), axisY - 8], [sx(i), axisY - 30], [r.x, ry + 30]], dur: period, begin: (i / (n - 1)) * period * 0.98 + k * 0.08, fadeIn: 0.15, fadeOut: 0.85, travel: 0.11 } },
       });
     });
   }

@@ -26,6 +26,13 @@ export interface ScreenModule {
   update(dt: number, t: number): boolean;
   draw(g: CanvasRenderingContext2D, area: Rect, ctx: ModuleContext): void;
   key?(e: KeyboardEvent): boolean;
+  keyUp?(e: KeyboardEvent): boolean;
+  /** Raw pointer input in canvas pixels, before regions; return true to take it. */
+  pointer?(x: number, y: number, type: 'move' | 'down' | 'up' | 'leave'): boolean;
+  /** The display is (or stops being) the thing the visitor is looking at. */
+  attention?(on: boolean): void;
+  /** Redraw rate while update() keeps returning true (default 30). */
+  readonly fps?: number;
   /** Plain-text summary for screen readers. */
   describe(): string;
 }

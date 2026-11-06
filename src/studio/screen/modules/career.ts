@@ -1,4 +1,5 @@
 import { bands, positions } from '../../../../content/profile.ts';
+
 import { C, MONO, card, easeOut, eyebrow, font, para, pill, rr, setTracking, title, type Rect } from '../kit.ts';
 import type { ModuleContext } from '../types.ts';
 import { BaseModule } from './base.ts';
@@ -6,11 +7,53 @@ import { BaseModule } from './base.ts';
 const BAND_FILL = ['#CFD0D3', '#94BCE3', '#416180'];
 const BAND_TEXT = ['#1D1F20', '#1D2D3D', '#F5F5F8'];
 
+// The skill mix over time, from the original portfolio's career chart: how much of the work was
+// finance and markets, product and delivery, and AI. Keys are eased with a cosine.
+const SKILL: [number, [number, number, number]][] = [
+  [2009, [0.55, 0, 0]],
+  [2013, [1, 0.05, 0]],
+  [2015, [1, 0.12, 0]],
+  [2018, [0.85, 0.35, 0]],
+  [2020, [0.55, 0.85, 0]],
+  [2022.83, [0.42, 0.88, 0]],
+  [2024, [0.32, 0.62, 0.62]],
+  [2025, [0.26, 0.45, 0.92]],
+  [2026, [0.22, 0.38, 1.05]],
+];
+
+function skillAt(t: number): [number, number, number] {
+  let i = 0;
+  while (i < SKILL.length - 2 && t > SKILL[i + 1][0]) i++;
+  const [a, va] = SKILL[i];
+  const [b, vb] = SKILL[i + 1];
+  const f = (1 - Math.cos(Math.PI * Math.max(0, Math.min(1, (t - a) / (b - a))))) / 2;
+  return [0, 1, 2].map((j) => va[j] + (vb[j] - va[j]) * f) as [number, number, number];
+}
+
 export class Career extends BaseModule {
   readonly id = 'career' as const;
   readonly title = 'Career';
   private sel = positions.length - 1;
   private swap = 1;
+  private scrub: number | null = null;
+  private chart: Rect = { x: 0, y: 0, w: 0, h: 0 };
+  private span: [number, number] = [2009, 2026];
+
+  pointer(x: number, y: number, type: 'move' | 'down' | 'up' | 'leave'): boolean {
+    const c = this.chart;
+    const inside = type !== 'leave' && x >= c.x && x <= c.x + c.w && y >= c.y - 20 && y <= c.y + c.h + 40;
+    const t = inside ? this.span[0] + ((x - c.x) / c.w) * (this.span[1] - this.span[0]) : null;
+    const snapped = t === null ? null : Math.round(t * 4) / 4;
+    if (type === 'up' && snapped !== null) {
+      const i = Math.max(0, positions.map((p) => snapped >= p.start).lastIndexOf(true));
+      this.select(i);
+    }
+    if (snapped !== this.scrub) {
+      this.scrub = snapped;
+      return true;
+    }
+    return false;
+  }
 
   protected tick(dt: number): boolean {
     let busy = this.animating && this.age < 1.6;
@@ -43,78 +86,92 @@ export class Career extends BaseModule {
     eyebrow(g, '04', 'Career', a.x, a.y + 10);
     title(g, 'Thirteen years across markets, product and AI', a.x, a.y + 66, 54, C.ink, 1300);
 
-    // timeline
-    const tx = a.x;
-    const tw = a.w;
-    const ty = a.y + 200;
-    const first = positions[0].start;
-    const last = positions[positions.length - 1].end;
-    const X = (yr: number) => tx + ((yr - first) / (last - first)) * tw;
-    g.fillStyle = C.line;
-    g.fillRect(tx, ty + 120, tw, 2);
-    [2009, 2013, 2015.5, 2020.4, 2022, 2025.67].forEach((yr) => {
-      g.fillRect(X(yr), ty + 112, 2, 16);
-      g.font = font(18, 500, MONO);
-      g.fillStyle = C.faint;
-      g.fillText(String(Math.floor(yr)), X(yr) + 6, ty + 132);
-      g.fillStyle = C.line;
+    // the skill mix, as a stream over the years (from the original portfolio's career chart)
+    const [t0, t1] = this.span;
+    const cx0 = a.x;
+    const cw = a.w;
+    const top = a.y + 180;
+    const ch = 172;
+    this.chart = { x: cx0, y: top, w: cw, h: ch };
+    const X = (yr: number) => cx0 + ((yr - t0) / (t1 - t0)) * cw;
+    const grow = easeOut(this.enter(0.1, 1.1));
+    const m = top + ch / 2;
+    const ks = (ch / 2.25) * grow;
+    const edges = (t: number) => {
+      const v = skillAt(t);
+      const e = [m + ((v[0] + v[1] + v[2]) * ks) / 2];
+      v.forEach((x) => e.push(e[e.length - 1] - x * ks));
+      return e;
+    };
+    const ts: number[] = [];
+    for (let t = t0; t <= t1 + 1e-6; t += 0.125) ts.push(t);
+    const E = ts.map(edges);
+    for (let j = 0; j < 3; j++) {
+      g.beginPath();
+      ts.forEach((t, i) => (i ? g.lineTo(X(t), E[i][j + 1]) : g.moveTo(X(t), E[i][j + 1])));
+      for (let i = ts.length - 1; i >= 0; i--) g.lineTo(X(ts[i]), E[i][j]);
+      g.closePath();
+      g.fillStyle = BAND_FILL[j];
+      g.fill();
+    }
+    g.globalAlpha = e;
+    // band names inside the stream
+    ([[2014.6, 0, 'Finance & markets'], [2020.8, 1, 'Product & delivery'], [2025.1, 2, 'AI']] as [number, number, string][]).forEach(([t, j, txt]) => {
+      const ed = edges(t);
+      g.font = font(19, 650);
+      setTracking(g, 1.4);
+      g.fillStyle = BAND_TEXT[j];
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(txt.toUpperCase(), X(t), (ed[j] + ed[j + 1]) / 2);
+      g.textAlign = 'left';
+      g.textBaseline = 'top';
+      setTracking(g, 0);
     });
-    g.font = font(18, 500, MONO);
-    g.fillStyle = C.faint;
+    // year ticks and the positions as segments under the stream
+    const axisY = top + ch + 18;
+    g.fillStyle = 'rgba(29,29,31,0.35)';
+    g.fillRect(cx0, axisY, cw, 1);
+    [2009, 2013, 2015, 2020, 2022].forEach((yr) => {
+      g.fillStyle = 'rgba(29,29,31,0.12)';
+      g.fillRect(X(yr), top - 6, 1, ch + 24);
+      g.font = font(17, 500, MONO);
+      g.fillStyle = C.faint;
+      g.fillText(String(yr), X(yr) + 6, axisY + 26);
+    });
+    g.font = font(17, 600, MONO);
+    g.fillStyle = C.lingon;
     g.textAlign = 'right';
-    g.fillText('Now', tx + tw, ty + 132);
+    g.fillText('Now', cx0 + cw, axisY + 26);
     g.textAlign = 'left';
     positions.forEach((p, i) => {
-      const grow = easeOut(this.enter(0.1 + i * 0.07, 0.5));
       const on = i === this.sel;
       const hov = ctx.hover === `pos:${i}`;
-      const x = X(p.start) + 3;
-      const w = (X(p.end) - X(p.start) - 6) * grow;
-      const h = on ? 104 : hov ? 92 : 84;
-      const y = ty + 104 - h;
-      g.save();
-      if (on) {
-        g.shadowColor = 'rgba(29,45,61,0.22)';
-        g.shadowBlur = 20;
-        g.shadowOffsetY = 6;
-      }
-      rr(g, x, y, Math.max(8, w), h, 16);
-      g.fillStyle = BAND_FILL[p.band];
+      const x = X(p.start) + 2;
+      const w = X(Math.min(p.end, t1)) - X(p.start) - 4;
+      rr(g, x, axisY + 6, Math.max(6, w), on ? 10 : 6, 4);
+      g.fillStyle = on ? C.ink : hov ? C.fjord : BAND_FILL[p.band];
       g.fill();
-      g.restore();
-      if (on) {
-        rr(g, x, y, Math.max(8, w), h, 16);
-        g.lineWidth = 3;
-        g.strokeStyle = C.ink;
-        g.stroke();
-      }
-      if (w > 60) {
-        g.save();
-        rr(g, x, y, w, h, 16);
-        g.clip();
-        g.font = font(17, 500, MONO);
-        g.fillStyle = BAND_TEXT[p.band];
-        g.globalAlpha = 0.8;
-        g.fillText(p.years, x + 14, y + 14);
-        g.globalAlpha = 1;
-        g.font = font(21, 600);
-        if (g.measureText(p.short).width <= w - 24) g.fillText(p.short, x + 14, y + 42);
-        g.restore();
-      }
-      ctx.regions.add({ id: `pos:${i}`, rect: { x, y: ty, w: Math.max(30, w), h: 110 }, label: p.title, onClick: () => this.select(i) });
+      ctx.regions.add({ id: `pos:${i}`, rect: { x, y: axisY - 4, w: Math.max(20, w), h: 30 }, label: p.title, onClick: () => this.select(i) });
     });
-    // legend
-    let lx = tx;
-    bands.forEach((b, i) => {
-      g.beginPath();
-      g.arc(lx + 8, ty + 186, 8, 0, Math.PI * 2);
-      g.fillStyle = BAND_FILL[i];
-      g.fill();
-      g.font = font(19, 500);
-      g.fillStyle = C.muted;
-      g.fillText(b, lx + 24, ty + 175);
-      lx += g.measureText(b).width + 70;
-    });
+    // the scrub line: hovered year, or the middle of the selected position
+    const sp = positions[this.sel];
+    const yr = this.scrub ?? Math.min(t1 - 0.2, (sp.start + Math.min(sp.end, t1)) / 2);
+    const sx = X(yr);
+    g.fillStyle = C.lingon;
+    g.fillRect(sx - 1, top - 10, 2, ch + 22);
+    const ri = Math.max(0, positions.map((q) => yr >= q.start).lastIndexOf(true));
+    const chip = `${Math.floor(yr)} · ${positions[ri].short}`;
+    g.font = font(17, 650);
+    const cwid = g.measureText(chip).width + 22;
+    const chx = Math.min(cx0 + cw - cwid, Math.max(cx0, sx - cwid / 2));
+    rr(g, chx, top - 46, cwid, 32, 8);
+    g.fillStyle = C.lingon;
+    g.fill();
+    g.fillStyle = '#FFFFFF';
+    g.textBaseline = 'middle';
+    g.fillText(chip, chx + 11, top - 29);
+    g.textBaseline = 'top';
     g.restore();
 
     // detail

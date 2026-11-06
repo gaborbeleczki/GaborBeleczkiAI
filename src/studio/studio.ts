@@ -399,6 +399,9 @@ export class Studio {
       this.rig.setPointer(0, 0);
     });
     on(window, 'keydown', (e) => this.onKey(e as KeyboardEvent));
+    on(window, 'keyup', (e) => {
+      if (this.focus === 'desk' && this.screen.keyUp(e as KeyboardEvent)) e.preventDefault();
+    });
     on(document, 'visibilitychange', () => (document.hidden ? this.pause() : this.resume()));
     on(canvas, 'webglcontextlost', (e) => {
       e.preventDefault();
@@ -598,6 +601,7 @@ export class Studio {
     const pose = this.poses[f] ?? this.poses.home;
     this.rig.goTo(pose, f === 'home' ? 1.5 : 1.25);
     this.rig.setLook(LOOKS[f] ?? LOOKS.home);
+    this.screen.attention(f === 'desk');
     this.hud.setFocused(f !== 'home');
     this.hud.setHint(HINTS[f]);
     if (f === 'window') this.windowView?.hurry();

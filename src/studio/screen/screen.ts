@@ -40,6 +40,7 @@ export class Screen {
   private moduleId: FolioId = 'hello';
   private animDirty = false;
   private drawnAt = -1;
+  private attended = false;
   private fade = 1;
   private dirty = true;
   private hoverId: string | null = null;
@@ -136,12 +137,14 @@ export class Screen {
     this.moduleId = id;
     this.fade = this.reduceMotion ? 1 : 0;
     mod.mount(this.ctx);
+    mod.attention?.(this.attended);
     this.hoverId = null;
     this.dirty = true;
     this.host.announce(`${mod.title}. ${mod.describe()}`);
   }
 
   pointer(x: number, y: number, type: 'move' | 'down' | 'up' | 'leave'): void {
+    if (this.module?.pointer?.(x, y, type)) this.dirty = true;
     if (type === 'leave') {
       if (this.hoverId) {
         this.hoverId = null;
@@ -168,6 +171,16 @@ export class Screen {
     return false;
   }
 
+  keyUp(e: KeyboardEvent): boolean {
+    return !!this.module?.keyUp?.(e);
+  }
+
+  /** The visitor sits at the desk (true) or has walked away (false). */
+  attention(on: boolean): void {
+    this.attended = on;
+    this.module?.attention?.(on);
+  }
+
   update(dt: number): void {
     this.time += dt;
     if (this.fade < 1) {
@@ -181,7 +194,8 @@ export class Screen {
       this.clock = now;
       this.dirty = true;
     }
-    if (this.dirty || (this.animDirty && this.time - this.drawnAt >= 1 / 30)) {
+    const rate = this.attended ? (this.module?.fps ?? 30) : 15;
+    if (this.dirty || (this.animDirty && this.time - this.drawnAt >= 1 / rate - 1e-4)) {
       this.draw();
       this.dirty = false;
       this.animDirty = false;

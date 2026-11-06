@@ -14,6 +14,7 @@ import {
   toolGroups,
   tools,
 } from '../../content/profile.ts';
+import { caseFigureHtml } from './figure-svg.ts';
 import type { Note } from './notes.ts';
 
 export const esc = (s: string): string =>
@@ -195,6 +196,7 @@ function workSection(): string {
         <span class="case__toggle" aria-hidden="true"></span>
       </summary>
       <div class="case__body">
+        ${caseFigureHtml(i)}
         ${
           c.outcomes.length
             ? `<div class="case__outcomes">${c.outcomes

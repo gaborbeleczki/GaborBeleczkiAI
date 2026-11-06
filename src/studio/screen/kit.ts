@@ -203,3 +203,42 @@ export function setTracking(g: CanvasRenderingContext2D, px: number): void {
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 export const easeOut = (t: number) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
 export const inRect = (x: number, y: number, r: Rect) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+
+/** Apple-style segmented control; returns the rectangle of each segment. */
+export function segmented(g: CanvasRenderingContext2D, items: string[], active: number, x: number, y: number, hover = -1, size = 19): Rect[] {
+  g.font = font(size, 600);
+  const pad = 22;
+  const h = size + 26;
+  const widths = items.map((t) => g.measureText(t).width + pad * 2);
+  const total = widths.reduce((a, b) => a + b, 0) + 8;
+  rr(g, x, y, total, h + 8, (h + 8) / 2);
+  g.fillStyle = 'rgba(29,29,31,0.07)';
+  g.fill();
+  const rects: Rect[] = [];
+  let cx = x + 4;
+  items.forEach((t, i) => {
+    const r = { x: cx, y: y + 4, w: widths[i], h };
+    if (i === active) {
+      g.save();
+      g.shadowColor = 'rgba(29,45,61,0.16)';
+      g.shadowBlur = 10;
+      g.shadowOffsetY = 2;
+      rr(g, r.x, r.y, r.w, r.h, h / 2);
+      g.fillStyle = '#FFFFFF';
+      g.fill();
+      g.restore();
+    } else if (i === hover) {
+      rr(g, r.x, r.y, r.w, r.h, h / 2);
+      g.fillStyle = 'rgba(29,29,31,0.05)';
+      g.fill();
+    }
+    g.font = font(size, 600);
+    g.fillStyle = i === active ? C.ink : C.muted;
+    g.textBaseline = 'middle';
+    g.fillText(t, r.x + pad, r.y + h / 2 + 1);
+    g.textBaseline = 'top';
+    rects.push(r);
+    cx += widths[i];
+  });
+  return rects;
+}

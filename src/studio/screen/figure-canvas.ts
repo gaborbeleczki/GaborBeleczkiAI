@@ -79,6 +79,14 @@ function drawShape(g: CanvasRenderingContext2D, s: Shape, t: number, still: bool
       }
       f = (((t - m.begin) / m.dur) % 1 + 1) % 1;
     }
+    if (m.travel) {
+      if (still) f = Math.min(f, m.travel * 0.999);
+      if (f > m.travel) {
+        g.restore();
+        return;
+      }
+      f /= m.travel;
+    }
     const [x, y] = along(m.path, f);
     g.translate(x, y);
     g.globalAlpha *= still ? 1 : tokenOpacity(f, m.fadeIn, m.fadeOut);
@@ -157,7 +165,7 @@ function drawShape(g: CanvasRenderingContext2D, s: Shape, t: number, still: bool
 }
 
 /** Draw the figure into `r` (fit inside, centred). Returns the rectangle it used. */
-export function drawFigure(g: CanvasRenderingContext2D, fig: Figure, r: Rect, t: number, still: boolean, noteScale = 1.3): Rect {
+export function drawFigure(g: CanvasRenderingContext2D, fig: Figure, r: Rect, t: number, still: boolean, noteScale = 1.15): Rect {
   const sc = Math.min(r.w / fig.w, r.h / fig.h);
   const w = fig.w * sc;
   const h = fig.h * sc;

@@ -40,4 +40,7 @@ export abstract class BaseModule implements ScreenModule {
   abstract draw(g: CanvasRenderingContext2D, area: Rect, ctx: ModuleContext): void;
   abstract describe(): string;
   key?(e: KeyboardEvent): boolean;
+  keyUp?(e: KeyboardEvent): boolean;
+  pointer?(x: number, y: number, type: 'move' | 'down' | 'up' | 'leave'): boolean;
+  attention?(on: boolean): void;
 }

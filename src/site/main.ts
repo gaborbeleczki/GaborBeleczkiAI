@@ -198,10 +198,20 @@ function initSupportNote(): void {
 }
 
 syncModeButtons(currentMode());
+/** The case figures loop with SMIL; with reduced motion, hold them still mid-loop. */
+function initFigures(): void {
+  if (!reduceMotion) return;
+  document.querySelectorAll<SVGSVGElement>('svg.fig__svg').forEach((svg) => {
+    svg.setCurrentTime(6);
+    svg.pauseAnimations();
+  });
+}
+
 initReveal();
 initTerminal();
 initCopy();
 initSupportNote();
+initFigures();
 
 if (currentMode() === 'studio') {
   void bootStudio();
