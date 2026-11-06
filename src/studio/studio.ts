@@ -37,6 +37,9 @@ type Focus = 'home' | 'desk' | 'shelf' | 'window' | 'record';
 
 const v3 = (a: number[]) => new THREE.Vector3(a[0], a[1], a[2]);
 
+/** Asset URL with the build's asset version (cache busting across deploys). */
+const asset = (path: string) => `${path}?v=${import.meta.env.VITE_ASSET_V ?? '0'}`;
+
 const HINTS: Record<Focus, string> = {
   home: 'Pick a folio on the shelf · click the display, the window or a lamp',
   desk: 'Use the dock on the display · <kbd>←</kbd> <kbd>→</kbd> to browse · <kbd>Esc</kbd> to step back',
@@ -67,7 +70,7 @@ export class Studio {
   private sharpening?: Promise<boolean>;
   private folios?: Folios;
   private turntable?: Turntable;
-  private readonly ambient = new Lounge();
+  private readonly music = new Lounge();
   private envs: { evening?: THREE.Texture; day?: THREE.Texture } = {};
   private flame?: THREE.Sprite;
   private warmLight = new THREE.PointLight('#ffb36b', 0, 6, 1.6);
@@ -142,18 +145,18 @@ export class Studio {
   async load(): Promise<void> {
     const manager = new THREE.LoadingManager();
     manager.onProgress = (_url, loaded, total) => this.hud.progress(loaded / Math.max(total, 1));
-    const meta: StudioMeta = await fetch('/models/studio.json').then((r) => {
+    const meta: StudioMeta = await fetch(asset('/models/studio.json')).then((r) => {
       if (!r.ok) throw new Error('studio.json');
       return r.json();
     });
-    const view: WindowMeta = await fetch('/models/window.json').then((r) => r.json());
+    const view: WindowMeta = await fetch(asset('/models/window.json')).then((r) => r.json());
     this.meta = meta;
     this.windowMeta = view;
     for (const [k, p] of Object.entries(meta.poses)) this.poses[k] = { pos: v3(p.pos), target: v3(p.target), fit: p.fit };
 
     const tl = new THREE.TextureLoader(manager);
     const tex = (url: string, srgb: boolean, flipY: boolean) =>
-      new Promise<THREE.Texture>((res, rej) => tl.load(url, (t) => res(configureTexture(t, { srgb, flipY, aniso: this.renderer.capabilities.getMaxAnisotropy() >= 8 ? 8 : 4 })), undefined, rej));
+      new Promise<THREE.Texture>((res, rej) => tl.load(asset(url), (t) => res(configureTexture(t, { srgb, flipY, aniso: this.renderer.capabilities.getMaxAnisotropy() >= 8 ? 8 : 4 })), undefined, rej));
     const gltfLoader = new GLTFLoader(manager);
     gltfLoader.setMeshoptDecoder(MeshoptDecoder);
     const hdr = new HDRLoader(manager);
@@ -181,12 +184,12 @@ export class Studio {
       return { plate, data, fill };
     };
     const [gltf, atlases, winE, winD, envE, envD] = await Promise.all([
-      gltfLoader.loadAsync('/models/studio.glb'),
+      gltfLoader.loadAsync(asset('/models/studio.glb')),
       Promise.all(atlasJobs),
       windowSet('evening'),
       windowSet('day'),
-      loadHdr('/textures/room_evening.hdr').catch(() => null),
-      loadHdr('/textures/room_day.hdr').catch(() => null),
+      loadHdr(asset('/textures/room_evening.hdr')).catch(() => null),
+      loadHdr(asset('/textures/room_day.hdr')).catch(() => null),
     ]);
 
     const pmrem = new THREE.PMREMGenerator(this.renderer);
@@ -318,6 +321,7 @@ export class Studio {
 
     this.rig = new CameraRig(this.poses.home);
     this.rig.calm = this.reduceMotion || this.capture;
+    this.lastEye.copy(this.rig.camera.position);
     const start = this.poses.home;
     // arrive with a short dolly
     const from: Pose = { pos: start.pos.clone().add(new THREE.Vector3(0.5, 0.18, 0.9)), target: start.target.clone(), fit: start.fit };
@@ -354,19 +358,26 @@ export class Studio {
   private async sharpen(): Promise<boolean> {
     const loader = new THREE.TextureLoader();
     const aniso = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
-    const load = async (url: string, flipY: boolean) => configureTexture(await loader.loadAsync(url), { srgb: true, flipY, aniso });
+    const load = async (url: string, flipY: boolean) => configureTexture(await loader.loadAsync(asset(url)), { srgb: true, flipY, aniso });
+    // the full 4K bake needs ~400 MB of video memory: desktops get it, tablets and
+    // low-memory devices get the 2K set
+    const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
+    const coarse = matchMedia('(pointer: coarse)').matches;
+    const full = mem >= 8 && !coarse && this.renderer.capabilities.maxTextureSize >= 4096;
+    // (the walls' albedo is 2K already, so it has no smaller sibling)
+    const sharp = (g: string, kind: string) => (full || (g === 'walls' && kind === 'albedo') ? `/textures/${g}_${kind}.webp` : `/textures/${g}_${kind}_md.webp`);
     const states: ('evening' | 'day')[] = this.night ? ['evening', 'day'] : ['day', 'evening'];
     try {
       for (const m of this.baked) {
         const g = m.userData.atlas as string;
-        const [albedo, light] = await Promise.all([load(`/textures/${g}_albedo.webp`, false), load(`/textures/${g}_light_${states[0]}.webp`, false)]);
+        const [albedo, light] = await Promise.all([load(sharp(g, 'albedo'), false), load(sharp(g, `light_${states[0]}`), false)]);
         this.swapTexture(m, 'albedoMap', albedo);
         this.swapTexture(m, states[0] === 'evening' ? 'lightA' : 'lightB', light);
       }
       for (const state of states) this.windowView?.setTextures(state, { plate: await load(`/textures/window_${state}.webp`, true) });
       for (const m of this.baked) {
         const g = m.userData.atlas as string;
-        this.swapTexture(m, states[1] === 'evening' ? 'lightA' : 'lightB', await load(`/textures/${g}_light_${states[1]}.webp`, false));
+        this.swapTexture(m, states[1] === 'evening' ? 'lightA' : 'lightB', await load(sharp(g, `light_${states[1]}`), false));
       }
       return true;
     } catch {
@@ -440,14 +451,43 @@ export class Studio {
         for (let i = 0; i < n; i++) this.frame(dt, i === n - 1);
       },
       screenPng: () => this.screen.canvas.toDataURL('image/png'),
+      game: () => this.screen.debug(),
       screenMaterial: () => {
         const m = this.screenMesh?.material as THREE.MeshBasicMaterial | undefined;
         const uv = this.screenMesh?.geometry.getAttribute('uv');
         return { has: !!this.screenMesh, type: m?.type, map: !!m?.map, uvCount: uv?.count ?? 0, uv0: uv ? [uv.getX(0), uv.getY(0), uv.getX(2), uv.getY(2)] : null, normalized: (uv as THREE.BufferAttribute | undefined)?.normalized };
       },
       // QA: render the soundtrack's opening offline and report its levels per second
-      music: async (seconds = 40) => {
+      music: async (seconds = 40, wav = false) => {
         const buf = await Lounge.render(seconds);
+        if (wav) {
+          // 16-bit stereo WAV, base64, for a listenable preview
+          const n = buf.length;
+          const data = new DataView(new ArrayBuffer(44 + n * 4));
+          const str = (o: number, t: string) => [...t].forEach((c, i) => data.setUint8(o + i, c.charCodeAt(0)));
+          str(0, 'RIFF');
+          data.setUint32(4, 36 + n * 4, true);
+          str(8, 'WAVEfmt ');
+          data.setUint32(16, 16, true);
+          data.setUint16(20, 1, true);
+          data.setUint16(22, 2, true);
+          data.setUint32(24, buf.sampleRate, true);
+          data.setUint32(28, buf.sampleRate * 4, true);
+          data.setUint16(32, 4, true);
+          data.setUint16(34, 16, true);
+          str(36, 'data');
+          data.setUint32(40, n * 4, true);
+          const L = buf.getChannelData(0);
+          const R = buf.getChannelData(1);
+          for (let i = 0; i < n; i++) {
+            data.setInt16(44 + i * 4, Math.max(-1, Math.min(1, L[i])) * 32767, true);
+            data.setInt16(46 + i * 4, Math.max(-1, Math.min(1, R[i])) * 32767, true);
+          }
+          let bin = '';
+          const bytes = new Uint8Array(data.buffer);
+          for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+          return btoa(bin);
+        }
         const per: { peak: number; rms: number }[] = [];
         const sr = buf.sampleRate;
         for (let s = 0; s < Math.floor(buf.duration); s++) {
@@ -492,7 +532,7 @@ export class Studio {
     this.pause();
     window.clearTimeout(this.contextLostTimer);
     this.cleanups.forEach((f) => f());
-    this.ambient.dispose();
+    this.music.dispose();
     this.screen?.dispose();
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
@@ -552,7 +592,7 @@ export class Studio {
     const eye = this.rig.camera.position;
     const lamp = this.lampPositions[0];
     if (lamp) {
-      this.air.subVectors(eye, this.lastEye).divideScalar(h);
+      this.air.subVectors(eye, this.lastEye).divideScalar(h).clampLength(0, 3);
       const near = Math.max(0, 1 - eye.distanceTo(lamp) / 1.6);
       this.air.multiplyScalar(near * near * 0.6);
       this.air.y = 0;
@@ -608,9 +648,9 @@ export class Studio {
   }
 
   private async toggleMusic(force?: boolean): Promise<void> {
-    const on = force ?? !this.ambient.playing;
-    if (on) await this.ambient.start();
-    else this.ambient.stop();
+    const on = force ?? !this.music.playing;
+    if (on) await this.music.start();
+    else this.music.stop();
     this.turntable?.setPlaying(on);
     this.hud.setSound(on);
   }
@@ -683,7 +723,7 @@ export class Studio {
       const f = folios.find((x) => x.id === folioId)!;
       label = `Folio ${f.n} · ${f.title}`;
     } else if (hitId === 'lights') label = this.night ? `${label} · switch to day` : `${label} · switch to evening`;
-    else if (hitId === 'record') label = this.ambient.playing ? 'Stop the record' : 'Play a record';
+    else if (hitId === 'record') label = this.music.playing ? 'Stop the record' : 'Play a record';
     else if (hitId === 'screen') label = 'Sit at the desk';
     this.renderer.domElement.style.cursor = target ? 'pointer' : 'default';
     this.hud.showTip(target && e.pointerType === 'mouse' ? label : null, e.clientX, e.clientY);
@@ -720,7 +760,7 @@ export class Studio {
     if (id === 'window') return this.setFocus(this.focus === 'window' ? 'home' : 'window');
     if (id === 'lights') return this.setNight(!this.night);
     if (id === 'record') {
-      if (this.focus !== 'record' && !this.ambient.playing) this.setFocus('record');
+      if (this.focus !== 'record' && !this.music.playing) this.setFocus('record');
       void this.toggleMusic();
       return;
     }

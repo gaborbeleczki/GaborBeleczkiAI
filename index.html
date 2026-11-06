@@ -85,7 +85,7 @@
           var l = document.createElement('link');
           l.rel = 'preload';
           l.as = 'fetch';
-          l.href = '/models/studio.glb';
+          l.href = '/models/studio.glb?v=%VITE_ASSET_V%';
           l.crossOrigin = 'anonymous';
           document.head.appendChild(l);
         }

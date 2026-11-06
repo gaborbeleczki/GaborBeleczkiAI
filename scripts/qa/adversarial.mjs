@@ -58,7 +58,7 @@ export async function adversarial(base) {
     const ctx = await b.newContext();
     const page = await ctx.newPage();
     watch(page, errors);
-    await page.route('**/models/studio.glb', (r) => r.fulfill({ status: 404, body: 'gone' }));
+    await page.route('**/models/studio.glb*', (r) => r.fulfill({ status: 404, body: 'gone' }));
     await page.goto(`${base}/?studio`, { waitUntil: 'load' });
     await page.waitForFunction(() => document.documentElement.getAttribute('data-mode') === 'page', null, { timeout: 60000 });
     const toast = await page.locator('.toast').textContent().catch(() => '');
@@ -144,7 +144,59 @@ export async function adversarial(base) {
     return info;
   });
 
-  // 8. Every generated page and feed responds.
+  // 8. The role game: keys reach it at the desk, walking away pauses it.
+  await run('game: plays with keys, pauses when you leave the desk', async (errors) => {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/?studio&capture`, { waitUntil: 'load' });
+    await waitForStudio(page);
+    await page.evaluate(() => window.__studio.open('role'));
+    await page.evaluate(() => window.__studio.step(1 / 60, 30));
+    await page.keyboard.press('g');
+    await page.keyboard.press('Enter');
+    await page.keyboard.down('ArrowRight');
+    await page.evaluate(() => window.__studio.step(1 / 60, 120));
+    await page.keyboard.up('ArrowRight');
+    const playing = await page.evaluate(() => window.__studio.game());
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => window.__studio.step(1 / 60, 10));
+    const left = await page.evaluate(() => window.__studio.game());
+    await ctx.close();
+    if (!playing || playing.phase !== 'playing' || !(playing.x > 80)) throw new Error(`while playing: ${JSON.stringify(playing)}`);
+    if (left.phase !== 'paused') throw new Error(`after Escape: ${JSON.stringify(left)}`);
+    return { playing, left };
+  });
+
+  // 9. The soundtrack renders without clipping (offline, no speakers).
+  await run('music: 16 s offline render, no clipping, not silent', async (errors) => {
+    const ctx = await b.newContext({ viewport: { width: 800, height: 500 } });
+    const page = await ctx.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/?studio&capture`, { waitUntil: 'load' });
+    await waitForStudio(page);
+    const per = await page.evaluate(() => window.__studio.music(16));
+    await ctx.close();
+    const peak = Math.max(...per.map((p) => p.peak));
+    const rms = Math.max(...per.map((p) => p.rms));
+    if (peak >= 0.98) throw new Error(`peak ${peak}`);
+    if (rms < 0.005) throw new Error(`silent: rms ${rms}`);
+    return { peak, rms };
+  });
+
+  // 10. The page's case figures are there and animated.
+  await run('page: seven animated case figures', async (errors) => {
+    const page = await b.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/?page`, { waitUntil: 'load' });
+    const figs = await page.evaluate(() => [...document.querySelectorAll('svg.fig__svg')].map((s) => s.querySelectorAll('animateMotion, animate, animateTransform, [style*="animation"]').length));
+    await page.close();
+    if (figs.length !== 7) throw new Error(`${figs.length} figures`);
+    if (figs.some((n) => n === 0)) throw new Error(`a figure without motion: ${figs.join(',')}`);
+    return { animationsPerFigure: figs };
+  });
+
+  // 11. Every generated page and feed responds.
   await run('routes: /, /cv/, /notes/, note, rss, sitemap, robots', async () => {
     const out = {};
     for (const p of ['/', '/cv/', '/notes/', '/notes/building-the-studio/', '/rss.xml', '/sitemap.xml', '/robots.txt', '/models/studio.json']) {

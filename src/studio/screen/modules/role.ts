@@ -78,6 +78,11 @@ export class Role extends BaseModule {
     } else this.game?.pause();
   }
 
+  /** QA hook: the game's phase and the player's position. */
+  debug(): { phase: string; x: number } | null {
+    return this.game ? { phase: this.game.phase, x: this.game.player().x } : null;
+  }
+
   keyUp(e: KeyboardEvent): boolean {
     if (this.view !== 'play' || !this.game) return false;
     return this.game.key(e, false);

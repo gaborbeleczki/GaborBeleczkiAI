@@ -501,6 +501,7 @@ export function mount(host, opts) {
       onUp(e); return !!KEYS[e.code];
     },
     get phase() { return phase; },
+    player() { return { x: player.x, y: player.y, lvl: player.lvl }; },
     stats() { return stats(); },
     destroy() {
       cancelAnimationFrame(raf); if (io) io.disconnect(); if (ro) ro.disconnect();

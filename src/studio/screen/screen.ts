@@ -171,6 +171,11 @@ export class Screen {
     return false;
   }
 
+  /** QA: whatever the current chapter wants to report (the game's state). */
+  debug(): unknown {
+    return (this.module as unknown as { debug?: () => unknown })?.debug?.() ?? null;
+  }
+
   keyUp(e: KeyboardEvent): boolean {
     return !!this.module?.keyUp?.(e);
   }

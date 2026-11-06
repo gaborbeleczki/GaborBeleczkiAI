@@ -2,7 +2,7 @@
 
 A personal site in two layers:
 
-- **The studio** — a calm Nordic room in Budapest, modeled in Blender with Python, lit and baked with Cycles, and rendered live in the browser with Three.js. Folios on the shelf open chapters on the desk display; the window looks across the Danube to the castle; lamps switch between day and evening; a record player plays generated ambient music.
+- **The studio** — a calm Nordic room in Budapest, modeled in Blender with Python, lit and baked with Cycles, and rendered live in the browser with Three.js. Folios on the shelf open chapters on the desk display; the window looks out on real photographs of Budapest — the Chain Bridge at night, the Parliament by day — rebuilt in depth, with traffic, tram 2, boats and wind; lamps switch between day and evening; a record player plays generated lounge deep house.
 - **The page** — a minimal single-column portfolio with the same content (Nordic palette, Apple-style type and controls). It is what crawlers, phones, reduced-motion users and browsers without WebGL 2 get, and it is always one click away.
 
 ```
@@ -44,7 +44,7 @@ BLENDER_PY=/path/to/venv/bin/python npm run blender
 | --- | --- | --- |
 | Window | `blender/fetch_photos.py` + `blender/window_photos.py` | two Budapest photos (evening, day) → colour plates, a depth/river/lights/foreground data map, a fill for what the trees hide, and paths for traffic, tram 2, boats, a plane and birds (`public/models/window.json`) |
 | Scene | `blender/build_scene.py` | the room from primitives + procedural materials, merged into four bake groups with packed UV atlases; camera poses and click targets in `public/models/studio.json` |
-| Bake | `blender/bake.py` | per group: albedo (up to 4096²) and light (2048², evening + day, denoised with OpenImageDenoise); small `_lo` previews load first |
+| Bake | `blender/bake.py` | per group: albedo (up to 4096²) and light (2048², evening + day, denoised with OpenImageDenoise); `_lo` previews load first, then the full set on desktops or the 2K `_md` set on tablets and low-memory devices |
 | Env maps | `blender/envmap.py` | small HDR panoramas that light the moving objects |
 | Stills | `blender/render_stills.py` | Cycles references of the main view (pixel diff, build notes) |
 | Export | `blender/export.py` + `scripts/optimize-assets.mjs` | glTF → meshopt-compressed `public/models/studio.glb`, WebP textures |

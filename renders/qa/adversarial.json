@@ -1,0 +1,139 @@
+{
+  "passed": 11,
+  "total": 12,
+  "checks": [
+    {
+      "name": "no WebGL → page by default",
+      "pass": true,
+      "detail": {
+        "mode": "page",
+        "why": "webgl2"
+      },
+      "errors": []
+    },
+    {
+      "name": "no WebGL + ?studio → falls back to page with a notice",
+      "pass": true,
+      "detail": {
+        "toast": "The 3D studio could not start on this device. Showing the page instead."
+      },
+      "errors": []
+    },
+    {
+      "name": "prefers-reduced-motion → page by default",
+      "pass": true,
+      "detail": {
+        "mode": "page"
+      },
+      "errors": []
+    },
+    {
+      "name": "studio.glb missing → page with notice",
+      "pass": true,
+      "detail": {
+        "toast": "The 3D studio could not start on this device. Showing the page instead."
+      },
+      "errors": []
+    },
+    {
+      "name": "rapid input: keys 0-7, clicks, resizes",
+      "pass": true,
+      "detail": {
+        "focus": "home",
+        "module": "career",
+        "screenReady": true,
+        "night": true,
+        "dpr": 1,
+        "size": [
+          1280,
+          720
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "WebGL context lost → page",
+      "pass": true,
+      "detail": {
+        "mode": "page"
+      },
+      "errors": []
+    },
+    {
+      "name": "keyboard: skip link + focus order on the page",
+      "pass": true,
+      "detail": {
+        "tabStops": [
+          "Skip to content",
+          "GB\n      Gábor Béleczki",
+          "Approach",
+          "Role",
+          "Work",
+          "Career"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "keyboard: studio chapters menu",
+      "pass": true,
+      "detail": {
+        "focus": "desk",
+        "module": "career",
+        "screenReady": true,
+        "night": true,
+        "dpr": 1,
+        "size": [
+          1280,
+          720
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "game: plays with keys, pauses when you leave the desk",
+      "pass": true,
+      "detail": {
+        "playing": {
+          "phase": "playing",
+          "x": 504.25000000000193
+        },
+        "left": {
+          "phase": "paused",
+          "x": 504.25000000000193
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "music: 16 s offline render, no clipping, not silent",
+      "pass": true,
+      "detail": {
+        "peak": 0.551,
+        "rms": 0.104
+      },
+      "errors": []
+    },
+    {
+      "name": "page: seven animated case figures",
+      "pass": false,
+      "detail": "a figure without motion: 5,26,12,0,19,40,4",
+      "errors": []
+    },
+    {
+      "name": "routes: /, /cv/, /notes/, note, rss, sitemap, robots",
+      "pass": true,
+      "detail": {
+        "/": 200,
+        "/cv/": 200,
+        "/notes/": 200,
+        "/notes/building-the-studio/": 200,
+        "/rss.xml": 200,
+        "/sitemap.xml": 200,
+        "/robots.txt": 200,
+        "/models/studio.json": 200
+      },
+      "errors": []
+    }
+  ]
+}

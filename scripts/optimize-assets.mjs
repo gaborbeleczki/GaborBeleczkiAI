@@ -48,12 +48,17 @@ async function optimizeGlb() {
 async function atlasPreviews() {
   // The studio shows these first (a few hundred KB in all), then swaps in the full atlases.
   const dir = out('public/textures');
-  const sizes = { albedo: 1024, light_evening: 512, light_day: 512 };
+  // _lo: shown first everywhere; _md: the sharp set for tablets and low-memory devices
+  const tiers = { lo: { albedo: 1024, light_evening: 512, light_day: 512 }, md: { albedo: 2048, light_evening: 1024, light_day: 1024 } };
   for (const g of ['floor', 'walls', 'furniture', 'props']) {
-    for (const [kind, px] of Object.entries(sizes)) {
-      const src = path.join(dir, `${g}_${kind}.webp`);
-      if (!exists(src)) continue;
-      await sharp(src).resize(px, px).webp({ quality: 80, effort: 6 }).toFile(path.join(dir, `${g}_${kind}_lo.webp`));
+    for (const [tier, sizes] of Object.entries(tiers)) {
+      for (const [kind, px] of Object.entries(sizes)) {
+        const src = path.join(dir, `${g}_${kind}.webp`);
+        if (!exists(src)) continue;
+        const meta = await sharp(src).metadata();
+        if ((meta.width ?? 0) <= px && tier === 'md') continue;
+        await sharp(src).resize(px, px).webp({ quality: tier === 'lo' ? 80 : 86, effort: 6 }).toFile(path.join(dir, `${g}_${kind}_${tier}.webp`));
+      }
     }
   }
   console.log('[assets] atlas previews written');

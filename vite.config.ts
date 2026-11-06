@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import fs from 'node:fs';
 import { defineConfig, type Plugin } from 'vite';
 import { header, footer, sections } from './src/site/render.ts';
 import { loadNotes } from './src/site/notes.ts';
@@ -58,6 +60,21 @@ function sitePages(): Plugin {
     },
   };
 }
+
+// One version for the 3D assets (model, metadata, textures): it changes whenever any of them
+// does, and goes on every asset URL, so a returning visitor never mixes an old texture with a
+// new model from the cache.
+function assetVersion(): string {
+  const h = createHash('sha1');
+  for (const f of ['public/models/studio.glb', 'public/models/studio.json', 'public/models/window.json']) {
+    if (fs.existsSync(f)) h.update(fs.readFileSync(f));
+  }
+  if (fs.existsSync('public/textures')) {
+    for (const f of fs.readdirSync('public/textures').sort()) h.update(`${f}:${fs.statSync(`public/textures/${f}`).size}`);
+  }
+  return h.digest('hex').slice(0, 10);
+}
+process.env.VITE_ASSET_V = assetVersion();
 
 export default defineConfig({
   plugins: [sitePages()],

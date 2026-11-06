@@ -26,6 +26,7 @@ export interface GameApi {
   tick(dt: number): void;
   key(e: { code: string; preventDefault(): void }, down: boolean): boolean;
   readonly phase: GamePhase;
+  player(): { x: number; y: number; lvl: number };
   stats(): GameStats;
   destroy(): void;
 }
