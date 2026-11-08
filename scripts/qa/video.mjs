@@ -21,7 +21,7 @@ export async function video(base) {
   await page.goto(`${base}/?studio&capture&evening`, { waitUntil: 'load' });
   await waitForStudio(page);
   // hide the HUD for the clip, settle the intro, then glance slowly around the room
-  await page.addStyleTag({ content: '.hud{display:none!important}' });
+  await page.addStyleTag({ content: '.hud,.spots{display:none!important}' });
   await page.evaluate(() => {
     window.__studio.step(1 / 30, 120);
     window.__studio.drift(true);

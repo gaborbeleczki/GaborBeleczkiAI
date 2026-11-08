@@ -43,6 +43,7 @@ export async function pixeldiff(base) {
     watch(page, errors);
     await page.goto(`${base}/?studio&capture&${state}`, { waitUntil: 'load' });
     await waitForStudio(page);
+    await page.addStyleTag({ content: '.hud,.spots{display:none!important}' });
     // settle the intro move, keep the camera centred (no look-around), freeze trams
     await page.evaluate(() => {
       window.__studio.lookAt(0, 0);

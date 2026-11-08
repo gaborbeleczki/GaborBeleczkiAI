@@ -76,7 +76,7 @@ node scripts/qa/video.mjs          # re-record public/media/studio-loop.mp4
 node scripts/qa/window.mjs         # the window up close: evening/day, leaning left/right, a few seconds apart
 ```
 
-Headless Chromium (software WebGL) takes screenshots of every view and chapter, measures load and frame times, compares the WebGL render with the Cycles reference from the same camera, and runs hostile checks: no WebGL, a missing model, a lost graphics context, reduced motion, keyboard-only use and rapid input. Each must end somewhere sensible, usually the page. It also plays the role game with the keyboard, renders the soundtrack offline to check it neither clips nor goes silent, and checks that the page's seven case figures are animated.
+Headless Chromium (software WebGL) takes screenshots of every view, chapter, dossier and desk object, measures load and frame times, compares the WebGL render with the Cycles reference from the same camera, and runs hostile checks: no WebGL, software-only WebGL, a missing model, a lost graphics context, reduced motion, keyboard-only use and rapid input. Each must end somewhere sensible, usually the original portfolio at `/page/`. It also opens a dossier and turns its pages both ways, picks up every desk object, counts the hotspot dots, plays the role game with the keyboard, renders the soundtrack offline to check it neither clips nor goes silent, and checks that the static page's seven case figures are animated.
 
 ## Deploy
 

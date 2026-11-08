@@ -12,7 +12,7 @@ export async function posters(base) {
     const page = await ctx.newPage();
     await page.goto(`${base}/?studio&capture&${state}`, { waitUntil: 'load' });
     await waitForStudio(page);
-    await page.addStyleTag({ content: '.hud{display:none!important}' });
+    await page.addStyleTag({ content: '.hud,.spots{display:none!important}' });
     await page.evaluate(() => {
       window.__studio.lookAt(0, 0);
       window.__studio.step(1 / 30, 150);
