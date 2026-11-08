@@ -1,5 +1,6 @@
-// Screenshots of the static page (desktop, phone, dark) and of the studio (every folio,
-// window, day/evening). Usage: node scripts/qa/screenshots.mjs
+// Screenshots of the page view (the original portfolio), the static page (what crawlers read),
+// and the studio: the display's chapters, the dossiers, the desk objects, the window by day and
+// by evening. Usage: node scripts/qa/screenshots.mjs
 import path from 'node:path';
 import { OUT, browser, devices, serve, waitForStudio, watch, writeJson } from './lib.mjs';
 
@@ -9,6 +10,8 @@ export async function screenshots(base) {
   const b = await browser();
   const shot = async (page, name, opts = {}) => {
     const file = path.join(OUT, `${name}.png`);
+    // let the HUD's fades finish (frames are stepped by hand, CSS runs in real time)
+    await page.waitForTimeout(450);
     await page.screenshot({ path: file, ...opts });
     shots.push(name);
   };
@@ -18,7 +21,11 @@ export async function screenshots(base) {
     const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
     watch(page, errors);
-    await page.goto(`${base}/?page`, { waitUntil: 'networkidle' });
+    await page.goto(`${base}/page/`, { waitUntil: 'load' });
+    await page.frameLocator('iframe.original').locator('text=Béleczki').first().waitFor({ timeout: 60000 });
+    await page.waitForTimeout(1500);
+    await shot(page, 'page-original-desktop');
+    await page.goto(`${base}/?static`, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-in')));
     await shot(page, 'page-desktop-top');
     await shot(page, 'page-desktop-full', { fullPage: true });
@@ -32,7 +39,13 @@ export async function screenshots(base) {
     const ctx = await b.newContext({ ...devices['iPhone 13'] });
     const page = await ctx.newPage();
     watch(page, errors);
-    await page.goto(`${base}/`, { waitUntil: 'networkidle' });
+    // a phone is sent to the original portfolio
+    await page.goto(`${base}/`, { waitUntil: 'load' });
+    await page.waitForURL((u) => u.pathname === '/page/', { timeout: 30000 });
+    await page.frameLocator('iframe.original').locator('text=Béleczki').first().waitFor({ timeout: 60000 });
+    await page.waitForTimeout(1500);
+    await shot(page, 'page-phone-original');
+    await page.goto(`${base}/?static`, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-in')));
     await shot(page, 'page-phone-top');
     await shot(page, 'page-phone-full', { fullPage: true });
@@ -42,7 +55,7 @@ export async function screenshots(base) {
     const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark' });
     const page = await ctx.newPage();
     watch(page, errors);
-    await page.goto(`${base}/?page`, { waitUntil: 'networkidle' });
+    await page.goto(`${base}/?static`, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-in')));
     await shot(page, 'page-dark-top');
     await ctx.close();
@@ -58,12 +71,33 @@ export async function screenshots(base) {
     await page.evaluate(() => window.__studio.step(1 / 30, 100));
     await shot(page, `studio-${state}-home`);
     if (state === 'evening') {
-      const ids = ['hello', 'approach', 'role', 'work', 'career', 'toolkit', 'faq', 'contact'];
-      for (const id of ids) {
-        await page.evaluate((x) => window.__studio.open(x), id);
-        await page.evaluate(() => window.__studio.step(1 / 30, 75));
-        await shot(page, `studio-folio-${id}`);
+      // the display's chapters, switched with its dock (nothing else in the room moves)
+      await page.evaluate(() => (window.__studio.focus('desk'), window.__studio.step(1 / 30, 75)));
+      for (const id of ['hello', 'approach', 'role', 'work', 'career', 'toolkit', 'faq', 'contact']) {
+        await page.evaluate((x) => (window.__studio.showOnScreen(x), window.__studio.step(1 / 30, 20)), id);
+        await shot(page, `studio-display-${id}`);
       }
+      await page.evaluate(() => (window.__studio.focus('home'), window.__studio.step(1 / 30, 75)));
+      // the dossiers, opened in the reader's hands
+      for (const id of ['hello', 'role', 'work', 'career', 'contact']) {
+        await page.evaluate((x) => (window.__studio.open(x), window.__studio.step(1 / 30, 90)), id);
+        await shot(page, `studio-dossier-${id}`);
+        if (id === 'work') {
+          await page.evaluate(() => (window.__studio.turn(1), window.__studio.step(1 / 30, 40)));
+          await shot(page, 'studio-dossier-work-p2');
+        }
+        await page.evaluate(() => (window.__studio.putDown(), window.__studio.step(1 / 30, 90)));
+      }
+      // the desk and the things on it
+      await page.evaluate(() => (window.__studio.focus('objects'), window.__studio.step(1 / 30, 90)));
+      await shot(page, 'studio-objects');
+      for (const id of ['cards', 'phone', 'cv', 'notebook']) {
+        await page.evaluate((x) => (window.__studio.use(x), window.__studio.step(1 / 30, 80)), id);
+        await shot(page, `studio-hold-${id}`);
+        await page.evaluate(() => (window.__studio.putDown(), window.__studio.step(1 / 30, 80)));
+      }
+      await page.evaluate(() => (window.__studio.use('globe'), window.__studio.step(1 / 30, 40)));
+      await shot(page, 'studio-globe');
       await page.evaluate(() => window.__studio.focus('shelf'));
       await page.evaluate(() => window.__studio.step(1 / 30, 60));
       await shot(page, 'studio-shelf');

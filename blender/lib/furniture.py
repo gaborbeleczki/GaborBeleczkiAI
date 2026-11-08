@@ -1,5 +1,5 @@
-"""Furniture: oak desk, desk chair, fluted sideboard, floating shelves, lounge chair,
-side table, rug and the three lamps. Original, generic Nordic shapes.
+"""Furniture: oak desk, an upholstered shell chair, a fluted credenza, floating shelves,
+a rug, the pendant and the desk lamp. Original, generic Nordic shapes.
 """
 
 from __future__ import annotations
@@ -11,13 +11,14 @@ import bpy
 from mathutils import Matrix, Vector
 
 from . import materials as M
-from .room import X0
+from .room import H, X0
 from .util import RNG, add_bevel, box, cylinder, mesh_object, revolve, smooth, sphere, tag, tube_along
 
-DESK = dict(x=-0.1, y=1.72, w=1.6, d=0.72, top=0.75)
-SIDEBOARD = dict(x0=X0 + 0.012, depth=0.45, y0=-0.7, y1=1.3, z0=0.14, z1=0.66)
-SHELF_Z = (1.24, 1.64)
-SHELF = dict(depth=0.25, y0=-0.55, y1=1.15, t=0.034)
+DESK = dict(x=-0.1, y=1.75, w=1.5, d=0.7, top=0.75)
+SIDEBOARD = dict(x0=X0 + 0.012, depth=0.42, y0=0.12, y1=1.47, z0=0.14, z1=0.64)
+SHELF_Z = (1.22, 1.6)
+SHELF = dict(depth=0.25, y0=0.16, y1=1.43, t=0.034)
+CHAIR = dict(x=0.0, y=1.02, rot=math.radians(160))
 
 
 def tapered_leg(name, top, bottom_r, top_r, height, coll, mat, tilt=(0.0, 0.0)):
@@ -71,74 +72,73 @@ def build_desk(coll) -> list:
 
 # ------------------------------------------------------------------ chairs
 
-def build_desk_chair(coll, loc=(-0.02, 1.0), rot_z=math.radians(-6)) -> list:
-    oak = M.oak('oak_chair', 'light', 'Z')
-    seat_mat = M.wool('#3F4246', 'wool_charcoal', 300.0)
-    parent = group_parent('desk_chair', (loc[0], loc[1], 0), rot_z, coll)
-    parts = []
-    sw, sd, sh = 0.46, 0.43, 0.45
-    parts.append(box('chair_seat', (sw, sd, 0.03), (0, 0, sh - 0.015), coll, oak, bevel=0.012))
-    parts.append(box('chair_pad', (sw - 0.05, sd - 0.06, 0.03), (0, -0.01, sh + 0.012), coll, seat_mat, bevel=0.012, segments=4))
-    for sx in (-1, 1):
-        # front legs
-        parts.append(tapered_leg(f'chair_fleg_{sx}', (sx * (sw / 2 - 0.04), -(sd / 2 - 0.04), sh - 0.03), 0.014, 0.019, sh - 0.03, coll, oak, tilt=(sx * 0.02, -0.025)))
-        # back legs continue up as the back posts
-        bx = sx * (sw / 2 - 0.045)
-        parts.append(tube_along(f'chair_post_{sx}', [(bx + sx * 0.012, sd / 2 - 0.03 + 0.03, 0.0), (bx, sd / 2 - 0.04, sh), (bx - sx * 0.005, sd / 2 - 0.0, 0.8)], 0.017, coll, oak))
-    # curved top rail
-    rail = []
-    for i in range(13):
-        t = i / 12
-        a = math.radians(-58 + 116 * t)
-        rail.append((math.sin(a) * 0.27, sd / 2 - 0.13 + math.cos(a) * 0.14, 0.79))
-    parts.append(tube_along('chair_rail', rail, 0.02, coll, oak))
-    # two flat back slats
-    for sx in (-1, 1):
-        parts.append(box(f'chair_slat_{sx}', (0.02, 0.018, 0.28), (sx * 0.07, sd / 2 - 0.0, 0.63), coll, oak, bevel=0.006))
-    # stretchers
-    parts.append(tube_along('chair_str_f', [(-(sw / 2 - 0.05), -(sd / 2 - 0.06), 0.16), ((sw / 2 - 0.05), -(sd / 2 - 0.06), 0.16)], 0.009, coll, oak))
-    parts.append(tube_along('chair_str_b', [(-(sw / 2 - 0.05), (sd / 2 - 0.05), 0.2), ((sw / 2 - 0.05), (sd / 2 - 0.05), 0.2)], 0.009, coll, oak))
-    parent_all(parts, parent)
-    for p in parts:
-        tag(p, bake='furniture')
-    return parts
-
-
-def build_lounge_chair(coll, loc=(1.68, 1.42), facing=(-0.55, -0.84)) -> list:
-    """Low lounge chair: oak frame, oat wool cushions, a lingonberry throw."""
-    rot = math.atan2(-facing[0], facing[1]) + math.pi  # model faces -y
-    rot = math.atan2(facing[0], -facing[1])
-    parent = group_parent('lounge_chair', (loc[0], loc[1], 0), rot, coll)
-    oak = M.oak('oak_lounge', 'warm', 'Y')
-    wool = M.wool('#D9CFBF', 'wool_oat', 220.0)
-    parts = []
-    W, D = 0.74, 0.80
-    for sx in (-1, 1):
-        x = sx * (W / 2 - 0.03)
-        # side frame: front leg, back leg, armrest
-        parts.append(tube_along(f'lc_front_{sx}', [(x, -D / 2 + 0.06, 0.0), (x, -D / 2 + 0.07, 0.56)], 0.022, coll, oak))
-        parts.append(tube_along(f'lc_back_{sx}', [(x, D / 2 + 0.02, 0.0), (x, D / 2 - 0.05, 0.36), (x, D / 2 + 0.03, 0.82)], 0.022, coll, oak))
-        parts.append(box(f'lc_arm_{sx}', (0.07, D - 0.02, 0.026), (x, 0.0, 0.575), coll, oak, bevel=0.01))
-        parts.append(tube_along(f'lc_rail_{sx}', [(x, -D / 2 + 0.07, 0.26), (x, D / 2 - 0.03, 0.26)], 0.016, coll, oak))
-    parts.append(tube_along('lc_rail_f', [(-W / 2 + 0.03, -D / 2 + 0.07, 0.26), (W / 2 - 0.03, -D / 2 + 0.07, 0.26)], 0.016, coll, oak))
-    parts.append(tube_along('lc_rail_b', [(-W / 2 + 0.03, D / 2 - 0.04, 0.3), (W / 2 - 0.03, D / 2 - 0.04, 0.3)], 0.016, coll, oak))
-    # cushions: thick rounded boxes with a subdivision for softness
-    seat = box('lc_seat', (W - 0.1, D - 0.12, 0.13), (0, -0.02, 0.34), coll, wool, bevel=0.045, segments=5)
-    back = box('lc_backcushion', (W - 0.1, 0.14, 0.5), (0, D / 2 - 0.12, 0.6), coll, wool, bevel=0.05, segments=5)
-    back.rotation_euler.x = math.radians(-14)
-    for c in (seat, back):
-        sub = c.modifiers.new('Sub', 'SUBSURF')
-        sub.levels = 2
-        sub.render_levels = 2
-        smooth(c)
-    parts += [seat, back]
-    # folded wool throw over the right armrest
-    throw = box('lc_throw', (0.2, 0.46, 0.05), (W / 2 - 0.03, 0.06, 0.6), coll, M.wool('#B5483A', 'wool_lingon', 160.0), bevel=0.02, segments=4)
-    throw.rotation_euler.y = math.radians(8)
-    sub = throw.modifiers.new('Sub', 'SUBSURF')
+def shell_surface(name, coll, mat, seat_z=0.45, rx=0.27, ry=0.25, back_h=0.36, arm_h=0.17, flare=0.07, recline=0.09):
+    """An upholstered tub shell as one continuous surface: a dished seat pan that rises into
+    armrests and a reclined back, built on an (angle, height) grid and smoothed afterwards.
+    The chair faces -y in its own space."""
+    bm = bmesh.new()
+    na, ns = 72, 22
+    rows = []
+    for j in range(ns + 1):
+        t = j / ns
+        ring = []
+        for i in range(na):
+            th = 2 * math.pi * i / na  # 0 = front (-y)
+            front = 0.5 + 0.5 * math.cos(th)  # 1 at the front, 0 at the back
+            wall = max(back_h * (1 - front) ** 1.25 + arm_h * math.sin(th) ** 2 * 0.35, 0.018)
+            if t <= 0.55:
+                k = t / 0.55
+                r = k
+                z = seat_z - 0.022 * (1 - k * k)  # a gentle dish
+                lift = 0.0
+            else:
+                k = (t - 0.55) / 0.45
+                r = 1.0 + (flare / rx) * k
+                z = seat_z + wall * (1 - (1 - k) ** 2)
+                lift = recline * k * (1 - front)
+            ring.append(bm.verts.new((-math.sin(th) * rx * r, -math.cos(th) * ry * r + lift, z)))
+        rows.append(ring)
+    center = bm.verts.new((0, 0, seat_z - 0.022))
+    for i in range(na):
+        i2 = (i + 1) % na
+        bm.faces.new((center, rows[1][i], rows[1][i2]))
+    for j in range(1, ns):
+        for i in range(na):
+            i2 = (i + 1) % na
+            bm.faces.new((rows[j][i], rows[j + 1][i], rows[j + 1][i2], rows[j][i2]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    ob = mesh_object(name, bm, coll, mat)
+    sol = ob.modifiers.new('Solid', 'SOLIDIFY')
+    sol.thickness = 0.024
+    sol.offset = -1.0
+    sub = ob.modifiers.new('Sub', 'SUBSURF')
     sub.levels = 2
-    smooth(throw)
-    parts.append(throw)
+    sub.render_levels = 2
+    smooth(ob)
+    return ob
+
+
+def build_desk_chair(coll) -> list:
+    """An upholstered shell armchair in oat wool on four splayed oak legs, turned out from
+    the desk as if just left (it faces -y in its own space)."""
+    c = CHAIR
+    oak = M.oak('oak_chair', 'light', 'Z')
+    wool = M.wool('#CFC6B6', 'wool_shell', 260.0)
+    cushion_wool = M.wool('#B9AE9B', 'wool_cushion', 300.0)
+    parent = group_parent('desk_chair', (c['x'], c['y'], 0), c['rot'], coll)
+    seat_z = 0.45
+    parts = [shell_surface('chair_shell', coll, wool, seat_z=seat_z)]
+    # a loose seat cushion, slightly domed
+    cush = box('chair_cushion', (0.42, 0.38, 0.05), (0, -0.015, seat_z + 0.012), coll, cushion_wool, bevel=0.022, segments=4)
+    sub = cush.modifiers.new('Sub', 'SUBSURF')
+    sub.levels = 2
+    smooth(cush)
+    parts.append(cush)
+    # mounting plate under the seat and four splayed oak legs
+    parts.append(box('chair_plate', (0.26, 0.24, 0.016), (0, 0.0, seat_z - 0.05), coll, M.matte('#2B2B2D', 'black_steel', 0.5), bevel=0.004))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            parts.append(tapered_leg(f'chair_leg_{sx}_{sy}', (sx * 0.11, sy * 0.1, seat_z - 0.058), 0.012, 0.018, seat_z - 0.058, coll, oak, tilt=(sx * 0.06, sy * 0.055)))
     parent_all(parts, parent)
     for p in parts:
         tag(p, bake='furniture')
@@ -189,19 +189,7 @@ def build_shelves(coll) -> list:
     return parts
 
 
-def build_side_table(coll, loc=(1.0, 0.98)) -> list:
-    oak = M.oak('oak_table', 'warm', 'X')
-    parts = [cylinder('st_top', 0.24, 0.026, (loc[0], loc[1], 0.52), coll, oak, segs=48, bevel=0.006)]
-    for k in range(3):
-        a = k * 2 * math.pi / 3 + 0.4
-        tx, ty = loc[0] + math.cos(a) * 0.15, loc[1] + math.sin(a) * 0.15
-        parts.append(tapered_leg(f'st_leg_{k}', (tx, ty, 0.507), 0.012, 0.018, 0.507, coll, oak, tilt=(math.cos(a) * 0.05, math.sin(a) * 0.05)))
-    for p in parts:
-        tag(p, bake='furniture')
-    return parts
-
-
-def build_rug(coll, center=(0.55, 0.95), size=(2.7, 1.85)) -> list:
+def build_rug(coll, center=(-0.05, 1.18), size=(2.1, 1.5)) -> list:
     bm = bmesh.new()
     bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.5)
     for v in bm.verts:
@@ -222,7 +210,7 @@ def build_rug(coll, center=(0.55, 0.95), size=(2.7, 1.85)) -> list:
 
 # ------------------------------------------------------------------ lamps
 
-def build_pendant(coll, coll_dyn, loc=(-0.15, 1.62), bottom=1.93) -> dict:
+def build_pendant(coll, coll_dyn, loc=(-0.12, 1.66), bottom=1.88) -> dict:
     white = M.ceramic('#F2EFE9', 'ceramic_shade', 0.45, speckle=False)
     inner = M.emission('#FFE2BC', 1.5, 'pendant_inner')
     prof = [(0.215, 0.0), (0.212, 0.012), (0.19, 0.07), (0.14, 0.13), (0.07, 0.17), (0.03, 0.185), (0.03, 0.2)]
@@ -232,8 +220,8 @@ def build_pendant(coll, coll_dyn, loc=(-0.15, 1.62), bottom=1.93) -> dict:
     # glowing inner disc (bulb diffuser) just inside the rim
     disc = cylinder('pendant_diffuser', 0.09, 0.004, (loc[0], loc[1], bottom + 0.11), coll_dyn, inner, segs=32)
     tag(disc, dyn='emitter', glow='#FFE2BC', strength=1.5)
-    cord = tube_along('pendant_cord', [(loc[0], loc[1], bottom + 0.2), (loc[0], loc[1], 2.85)], 0.0035, coll, M.matte('#1E1E20', 'cord', 0.6))
-    rose = cylinder('pendant_rose', 0.055, 0.025, (loc[0], loc[1], 2.85 - 0.0125), coll, white, segs=32)
+    cord = tube_along('pendant_cord', [(loc[0], loc[1], bottom + 0.2), (loc[0], loc[1], H)], 0.0035, coll, M.matte('#1E1E20', 'cord', 0.6))
+    rose = cylinder('pendant_rose', 0.055, 0.025, (loc[0], loc[1], H - 0.0125), coll, white, segs=32)
     parts = [shade, cord, rose]
     for p in parts:
         tag(p, bake='furniture')
@@ -242,21 +230,7 @@ def build_pendant(coll, coll_dyn, loc=(-0.15, 1.62), bottom=1.93) -> dict:
     return {'parts': parts, 'light_pos': (loc[0], loc[1], bottom + 0.09)}
 
 
-def build_floor_lamp(coll, coll_dyn, loc=(2.2, 1.95)) -> dict:
-    iron = M.matte('#2B2B2D', 'black_iron', 0.45)
-    shade_mat = M.lampshade('#EFE8DA', 'linen_shade', glow=0.0)
-    parts = [cylinder('fl_base', 0.15, 0.022, (loc[0], loc[1], 0.011), coll, iron, segs=48, bevel=0.006)]
-    parts.append(tube_along('fl_pole', [(loc[0], loc[1], 0.02), (loc[0], loc[1], 1.45)], 0.009, coll, iron))
-    shade = revolve('fl_shade', [(0.21, 0.0), (0.205, 0.30)], coll_dyn, shade_mat, loc=(loc[0], loc[1], 1.38), segs=64, cap_bottom=False)
-    sol = shade.modifiers.new('Solid', 'SOLIDIFY')
-    sol.thickness = 0.003
-    tag(shade, dyn='emitter', glow='#FFD2A0', strength=0.9, base='#EFE8DA')
-    for p in parts:
-        tag(p, bake='furniture')
-    return {'parts': parts, 'light_pos': (loc[0], loc[1], 1.55), 'shade': shade}
-
-
-def build_desk_lamp(coll, coll_dyn, base=(-0.8, 1.93)) -> dict:
+def build_desk_lamp(coll, coll_dyn, base=(-0.74, 1.96)) -> dict:
     """A slim task lamp: weighted base, bent arm, small conical head aimed at the desk."""
     paint = M.matte('#E9E4DA', 'lamp_paint', 0.4)
     top = DESK['top']

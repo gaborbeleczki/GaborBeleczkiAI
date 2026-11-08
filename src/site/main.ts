@@ -59,17 +59,16 @@ async function bootStudio(): Promise<void> {
       studioHandle = await mountStudio(host, {
         onExit: () => setMode('page', { remember: true }),
         onFatal: (reason: string) => {
+          console.warn('[studio] stopped:', reason);
           studioHandle?.dispose();
           studioHandle = null;
-          setMode('page', { remember: false });
-          toast(`The 3D studio could not start here (${reason}). Showing the page instead.`);
+          openOriginal('studio-error');
         },
       });
     } catch (err) {
       console.error('[studio] failed to start', err);
       studioHandle = null;
-      setMode('page', { remember: false });
-      toast('The 3D studio could not start on this device. Showing the page instead.');
+      openOriginal('studio-error');
     } finally {
       studioBooting = null;
     }
@@ -77,7 +76,27 @@ async function bootStudio(): Promise<void> {
   return studioBooting;
 }
 
+/** The page view is the original portfolio, served untouched at /page/. */
+function openOriginal(reason?: string): void {
+  location.href = `/page/${reason ? `?reason=${reason}` : ''}`;
+}
+
+const staticPage = /[?&]static\b/.test(location.search);
+
 function setMode(mode: Mode, opts: { remember?: boolean } = {}): void {
+  if (mode === 'page' && !staticPage) {
+    if (opts.remember) {
+      try {
+        localStorage.setItem('gb-mode', 'page');
+      } catch {
+        /* private mode: fine */
+      }
+    }
+    studioHandle?.dispose();
+    studioHandle = null;
+    openOriginal();
+    return;
+  }
   root.setAttribute('data-mode', mode);
   syncModeButtons(mode);
   if (opts.remember) {

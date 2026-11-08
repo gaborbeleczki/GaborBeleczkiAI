@@ -1,4 +1,5 @@
-"""Props: the display, peripherals, folios, record player, plants, books, ceramics, art.
+"""Props: the display and peripherals, the desk objects you can pick up, the chapter dossiers,
+the record player, plants, books, ceramics and art.
 
 Objects tagged dyn=... stay separate in the export and are lit live in WebGL
 (they move, glow or reflect). Everything tagged bake='props' is merged and baked.
@@ -13,7 +14,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 from . import materials as M
-from .furniture import DESK, SHELF, SHELF_Z, SIDEBOARD
+from .furniture import DESK, SHELF, SHELF_Z, SIDEBOARD, group_parent, parent_all
 from .room import X0, Y1, WIN_Z0
 from .util import RNG, add_bevel, add_box, box, cylinder, mesh_object, revolve, smooth, sphere, tag, tube_along
 
@@ -24,6 +25,20 @@ BOOK_COLORS = ['#D9CFBF', '#A9B8A4', '#8FA9C4', '#1D2D3D', '#C9A27C', '#E9E4DA',
 DISPLAY_ROT = math.radians(15)
 DISPLAY_POS = (DESK['x'] - 0.12, DESK['y'] + 0.1)
 SCREEN_W, SCREEN_H = 0.608, 0.38
+
+# A hardcover dossier for A4 pages (metres). In its own space it stands upright: the spine
+# faces +x, the boards run back to -x, the front board is on the +y side, z is up.
+DOSSIER = dict(
+    board_w=0.222,   # spine to fore-edge
+    board_h=0.312,
+    board_t=0.0028,
+    thick=0.032,     # closed, board to board
+    hinge_x=-0.002,  # the front board turns about a vertical line here
+    page_w=0.21,
+    page_h=0.297,
+    page_x=-0.008,   # page block starts this far behind the spine
+    spacing=0.044,
+)
 
 
 def place(ob, origin, rot_z):
@@ -83,29 +98,241 @@ def build_display(coll_dyn, coll_props) -> dict:
     return {'screen': screen, 'parts': parts}
 
 
-def build_desk_things(coll) -> list:
+# ------------------------------------------------------------------ the desk, dressed
+
+def build_desk_things(coll, coll_dyn, art_paths: dict) -> dict:
+    """Everyday objects that are also ways into the portfolio (the browser makes each one
+    clickable): business cards, a phone, a framed portrait, the printed CV, a notebook,
+    headphones, a brass armillary sphere and a coffee mug."""
     top = DESK['top']
     parts = []
-    # mug with handle
-    mug_pos = (DESK['x'] + 0.46, DESK['y'] - 0.18, top)
+    anchors = {}
+    oak = M.oak('oak_small', 'light', 'X')
+    # ---- mug, front right
+    mug_pos = (0.47, 1.52, top)
     mug = revolve('mug', [(0.0, 0.0), (0.038, 0.0), (0.041, 0.006), (0.043, 0.09), (0.04, 0.092), (0.037, 0.012), (0.0, 0.012)], coll, M.ceramic('#E7E0D3', 'ceramic_oat', 0.4), loc=mug_pos, segs=40, cap_bottom=False)
     handle = tube_along('mug_handle', [(mug_pos[0] + 0.04, mug_pos[1], top + 0.07), (mug_pos[0] + 0.066, mug_pos[1], top + 0.066), (mug_pos[0] + 0.07, mug_pos[1], top + 0.045), (mug_pos[0] + 0.062, mug_pos[1], top + 0.028), (mug_pos[0] + 0.04, mug_pos[1], top + 0.025)], 0.006, coll, M.ceramic('#E7E0D3', 'ceramic_oat', 0.4))
     coffee = cylinder('coffee', 0.037, 0.002, (mug_pos[0], mug_pos[1], top + 0.078), coll, M.matte('#3B2A20', 'coffee', 0.2), segs=32)
     parts += [mug, handle, coffee]
-    # notebook + pen
-    nb_pos = (DESK['x'] + 0.48, DESK['y'] + 0.12, top)
-    nb = box('notebook', (0.15, 0.21, 0.016), (nb_pos[0], nb_pos[1], top + 0.008), coll, M.wool('#2D4257', 'linen_navy', 400.0), bevel=0.003)
-    nb.rotation_euler.z = math.radians(-12)
-    pages = box('notebook_pages', (0.144, 0.205, 0.012), (nb_pos[0] + 0.004, nb_pos[1], top + 0.008), coll, M.paper('#F2ECDF', 'paper_cream'), bevel=0.001)
-    pages.rotation_euler.z = math.radians(-12)
-    band = box('notebook_band', (0.004, 0.214, 0.0175), (nb_pos[0] + 0.05, nb_pos[1] - 0.011, top + 0.008), coll, M.matte('#C8432B', 'elastic_red', 0.6))
-    band.rotation_euler.z = math.radians(-12)
-    pen = tube_along('pen', [(nb_pos[0] - 0.11, nb_pos[1] - 0.06, top + 0.005), (nb_pos[0] - 0.09, nb_pos[1] + 0.08, top + 0.005)], 0.0045, coll, M.matte('#1D1D1F', 'pen_black', 0.35))
-    parts += [nb, pages, band, pen]
-    # small stack of two books under the lamp side
-    parts += book_stack('desk_books', (DESK['x'] - 0.55, DESK['y'] - 0.12, top), coll, n=2, rot=math.radians(8))
+    anchors['coffee'] = (mug_pos[0], mug_pos[1], top + 0.1)
+    # ---- linen notebook with an elastic band, mid right: a movable group (the browser lifts it,
+    # slips the band off and opens the front cover on its hinge); the pen stays on the desk
+    nb_pos = (0.53, 1.8)
+    rot = math.radians(-12)
+    nb = notebook(coll_dyn, (nb_pos[0], nb_pos[1], top), rot)
+    pen = tube_along('pen', [(nb_pos[0] - 0.105, nb_pos[1] - 0.07, top + 0.005), (nb_pos[0] - 0.09, nb_pos[1] + 0.07, top + 0.005)], 0.0045, coll, M.matte('#1D1D1F', 'pen_black', 0.35))
+    parts.append(pen)
+    anchors['notebook'] = (nb_pos[0], nb_pos[1], top + 0.03)
+    # ---- the printed CV: three A4 sheets under a binder clip, the top one is the real one-pager
+    cv_pos = (0.27, 1.76)
+    cv_rot = math.radians(-9)
+    for i in range(2):
+        sh = box(f'cv_copy_{i}', (0.21, 0.297, 0.0006), (cv_pos[0] + 0.004 * (2 - i), cv_pos[1] - 0.003 * (2 - i), top + 0.0004 + i * 0.0007), coll, M.paper('#F6F3EC', 'paper_white'), rot_z=cv_rot + math.radians(1.5 * (2 - i)))
+        parts.append(sh)
+    # the top sheet is the real one-pager; it is movable (the browser lifts it to read)
+    cv_art = art_paths.get('cv')
+    cv_sheet = flat_art('cv_sheet', cv_art, (0.21, 0.297), coll_dyn, rough=0.88) if cv_art else box('cv_sheet', (0.21, 0.297, 0.0004), (0, 0, 0), coll_dyn, M.paper('#F6F3EC', 'paper_white'))
+    cv_sheet.location = (cv_pos[0], cv_pos[1], top + 0.0024)
+    cv_sheet.rotation_euler.z = cv_rot
+    tag(cv_sheet, dyn='cv', hit='cv', label='CV, printed')
+    # binder clip at the top edge, in the sheet's own frame
+    clip_parent = group_parent('cv_clip_grp', (cv_pos[0], cv_pos[1], top), cv_rot, coll)
+    clip_parts = [
+        box('cv_clip', (0.032, 0.014, 0.008), (0.0, 0.142, 0.0055), coll, M.matte('#1D1D1F', 'clip_black', 0.3), bevel=0.002),
+        tube_along('cv_clip_wire', [(-0.012, 0.136, 0.0095), (-0.012, 0.118, 0.0105), (0.012, 0.118, 0.0105), (0.012, 0.136, 0.0095)], 0.0011, coll, M.metal('#C9CBCF', 'steel_wire', 0.3)),
+    ]
+    parent_all(clip_parts, clip_parent)
+    parts += clip_parts
+    anchors['cv'] = (cv_pos[0], cv_pos[1], top + 0.01)
+    # ---- small oak frame with the portrait, standing at the back right
+    if 'portrait' in art_paths:
+        parts += photo_frame(coll, art_paths['portrait'], (0.21, 2.02, top), math.radians(-18))
+    anchors['about'] = (0.21, 2.0, top + 0.1)
+    # ---- brass armillary sphere on an oak foot (the rings turn in the browser)
+    arm_pos = (0.5, 2.0)
+    parts.append(cylinder('arm_foot', 0.05, 0.022, (arm_pos[0], arm_pos[1], top + 0.011), coll, oak, segs=48, bevel=0.004))
+    parts.append(revolve('arm_collar', [(0.012, 0.0), (0.012, 0.006), (0.006, 0.012), (0.0045, 0.014)], coll, M.metal('#B8955A', 'brass', 0.28), loc=(arm_pos[0], arm_pos[1], top + 0.022), segs=32))
+    parts.append(tube_along('arm_stem', [(arm_pos[0], arm_pos[1], top + 0.03), (arm_pos[0], arm_pos[1], top + 0.058)], 0.0045, coll, M.metal('#B8955A', 'brass', 0.28)))
+    # the meridian stand: a fixed half ring that holds the sphere
+    stand_pts = [(arm_pos[0] + 0.082 * math.sin(a), arm_pos[1], top + 0.135 - 0.082 * math.cos(a)) for a in [math.radians(d) for d in range(-120, 121, 8)]]
+    parts.append(tube_along('arm_stand', stand_pts, 0.0026, coll, M.metal('#B8955A', 'brass', 0.28)))
+    rings = armillary(coll_dyn, (arm_pos[0], arm_pos[1], top + 0.135))
+    anchors['globe'] = (arm_pos[0], arm_pos[1], top + 0.135)
+    # ---- smartphone lying face up, front right: a movable group (the browser picks it up and
+    # lights its screen)
+    ph_pos = (0.2, 1.5)
+    screen = phone(coll_dyn, (ph_pos[0], ph_pos[1], top), math.radians(-8))
+    anchors['phone'] = (ph_pos[0], ph_pos[1], top + 0.01)
+    # ---- business cards in a shallow oak tray, front left; the browser lifts the top card
+    cd_pos = (-0.55, 1.47)
+    cd_rot = math.radians(6)
+    tray_parent = group_parent('card_tray_grp', (cd_pos[0], cd_pos[1], top), cd_rot, coll)
+    tray_parts = [
+        box('card_tray_base', (0.112, 0.074, 0.004), (0, 0, 0.002), coll, oak, bevel=0.0012),
+        box('card_tray_wall_f', (0.112, 0.006, 0.013), (0, -0.034, 0.0065), coll, oak, bevel=0.0015),
+        box('card_tray_wall_b', (0.112, 0.006, 0.013), (0, 0.034, 0.0065), coll, oak, bevel=0.0015),
+        box('card_tray_wall_l', (0.006, 0.062, 0.013), (-0.053, 0, 0.0065), coll, oak, bevel=0.0015),
+        box('card_tray_wall_r', (0.006, 0.062, 0.013), (0.053, 0, 0.0065), coll, oak, bevel=0.0015),
+        box('card_stack', (0.089, 0.052, 0.009), (0, 0, 0.004 + 0.0045), coll, M.paper('#F4F0E6', 'card_stock'), bevel=0.0005, segments=2),
+    ]
+    parent_all(tray_parts, tray_parent)
+    parts += tray_parts
+    card = box('card_top', (0.089, 0.052, 0.0004), (cd_pos[0], cd_pos[1], top + 0.0134), coll_dyn, M.paper('#F7F3EA', 'card_face'), rot_z=cd_rot)
+    tag(card, dyn='card', hit='cards', label='Business cards')
+    anchors['cards'] = (cd_pos[0], cd_pos[1], top + 0.014)
+    # ---- two books, front left, with over-ear headphones resting on them
+    parts += book_stack('desk_books', (-0.66, 1.7, top), coll, n=2, rot=math.radians(-6))
+    parts += headphones(coll, (-0.66, 1.7, top + 0.064))
+    anchors['music'] = (-0.66, 1.7, top + 0.1)
     for p in parts:
         tag(p, bake='props')
+    return {'parts': parts, 'anchors': anchors, 'armillary': rings, 'card': card, 'phone': screen, 'notebook': nb, 'cv': cv_sheet}
+
+
+# notebook dimensions (metres): A5-ish, lying flat; the spine is on its left (-x) edge
+NOTEBOOK = dict(w=0.15, h=0.21, cover_t=0.0022, pages_t=0.0116, page_w=0.142, page_h=0.202, page_x=0.004)
+PHONE = dict(w=0.0716, h=0.1466, t=0.0078, screen_w=0.0644, screen_h=0.1392)
+
+
+def notebook(coll_dyn, pos, rot_z):
+    """Linen-bound notebook: back board and page block, a front board that turns on the spine,
+    and the red elastic band. Parts hang under the empty `notebook`."""
+    n = NOTEBOOK
+    linen = M.wool('#2D4257', 'linen_navy', 400.0)
+    parent = bpy.data.objects.new('notebook', None)
+    parent.location = pos
+    parent.rotation_euler.z = rot_z
+    coll_dyn.objects.link(parent)
+    tag(parent, dyn='notebook', hit='notebook', label='Notebook')
+    tc, tp = n['cover_t'], n['pages_t']
+    back = box('notebook_back', (n['w'], n['h'], tc), (0, 0, tc / 2), coll_dyn, linen, bevel=0.0008, segments=2)
+    spine = box('notebook_spine', (0.003, n['h'], 2 * tc + tp), (-n['w'] / 2 + 0.0015, 0, (2 * tc + tp) / 2), coll_dyn, linen, bevel=0.001, segments=2)
+    block = box('notebook_block', (n['page_w'], n['page_h'], tp), (-n['w'] / 2 + n['page_x'] + n['page_w'] / 2, 0, tc + tp / 2), coll_dyn, M.paper('#F2ECDF', 'paper_cream'), bevel=0.0008, segments=2)
+    cover = box('notebook_cover', (n['w'], n['h'], tc), (0, 0, 0), coll_dyn, linen, bevel=0.0008, segments=2)
+    cover.data.transform(Matrix.Translation((n['w'] / 2, 0, 0)))
+    cover.location = (-n['w'] / 2, 0, tc + tp + tc / 2)
+    band = box('notebook_band', (0.004, n['h'] + 0.004, 2 * tc + tp + 0.0015), (n['w'] / 2 - 0.025, 0, (2 * tc + tp) / 2), coll_dyn, M.matte('#C8432B', 'elastic_red', 0.6))
+    for p in (back, spine, block, cover, band):
+        p.parent = parent
+        tag(p, dyn='notebook_part', part=p.name.split('_')[-1])
+    return parent
+
+
+def phone(coll_dyn, pos, rot_z):
+    """A smartphone face up: graphite body, glass, camera lens; the screen is a UV-mapped quad
+    the browser paints. Parts hang under the empty `phone`."""
+    p = PHONE
+    parent = bpy.data.objects.new('phone', None)
+    parent.location = pos
+    parent.rotation_euler.z = rot_z
+    coll_dyn.objects.link(parent)
+    tag(parent, dyn='phone', hit='phone', label='Phone')
+    body = box('phone_body', (p['w'], p['h'], p['t']), (0, 0, p['t'] / 2), coll_dyn, M.metal('#3A3C40', 'graphite', 0.35), bevel=0.0035, segments=4)
+    glass = box('phone_glass', (p['w'] - 0.001, p['h'] - 0.001, 0.0006), (0, 0, p['t'] + 0.0001), coll_dyn, M.matte('#0A0B0D', 'phone_glass', 0.08), bevel=0.0028, segments=3)
+    lens = cylinder('phone_lens', 0.0045, 0.0012, (-0.02, 0.058, 0.0004), coll_dyn, M.matte('#111214', 'lens', 0.1), segs=24)
+    bm = bmesh.new()
+    uv = bm.loops.layers.uv.new('UVMap')
+    hw, hh = p['screen_w'] / 2, p['screen_h'] / 2
+    vs = [bm.verts.new(q) for q in ((-hw, -hh, 0), (hw, -hh, 0), (hw, hh, 0), (-hw, hh, 0))]
+    f = bm.faces.new(vs)
+    for lp, co in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
+        lp[uv].uv = co
+    screen = mesh_object('phone_screen', bm, coll_dyn, M.matte('#050506', 'phone_off', 0.1))
+    screen.location = (0, 0, p['t'] + 0.0006)
+    for q in (body, glass, lens, screen):
+        q.parent = parent
+        tag(q, dyn='phone_part', part=q.name.split('_')[-1])
+    tag(screen, dyn='phone_part', part='screen', screen=1)
+    return screen
+
+
+def flat_art(name, image_path, size, coll, rough=0.85):
+    """A printed surface lying flat (+z), UV-mapped to a whole image."""
+    bm = bmesh.new()
+    uv = bm.loops.layers.uv.new('ArtUV')
+    w, h = size
+    vs = [bm.verts.new(p) for p in ((-w / 2, -h / 2, 0), (w / 2, -h / 2, 0), (w / 2, h / 2, 0), (-w / 2, h / 2, 0))]
+    f = bm.faces.new(vs)
+    for lp, co in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
+        lp[uv].uv = co
+    return mesh_object(name, bm, coll, M.image_diffuse(name, image_path, rough))
+
+
+def photo_frame(coll, image_path, pos, rot_z) -> list:
+    """A small oak frame (13 x 17.5 cm) leaning back on a strut, the picture facing -y."""
+    oak = M.oak('oak_frame_small', 'light', 'Z')
+    w, h, t, d = 0.13, 0.175, 0.012, 0.014
+    lean = math.radians(-11)
+    parent = group_parent('photo_frame', pos, rot_z, coll)
+    tilt = bpy.data.objects.new('photo_frame_tilt', None)
+    tilt.rotation_euler.x = lean
+    tilt.parent = parent
+    coll.objects.link(tilt)
+    parts = [
+        box('pf_top', (w, d, t), (0, 0, h - t / 2), coll, oak, bevel=0.0015),
+        box('pf_bot', (w, d, t), (0, 0, t / 2), coll, oak, bevel=0.0015),
+        box('pf_l', (t, d, h), (-w / 2 + t / 2, 0, h / 2), coll, oak, bevel=0.0015),
+        box('pf_r', (t, d, h), (w / 2 - t / 2, 0, h / 2), coll, oak, bevel=0.0015),
+        box('pf_back', (w - 0.006, 0.003, h - 0.006), (0, 0.005, h / 2), coll, M.paper('#E9E2D4', 'frame_back')),
+        box('pf_mat', (w - 2 * t, 0.002, h - 2 * t), (0, -0.002, h / 2), coll, M.paper('#F5F2EC', 'passe_small')),
+    ]
+    bm = bmesh.new()
+    uv = bm.loops.layers.uv.new('ArtUV')
+    pw, ph = w - 2 * t - 0.022, h - 2 * t - 0.03
+    vs = [bm.verts.new(p) for p in ((-pw / 2, 0, -ph / 2), (pw / 2, 0, -ph / 2), (pw / 2, 0, ph / 2), (-pw / 2, 0, ph / 2))]
+    f = bm.faces.new(vs)
+    for lp, co in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
+        lp[uv].uv = co
+    pic = mesh_object('pf_photo', bm, coll, M.image_diffuse('pf_photo', image_path, 0.6))
+    pic.location = (0, -0.0035, h / 2 + 0.004)
+    parts.append(pic)
+    parent_all(parts, tilt)
+    # the strut runs from the back of the frame, a third of the way up, down to the desk
+    strut = box('pf_strut', (0.03, 0.004, 0.12), (0, 0.0515, 0.055), coll, oak, bevel=0.001)
+    strut.rotation_euler.x = math.radians(23)
+    strut.parent = parent
+    parts.append(strut)
+    return parts
+
+
+def armillary(coll_dyn, center) -> list:
+    """Three brass rings (equator, colure, ecliptic) around a small sphere. Each ring keeps
+    its origin at the centre so the browser can spin it about its own axis."""
+    brass = M.metal('#C2A066', 'brass_bright', 0.24)
+    R, r = 0.072, 0.0028
+    prof = [(R + r * math.cos(a), r * math.sin(a)) for a in [k * 2 * math.pi / 16 for k in range(17)]]
+    rings = []
+    for i, (rx, ry) in enumerate(((0.0, 0.0), (math.radians(90), 0.0), (math.radians(66.6), math.radians(20)))):
+        ring = revolve(f'arm_ring_{i}', prof, coll_dyn, brass, segs=96, cap_bottom=False)
+        ring.location = center
+        ring.rotation_euler = (rx, ry, 0.0)
+        tag(ring, dyn='armillary', ring=i, hit='globe', label='Armillary sphere')
+        rings.append(ring)
+    core = sphere('arm_core', 0.016, center, coll_dyn, brass, segs=32, rings=16)
+    tag(core, dyn='armillary', ring=3, hit='globe', label='Armillary sphere')
+    rings.append(core)
+    return rings
+
+
+def headphones(coll, center) -> list:
+    """Over-ear headphones lying folded flat: two cups, a padded band arching between them."""
+    shell = M.matte('#2C2D30', 'hp_shell', 0.42)
+    pad = M.wool('#3A3B3E', 'hp_pad', 500.0)
+    alu = M.metal('#9A9DA3', 'hp_alu', 0.3)
+    cx, cy, cz = center
+    parts = []
+    sep = 0.085
+    for i, sx in enumerate((-1, 1)):
+        x = cx + sx * sep
+        parts.append(cylinder(f'hp_cup_{i}', 0.044, 0.03, (x, cy, cz + 0.015 + 0.012), coll, shell, segs=48, bevel=0.006))
+        parts.append(cylinder(f'hp_cushion_{i}', 0.041, 0.016, (x, cy, cz + 0.006), coll, pad, segs=48, bevel=0.006))
+        parts.append(tube_along(f'hp_yoke_{i}', [(x, cy + 0.04, cz + 0.03), (x, cy + 0.058, cz + 0.03)], 0.004, coll, alu))
+    arc = []
+    for k in range(25):
+        a = math.pi * k / 24
+        arc.append((cx - math.cos(a) * sep, cy + 0.058 + math.sin(a) * 0.075, cz + 0.03 + math.sin(a) * 0.004))
+    parts.append(tube_along('hp_band', arc, 0.0085, coll, shell))
+    parts.append(tube_along('hp_band_pad', [(p[0], p[1] - 0.004, p[2] - 0.005) for p in arc[5:20]], 0.0065, coll, pad))
     return parts
 
 
@@ -138,53 +365,88 @@ def book_stack(name, loc, coll, n=3, rot=0.0):
     return out
 
 
-# ------------------------------------------------------------------ shelves: folios + books
+# ------------------------------------------------------------------ shelves: dossiers + books
 
-def folio_mesh(name, coll, color):
-    """Magazine file: full-height spine facing +x, top cut down towards the wall."""
-    w, d, h, low = 0.078, 0.245, 0.315, 0.16
+def _spine_strip(name, coll, mat, d):
+    """The cloth spine: a slightly rounded strip joining the two boards."""
     bm = bmesh.new()
-    prof = [(-d / 2, 0.0), (d / 2, 0.0), (d / 2, h), (d / 2 - 0.07, h), (-d / 2, low)]
-    front = [bm.verts.new((x, -w / 2, z)) for x, z in prof]
-    back = [bm.verts.new((x, w / 2, z)) for x, z in prof]
-    bm.faces.new(list(reversed(front)))
-    bm.faces.new(back)
-    n = len(prof)
+    T = d['thick']
+    n = 10
+    rows = []
+    for z in (0.0, d['board_h']):
+        row = []
+        for i in range(n + 1):
+            y = -T / 2 + T * i / n
+            x = 0.0035 * (1 - (2 * y / T) ** 2)
+            row.append(bm.verts.new((x, y, z)))
+        rows.append(row)
     for i in range(n):
-        j = (i + 1) % n
-        bm.faces.new((front[i], front[j], back[j], back[i]))
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    mat = M.matte(color, f'folio_{color}', 0.78)
+        bm.faces.new((rows[0][i], rows[0][i + 1], rows[1][i + 1], rows[1][i]))
     ob = mesh_object(name, bm, coll, mat)
-    add_bevel(ob, 0.003, 2, 30)
+    sol = ob.modifiers.new('Solid', 'SOLIDIFY')
+    sol.thickness = 0.0024
+    sol.offset = -1.0
+    smooth(ob)
     return ob
+
+
+def dossier(i, fid, color, loc, rot_z, coll_dyn):
+    """A cloth-bound hardcover dossier: back board and spine (one part), a front board that
+    turns on its hinge, and a block of A4 pages. Parts hang under an empty `folio_NN` that
+    the browser moves; it opens the front board and turns pages on top of the block."""
+    d = DOSSIER
+    T, tb = d['thick'], d['board_t']
+    cloth = M.matte(color, f'cloth_{color}', 0.82)
+    paper = M.paper('#F1EBDF', 'page_block')
+    parent = bpy.data.objects.new(f'folio_{i:02d}', None)
+    parent.location = loc
+    parent.rotation_euler.z = rot_z
+    coll_dyn.objects.link(parent)
+    tag(parent, dyn='folio', folio=fid, index=i, hit=f'folio:{fid}', label=fid)
+    bw, bh = d['board_w'], d['board_h']
+    hx = d['hinge_x']
+    back = box(f'folio_{i:02d}_back', (bw, tb, bh), (hx - bw / 2, -T / 2 + tb / 2, bh / 2), coll_dyn, cloth, bevel=0.0009, segments=2)
+    spine = _spine_strip(f'folio_{i:02d}_spine', coll_dyn, cloth, d)
+    # the front board, modelled about its hinge line so it can turn in place
+    cover = box(f'folio_{i:02d}_cover', (bw, tb, bh), (0, 0, 0), coll_dyn, cloth, bevel=0.0009, segments=2)
+    cover.data.transform(Matrix.Translation((-bw / 2, 0, bh / 2)))
+    cover.location = (hx, T / 2 - tb / 2, 0)
+    gap = 0.0005
+    pt = T - 2 * tb - 2 * gap
+    block = box(f'folio_{i:02d}_block', (d['page_w'], pt, d['page_h']), (d['page_x'] - d['page_w'] / 2, 0, (bh - d['page_h']) / 2 + d['page_h'] / 2), coll_dyn, paper, bevel=0.0012, segments=2)
+    for p in (back, spine, cover, block):
+        p.parent = parent
+        tag(p, dyn='folio_part', part=p.name.split('_')[-1])
+    return parent
 
 
 def build_shelf_things(coll_dyn, coll_props) -> dict:
     sh = SHELF
+    d = DOSSIER
     z_low, z_high = SHELF_Z
     folios = []
-    x_center = X0 + 0.02 + 0.245 / 2
-    y = sh['y0'] + 0.1
+    # the eight dossiers stand at the window end of the lower shelf, spines flush with its edge,
+    # so they face the room and are in view from the door
+    x_spine = X0 + sh['depth'] - 0.012
+    y_first = sh['y1'] - 0.09 - 7 * d['spacing']
     for i, (fid, col) in enumerate(zip(FOLIO_IDS, FOLIO_COLORS)):
-        f = folio_mesh(f'folio_{i:02d}', coll_dyn, col)
-        f.location = (x_center, y + i * 0.088, z_low)
-        f.rotation_euler.z = math.radians(RNG.uniform(-1.2, 1.2))
-        tag(f, dyn='folio', folio=fid, index=i, hit=f'folio:{fid}', label=fid)
-        folios.append(f)
+        ob = dossier(i, fid, col, (x_spine, y_first + i * d['spacing'], z_low), math.radians(RNG.uniform(-0.8, 0.8)), coll_dyn)
+        folios.append(ob)
     statics = []
-    # books after the folios on the lower shelf
-    yb = y + 8 * 0.088 + 0.04
-    for i in range(6):
+    # an oak bookend, then books towards the door, and a sand vase at the end
+    y_end = y_first - d['thick'] / 2 - 0.008
+    oak = M.oak('oak_bookend', 'light', 'X')
+    statics.append(box('bookend', (0.15, 0.022, 0.16), (X0 + 0.02 + 0.075, y_end - 0.011, z_low + 0.08), coll_props, oak, bevel=0.003))
+    yb = y_end - 0.03
+    for i in range(8):
         t = RNG.uniform(0.022, 0.042)
-        w = RNG.uniform(0.21, 0.27)
-        statics += book(f'shelf_book_{i}', w, 0.17, t, (X0 + 0.02 + 0.085, yb + t / 2, z_low), RNG.uniform(-0.02, 0.02), RNG.choice(BOOK_COLORS), coll_props)
-        yb += t + 0.002
-    # a leaning book and a small speckled vase at the end
-    statics.append(revolve('shelf_vase', [(0.0, 0.0), (0.035, 0.0), (0.05, 0.05), (0.042, 0.11), (0.022, 0.15), (0.024, 0.16), (0.0, 0.16)], coll_props, M.ceramic('#D9D2C3', 'ceramic_sand', 0.5), loc=(X0 + 0.13, sh['y1'] - 0.1, z_low), segs=40))
-    # upper shelf: books lying and standing, a small framed photo, a candle holder
-    statics += book_stack('upper_stack', (X0 + 0.13, sh['y0'] + 0.2, z_high), coll_props, n=3, rot=math.radians(90))
-    yb = sh['y0'] + 0.42
+        w = RNG.uniform(0.21, 0.26)
+        statics += book(f'shelf_book_{i}', w, 0.17, t, (X0 + 0.02 + 0.085, yb - t / 2, z_low), RNG.uniform(-0.02, 0.02), RNG.choice(BOOK_COLORS), coll_props)
+        yb -= t + 0.002
+    statics.append(revolve('shelf_vase', [(0.0, 0.0), (0.035, 0.0), (0.05, 0.05), (0.042, 0.11), (0.022, 0.15), (0.024, 0.16), (0.0, 0.16)], coll_props, M.ceramic('#D9D2C3', 'ceramic_sand', 0.5), loc=(X0 + 0.13, sh['y0'] + 0.12, z_low), segs=40))
+    # upper shelf: a lying stack, standing books, a sage pot with a coin-leaf plant
+    statics += book_stack('upper_stack', (X0 + 0.13, sh['y0'] + 0.18, z_high), coll_props, n=3, rot=math.radians(90))
+    yb = sh['y0'] + 0.38
     for i in range(9):
         t = RNG.uniform(0.02, 0.04)
         w = RNG.uniform(0.19, 0.26)
@@ -194,15 +456,19 @@ def build_shelf_things(coll_dyn, coll_props) -> dict:
     statics += pilea('upper_plant', (X0 + 0.13, sh['y1'] - 0.16, z_high + 0.1), coll_props, size=0.85)
     for p in statics:
         tag(p, bake='props')
-    return {'folios': folios}
+    mid = (Vector(folios[0].location) + Vector(folios[-1].location)) / 2
+    return {'folios': folios, 'mid': tuple(mid)}
 
 
 # ------------------------------------------------------------------ record player
 
+RECORD_Y = 1.2
+
+
 def build_record_player(coll_dyn, coll_props) -> dict:
     s = SIDEBOARD
     cx = s['x0'] + s['depth'] / 2 + 0.01
-    cy = 0.88
+    cy = RECORD_Y
     z = s['z1']
     oak = M.oak('oak_plinth', 'warm', 'Y')
     plinth = box('tt_plinth', (0.34, 0.44, 0.07), (cx, cy, z + 0.035), coll_props, oak, bevel=0.008)
@@ -219,17 +485,16 @@ def build_record_player(coll_dyn, coll_props) -> dict:
     tag(record, dyn='record', hit='record')
     # Tonearm, origin at the pivot so it can swing onto the record.
     pivot = Vector((cx + 0.11, cy + 0.15, pz))
-    arm_parts = []
     base = cylinder('tt_arm_base', 0.022, 0.03, (0, 0, 0.015), coll_dyn, M.metal('#B9BBC0', 'alu_dark', 0.3), segs=32)
     tube = tube_along('tt_arm_tube', [(0, 0, 0.032), (-0.03, -0.12, 0.034), (-0.045, -0.205, 0.03)], 0.0035, coll_dyn, M.metal('#D0D2D6', 'alu_bright', 0.25))
     head = box('tt_headshell', (0.018, 0.04, 0.006), (-0.047, -0.222, 0.027), coll_dyn, M.matte('#1D1D1F', 'headshell', 0.4))
     cw = cylinder('tt_counterweight', 0.012, 0.03, (0.008, 0.05, 0.032), coll_dyn, M.metal('#9EA1A6', 'alu_dark2', 0.35), segs=24)
     cw.rotation_euler.x = math.radians(90)
-    from .util import apply_modifiers, join
+    from .util import join
     arm = join([base, tube, head, cw], 'tonearm', coll_dyn)
     arm.location = pivot  # parts were modelled around the origin, i.e. in pivot space
     tag(arm, dyn='tonearm', hit='record')
-    return {'platter': platter, 'record': record, 'tonearm': arm, 'pivot': tuple(pivot)}
+    return {'platter': platter, 'record': record, 'tonearm': arm, 'pivot': tuple(pivot), 'center': (cx, cy, z)}
 
 
 # ------------------------------------------------------------------ plants
@@ -280,7 +545,7 @@ def pilea(name, loc, coll, size=1.0) -> list:
     return [ob] + stems
 
 
-def big_plant(coll, loc=(-2.2, 1.86)) -> list:
+def big_plant(coll, loc=(-1.55, 1.84)) -> list:
     """A tall ficus-like plant in a pale ceramic pot for the corner by the window."""
     parts = []
     pot = revolve('big_pot', [(0.0, 0.0), (0.16, 0.0), (0.2, 0.06), (0.215, 0.34), (0.21, 0.36), (0.19, 0.36), (0.19, 0.33), (0.0, 0.33)], coll, M.ceramic('#E4DED3', 'ceramic_pale', 0.55), loc=(loc[0], loc[1], 0), segs=56, cap_bottom=True)
@@ -345,36 +610,6 @@ def glass_tint():
     return M.ceramic('#B9C4C8', 'smoked_glass', 0.15, speckle=False)
 
 
-# ------------------------------------------------------------------ sideboard top + floor bits
-
-def sideboard_things(coll, art_paths: dict) -> list:
-    s = SIDEBOARD
-    z = s['z1']
-    cx = s['x0'] + s['depth'] / 2
-    parts = []
-    # two ceramics and dried grass at the back end of the sideboard
-    tall = revolve('sb_vase_tall', [(0.0, 0.0), (0.05, 0.0), (0.08, 0.08), (0.07, 0.22), (0.035, 0.32), (0.038, 0.34), (0.0, 0.34)], coll, M.ceramic('#EDE7DC', 'ceramic_chalk', 0.6), loc=(cx - 0.03, s['y0'] + 0.22, z), segs=48)
-    small = revolve('sb_vase_small', [(0.0, 0.0), (0.06, 0.0), (0.075, 0.05), (0.06, 0.12), (0.045, 0.13), (0.0, 0.13)], coll, M.ceramic('#A9B8A4', 'ceramic_sage', 0.45), loc=(cx + 0.02, s['y0'] + 0.38, z), segs=48)
-    parts += [tall, small]
-    for i in range(5):
-        a = i * 1.3
-        tip = (cx - 0.03 + math.cos(a) * 0.14, s['y0'] + 0.22 + math.sin(a) * 0.12, z + 0.72 + RNG.uniform(-0.06, 0.08))
-        parts.append(tube_along(f'sb_grass_{i}', [(cx - 0.03, s['y0'] + 0.22, z + 0.3), tip], 0.0016, coll, M.matte('#B59A72', 'dried_grass', 0.9)))
-        parts.append(sphere(f'sb_grass_head_{i}', 0.016, tip, coll, M.wool('#D8C6A2', 'grass_fluff', 600.0), segs=10, rings=6, scale=(1, 1, 2.4)))
-    # a short stack of books under the record player side
-    parts += book_stack('sb_books', (cx, s['y0'] + 0.62, z), coll, n=3, rot=math.radians(4))
-    # record sleeves leaning against the end of the sideboard
-    for i, key in enumerate(('sleeve_a', 'sleeve_b', 'sleeve_c')):
-        mat = M.image_diffuse(f'sleeve_{i}', art_paths[key], 0.7) if key in art_paths else M.paper(BOOK_COLORS[i], f'sleeve_{i}')
-        sl = box(f'sleeve_{i}', (0.315, 0.004, 0.315), (cx - 0.02 + i * 0.012, s['y1'] + 0.06 + i * 0.012, 0.16), coll, mat, bevel=0.001)
-        sl.rotation_euler.x = math.radians(-12 + i * 2)
-        set_uv_front(sl)
-        parts.append(sl)
-    for p in parts:
-        tag(p, bake='props')
-    return parts
-
-
 def set_uv_front(ob):
     """Map a thin box's large faces to the full 0-1 UV square (for printed covers)."""
     me = ob.data
@@ -388,46 +623,74 @@ def set_uv_front(ob):
             uv.data[li].uv = ((co.x - x0) / (x1 - x0), (co.z - z0) / (z1 - z0))
 
 
-def side_table_things(coll, table=(1.0, 0.98)) -> dict:
+# ------------------------------------------------------------------ sideboard top + floor bits
+
+def sideboard_things(coll, art_paths: dict) -> dict:
+    """Under the shelves: a framed print leaning on the wall, ceramics, a candle in a glass,
+    a short stack of books; record sleeves lean against the end of the sideboard."""
+    s = SIDEBOARD
+    z = s['z1']
+    cx = s['x0'] + s['depth'] / 2
     parts = []
-    z = 0.533
-    parts += book_stack('st_books', (table[0] - 0.05, table[1] + 0.04, z), coll, n=3, rot=math.radians(25))
-    plate = cylinder('st_plate', 0.06, 0.008, (table[0] + 0.1, table[1] - 0.08, z + 0.004), coll, M.ceramic('#E7E0D3', 'ceramic_oat', 0.4), segs=40)
-    candle = cylinder('st_candle', 0.034, 0.11, (table[0] + 0.1, table[1] - 0.08, z + 0.008 + 0.055), coll, M.matte('#F4EEDF', 'wax', 0.6), segs=40)
-    wick = tube_along('st_wick', [(table[0] + 0.1, table[1] - 0.08, z + 0.118), (table[0] + 0.1, table[1] - 0.08, z + 0.128)], 0.0012, coll, M.matte('#1A1A1A', 'wick', 0.9))
-    parts += [plate, candle, wick]
+    parts += leaning_print(coll, art_paths['print'], (X0 + 0.1, 0.38, z), size=(0.4, 0.5))
+    # ceramics in front of the print, overlapping it a little
+    parts.append(revolve('sb_vase_small', [(0.0, 0.0), (0.06, 0.0), (0.075, 0.05), (0.06, 0.12), (0.045, 0.13), (0.0, 0.13)], coll, M.ceramic('#A9B8A4', 'ceramic_sage', 0.45), loc=(cx + 0.08, 0.26, z), segs=48))
+    bud = revolve('sb_bud_vase', [(0.0, 0.0), (0.028, 0.0), (0.04, 0.05), (0.026, 0.14), (0.011, 0.19), (0.013, 0.2), (0.0, 0.2)], coll, M.ceramic('#EDE7DC', 'ceramic_chalk', 0.6), loc=(cx + 0.1, 0.5, z), segs=40)
+    parts.append(bud)
+    for i in range(3):
+        a = i * 2.2 + 0.4
+        tip = (cx + 0.1 + math.cos(a) * 0.07, 0.5 + math.sin(a) * 0.05, z + 0.4 + i * 0.03)
+        parts.append(tube_along(f'sb_stem_{i}', [(cx + 0.1, 0.5, z + 0.18), tip], 0.0014, coll, M.matte('#B59A72', 'dried_grass', 0.9)))
+        parts.append(sphere(f'sb_stem_head_{i}', 0.011, tip, coll, M.wool('#D8C6A2', 'grass_fluff', 600.0), segs=10, rings=6, scale=(1, 1, 2.2)))
+    # a pillar candle in a smoked glass, the evening's small light
+    cpos = (cx + 0.1, 0.92)
+    glass = revolve('sb_candle_glass', [(0.0, 0.0), (0.042, 0.0), (0.044, 0.004), (0.044, 0.09), (0.04, 0.09), (0.04, 0.008), (0.0, 0.008)], coll, glass_tint(), loc=(cpos[0], cpos[1], z), segs=40)
+    wax = cylinder('sb_candle', 0.036, 0.06, (cpos[0], cpos[1], z + 0.008 + 0.03), coll, M.matte('#F4EEDF', 'wax', 0.6), segs=40)
+    wick = tube_along('sb_wick', [(cpos[0], cpos[1], z + 0.067), (cpos[0], cpos[1], z + 0.077)], 0.0012, coll, M.matte('#1A1A1A', 'wick', 0.9))
+    parts += [glass, wax, wick]
+    flame = (cpos[0], cpos[1], z + 0.09)
+    # two books lying flat between the ceramics and the candle
+    parts += book_stack('sb_books', (cx, 0.72, z), coll, n=2, rot=math.radians(4))
+    # record sleeves leaning against the end of the sideboard
+    for i, key in enumerate(('sleeve_a', 'sleeve_b', 'sleeve_c')):
+        mat = M.image_diffuse(f'sleeve_{i}', art_paths[key], 0.7) if key in art_paths else M.paper(BOOK_COLORS[i], f'sleeve_{i}')
+        sl = box(f'sleeve_{i}', (0.315, 0.004, 0.315), (cx - 0.02 + i * 0.012, s['y1'] + 0.06 + i * 0.012, 0.16), coll, mat, bevel=0.001)
+        sl.rotation_euler.x = math.radians(-12 + i * 2)
+        set_uv_front(sl)
+        parts.append(sl)
     for p in parts:
         tag(p, bake='props')
-    flame_pos = (table[0] + 0.1, table[1] - 0.08, z + 0.142)
-    return {'parts': parts, 'flame': flame_pos}
+    return {'parts': parts, 'flame': flame}
 
 
-def framed_print(coll, image_path, center=(-1.93, 1.66), size=(0.56, 0.74)) -> list:
-    """Oak frame with a passe-partout on the window wall, left of the window."""
+def leaning_print(coll, image_path, base, size=(0.4, 0.5)) -> list:
+    """An oak frame with a passe-partout, standing on the sideboard and leaning on the wall
+    behind it (the picture faces +x, into the room)."""
     w, h = size
-    y = Y1 - 0.014
     oak = M.oak('oak_frame', 'light', 'Z')
-    parts = []
-    t = 0.022
-    parts.append(box('frame_top', (w, 0.026, t), (center[0], y, center[1] + h / 2 - t / 2), coll, oak, bevel=0.002))
-    parts.append(box('frame_bot', (w, 0.026, t), (center[0], y, center[1] - h / 2 + t / 2), coll, oak, bevel=0.002))
-    parts.append(box('frame_l', (t, 0.026, h), (center[0] - w / 2 + t / 2, y, center[1]), coll, oak, bevel=0.002))
-    parts.append(box('frame_r', (t, 0.026, h), (center[0] + w / 2 - t / 2, y, center[1]), coll, oak, bevel=0.002))
-    parts.append(box('passepartout', (w - 2 * t, 0.004, h - 2 * t), (center[0], y + 0.006, center[1]), coll, M.paper('#F5F2EC', 'passe_partout')))
-    # print surface with UVs
+    t, d = 0.022, 0.024
+    # built facing -y about its bottom edge, then turned to face +x and leaned back
+    parent = group_parent('print_frame', base, math.radians(90), coll)
+    parent.rotation_euler.x = math.radians(-9)
+    parts = [
+        box('frame_top', (w, d, t), (0, 0, h - t / 2), coll, oak, bevel=0.002),
+        box('frame_bot', (w, d, t), (0, 0, t / 2), coll, oak, bevel=0.002),
+        box('frame_l', (t, d, h), (-w / 2 + t / 2, 0, h / 2), coll, oak, bevel=0.002),
+        box('frame_r', (t, d, h), (w / 2 - t / 2, 0, h / 2), coll, oak, bevel=0.002),
+        box('frame_back', (w - 0.008, 0.004, h - 0.008), (0, 0.009, h / 2), coll, M.paper('#E9E2D4', 'frame_back')),
+        box('passepartout', (w - 2 * t, 0.003, h - 2 * t), (0, 0.004, h / 2), coll, M.paper('#F5F2EC', 'passe_partout')),
+    ]
     bm = bmesh.new()
     uv = bm.loops.layers.uv.new('ArtUV')
-    pw, ph = w - 2 * t - 0.11, h - 2 * t - 0.13
-    # wound so the face points into the room (-y): the bake samples light along the normal
+    pw, ph = w - 2 * t - 0.08, h - 2 * t - 0.1
     vs = [bm.verts.new(p) for p in ((-pw / 2, 0, -ph / 2), (pw / 2, 0, -ph / 2), (pw / 2, 0, ph / 2), (-pw / 2, 0, ph / 2))]
     f = bm.faces.new(vs)
     for lp, co in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
         lp[uv].uv = co
     art = mesh_object('print_art', bm, coll, M.image_diffuse('print_art', image_path, 0.9))
-    art.location = (center[0], y + 0.0035, center[1] + 0.01)
+    art.location = (0, 0.0022, h / 2 + 0.008)
     parts.append(art)
-    for p in parts:
-        tag(p, bake='props')
+    parent_all(parts, parent)
     return parts
 
 

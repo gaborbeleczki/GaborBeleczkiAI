@@ -25,10 +25,12 @@ export abstract class BaseModule implements ScreenModule {
     return this.tick(dt, t);
   }
 
-  /** Entrance progress 0..1 over `dur` seconds (1 immediately with reduced motion). */
-  protected enter(delay = 0, dur = 0.6): number {
-    if (!this.animating) return 1;
-    return Math.max(0, Math.min(1, (this.age - delay) / dur));
+  /**
+   * Entrance progress. Chapters appear at once: the display cross-fades between them and
+   * nothing slides in (kept as a hook so modules read the same either way).
+   */
+  protected enter(_delay = 0, _dur = 0.6): number {
+    return 1;
   }
 
   protected onMount(): void {}

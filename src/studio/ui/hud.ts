@@ -16,6 +16,37 @@ export interface HudActions {
   toggleSound(): void;
   pageView(): void;
   open(id: FolioId): void;
+  prev(): void;
+  next(): void;
+  close(): void;
+  act(id: string): void;
+}
+
+export interface HudAction {
+  label: string;
+  href?: string;
+  act?: string;
+  quiet?: boolean;
+}
+
+export interface ReaderState {
+  title: string;
+  sub: string;
+  pager: boolean;
+  canPrev?: boolean;
+  canNext?: boolean;
+  actions?: HudAction[];
+}
+
+const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+function actionHtml(a: HudAction): string {
+  const cls = `hud__link${a.quiet ? ' is-quiet' : ''}`;
+  if (a.href) {
+    const ext = /^https?:/.test(a.href);
+    return `<a class="${cls}" href="${esc(a.href)}"${ext ? ' target="_blank" rel="noopener"' : ''}>${esc(a.label)}</a>`;
+  }
+  return `<button type="button" class="${cls}" data-act="x:${esc(a.act ?? '')}">${esc(a.label)}</button>`;
 }
 
 export class Hud {
@@ -29,6 +60,8 @@ export class Hud {
   private readonly ring: SVGCircleElement;
   private readonly pct: HTMLParagraphElement;
   private readonly menu: HTMLDivElement;
+  private readonly reader: HTMLDivElement;
+  private readonly caption: HTMLDivElement;
 
   constructor(host: HTMLElement, private readonly actions: HudActions) {
     const root = document.createElement('div');
@@ -48,6 +81,17 @@ export class Hud {
           .join('')}
       </div>
       <div class="hud__hint glass" aria-hidden="true"></div>
+      <div class="hud__caption glass" role="region" aria-label="About this object">
+        <button type="button" class="hud__caption-x" data-act="caption-close" aria-label="Close">×</button>
+        <h3></h3><p></p><div class="hud__caption-actions"></div>
+      </div>
+      <div class="hud__reader glass" role="toolbar" aria-label="Reading">
+        <button type="button" class="hud__btn" data-act="prev" aria-label="Previous page">${ICON.back}</button>
+        <div class="hud__reader-title"><strong></strong><span></span></div>
+        <button type="button" class="hud__btn" data-act="next" aria-label="Next page"><span style="display:inline-flex;transform:scaleX(-1)">${ICON.back}</span></button>
+        <div class="hud__reader-actions"></div>
+        <button type="button" class="hud__btn" data-act="close" aria-label="Put it down">Close</button>
+      </div>
       <div class="hud__tip" aria-hidden="true"></div>
       <div class="hud__loader glass" role="status">
         <svg class="hud__ring" viewBox="0 0 54 54"><circle class="bg" cx="27" cy="27" r="23"/><circle class="fg" cx="27" cy="27" r="23" stroke-dasharray="144.5" stroke-dashoffset="144.5" transform="rotate(-90 27 27)"/></svg>
@@ -56,6 +100,7 @@ export class Hud {
         <a data-act="page">Read the page instead</a>
       </div>
       <div class="sr-only" aria-live="polite"></div>
+      <article class="sr-only hud__text" aria-label="The text of what you are reading" hidden></article>
     `;
     host.appendChild(root);
     this.root = root;
@@ -68,10 +113,14 @@ export class Hud {
     this.ring = root.querySelector('.hud__ring .fg')!;
     this.pct = root.querySelector('.hud__loader p')!;
     this.menu = root.querySelector('.hud__menu')!;
+    this.reader = root.querySelector('.hud__reader')!;
+    this.caption = root.querySelector('.hud__caption')!;
     root.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-open]');
       if (!el) return;
       e.stopPropagation();
+      const act = el.dataset.act ?? '';
+      if (act.startsWith('x:')) return this.actions.act(act.slice(2));
       const open = el.dataset.open as FolioId | undefined;
       if (open) {
         this.toggleMenu(false);
@@ -88,6 +137,14 @@ export class Hud {
           return this.actions.pageView();
         case 'menu':
           return this.toggleMenu();
+        case 'prev':
+          return this.actions.prev();
+        case 'next':
+          return this.actions.next();
+        case 'close':
+          return this.actions.close();
+        case 'caption-close':
+          return this.showCaption(null);
       }
     });
     // keep pointer events on the HUD from reaching the 3D canvas
@@ -96,6 +153,45 @@ export class Hud {
         if ((e.target as HTMLElement) !== root) e.stopPropagation();
       });
     }
+  }
+
+  /** The bar under something held: page controls for a dossier, actions for the rest. */
+  setReader(state: ReaderState | null): void {
+    const r = this.reader;
+    r.classList.toggle('is-on', !!state);
+    r.closest('.studio')?.classList.toggle('is-reading', !!state);
+    if (!state) return;
+    r.querySelector('strong')!.textContent = state.title;
+    r.querySelector('.hud__reader-title span')!.textContent = state.sub;
+    const prev = r.querySelector<HTMLButtonElement>('[data-act="prev"]')!;
+    const next = r.querySelector<HTMLButtonElement>('[data-act="next"]')!;
+    prev.hidden = next.hidden = !state.pager;
+    prev.disabled = !state.canPrev;
+    next.disabled = !state.canNext;
+    const html = (state.actions ?? []).map(actionHtml).join('');
+    const box = r.querySelector('.hud__reader-actions')!;
+    if (box.innerHTML !== html) box.innerHTML = html;
+  }
+
+  /** The words on the pages being read, for screen readers. */
+  setText(html: string | null): void {
+    const el = this.root.querySelector<HTMLElement>('.hud__text')!;
+    el.hidden = !html;
+    el.innerHTML = html ?? '';
+  }
+
+  /** A small card about the thing just touched, with a way onwards. */
+  showCaption(c: { title: string; text: string; actions?: HudAction[] } | null): void {
+    this.caption.classList.toggle('is-on', !!c);
+    if (!c) return;
+    this.caption.querySelector('h3')!.textContent = c.title;
+    this.caption.querySelector('p')!.textContent = c.text;
+    this.caption.querySelector('.hud__caption-actions')!.innerHTML = (c.actions ?? []).map(actionHtml).join('');
+    this.announce(`${c.title}. ${c.text}`);
+  }
+
+  get captionOpen(): boolean {
+    return this.caption.classList.contains('is-on');
   }
 
   toggleMenu(force?: boolean): void {

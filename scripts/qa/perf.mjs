@@ -67,7 +67,7 @@ export async function perf(base) {
     }
   });
   const t1 = Date.now();
-  await page2.goto(`${base}/?page`, { waitUntil: 'networkidle' });
+  await page2.goto(`${base}/?static`, { waitUntil: 'networkidle' });
   const tPage = Date.now() - t1;
   const lcp = await page2.evaluate(
     () =>

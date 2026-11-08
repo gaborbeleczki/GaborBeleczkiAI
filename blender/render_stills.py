@@ -36,7 +36,16 @@ def pose(name: str):
     return Vector(e.location), Vector(e['target'])
 
 
-FITS = {'home': (6.3, 3.3), 'desk': (0.7, 0.45), 'shelf': (1.35, 0.78), 'record': (0.8, 0.5), 'window': (3.1, 1.75)}
+def _fits() -> dict:
+    """The framing of each pose, as the browser uses it (public/models/studio.json)."""
+    try:
+        with open(os.path.join(ROOT, 'public', 'models', 'studio.json')) as fh:
+            return {k: tuple(v['fit']) for k, v in json.load(fh)['poses'].items()}
+    except (OSError, KeyError, ValueError):
+        return {}
+
+
+FITS = _fits()
 
 
 def camera(name: str, res: tuple[int, int], fit=None):

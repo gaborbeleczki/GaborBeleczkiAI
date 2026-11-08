@@ -292,17 +292,24 @@ export class Screen {
       const id = `dock:${f.id}`;
       const hov = this.hoverId === id;
       const active = f.id === this.moduleId;
-      const s = hov ? size + 8 : size;
-      const x = x0 + 24 + i * (size + gap) - (s - size) / 2;
-      const y = y0 + 14 - (hov ? 10 : 0);
+      // icons stay put: hover only rings the icon, nothing jumps or grows
+      const s = size;
+      const x = x0 + 24 + i * (size + gap);
+      const y = y0 + 14;
       g.save();
       g.shadowColor = 'rgba(0,0,0,0.12)';
-      g.shadowBlur = hov ? 16 : 8;
+      g.shadowBlur = 8;
       g.shadowOffsetY = 3;
       rr(g, x, y, s, s, 14);
       g.fillStyle = f.color;
       g.fill();
       g.restore();
+      if (hov) {
+        rr(g, x - 4, y - 4, s + 8, s + 8, 17);
+        g.strokeStyle = 'rgba(42,93,143,0.55)';
+        g.lineWidth = 3;
+        g.stroke();
+      }
       const dark = ['#1D2D3D', '#416180', '#C8432B'].includes(f.color);
       g.fillStyle = dark ? '#F5F5F7' : C.ink;
       g.font = font(20, 600, MONO);

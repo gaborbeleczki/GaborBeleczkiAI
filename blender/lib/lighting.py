@@ -143,8 +143,7 @@ def evening(anchors: dict):
     warm = kelvin(2700)
     point('pendant', anchors['pendant'], 38, warm, 0.05)
     spot('desk_lamp', anchors['desk_lamp'], anchors['desk_lamp_aim'], 22, kelvin(2900), 100, 0.75, 0.03)
-    point('floor_lamp', anchors['floor_lamp'], 55, warm, 0.07)
-    point('candle', anchors['candle'], 0.6, kelvin(1900), 0.01)
+    point('candle', anchors['candle'], 1.4, kelvin(1900), 0.012)
     # soft cool fill so shadow sides read as blue-hour rather than black
     area('fill_window', (0, 2.0, 1.7), (2.3, 1.4), 18, (0.62, 0.72, 1.0), (math.radians(-90), 0, 0))
     portal()

@@ -18,12 +18,16 @@ export interface Look {
 
 export const LOOKS: Record<string, Look> = {
   // a glance around the room: the eye moves a little, the gaze more
-  home: { eye: [0.14, 0.07], target: [0.45, 0.24], drift: 0.012 },
-  desk: { eye: [0.012, 0.008], target: [0.035, 0.02], drift: 0.002 },
-  shelf: { eye: [0.05, 0.025], target: [0.14, 0.07], drift: 0.004 },
-  record: { eye: [0.05, 0.025], target: [0.14, 0.07], drift: 0.004 },
+  home: { eye: [0.14, 0.07], target: [0.45, 0.24], drift: 0.008 },
+  // at the display the view holds still: no sway, no drift
+  desk: { eye: [0, 0], target: [0, 0], drift: 0 },
+  objects: { eye: [0.02, 0.012], target: [0.05, 0.03], drift: 0 },
+  shelf: { eye: [0.03, 0.015], target: [0.08, 0.04], drift: 0 },
+  record: { eye: [0.03, 0.015], target: [0.08, 0.04], drift: 0 },
+  // reading: whatever is held stays exactly where it is
+  read: { eye: [0, 0], target: [0, 0], drift: 0 },
   // at the window you lean: the eye travels, the gaze barely turns, the city shifts in depth
-  window: { eye: [0.32, 0.14], target: [0.08, 0.04], drift: 0.03 },
+  window: { eye: [0.32, 0.14], target: [0.08, 0.04], drift: 0.02 },
 };
 
 /**

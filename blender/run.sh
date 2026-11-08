@@ -11,6 +11,12 @@ step "Window: Budapest photos -> plates, depth and paths"
 "$PY" blender/fetch_photos.py
 "$PY" -I blender/window_photos.py
 
+step "The printed CV for the desk (needs Playwright)"
+node scripts/cv-texture.mjs || echo "  (skipped: the desk CV stays blank)"
+
+step "Vehicles for the window (sprites)"
+"$PY" blender/vehicles.py
+
 step "Studio scene"
 "$PY" blender/build_scene.py
 

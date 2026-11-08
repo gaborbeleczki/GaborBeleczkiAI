@@ -1,7 +1,6 @@
-// Adversarial checks: every hostile situation must land somewhere sensible (usually the page).
+// Adversarial checks: every hostile situation must land somewhere sensible (usually the original
+// portfolio at /page/), and the studio's things must work with the keyboard and in any order.
 import { browser, serve, waitForStudio, watch, writeJson } from './lib.mjs';
-
-const MODE = () => document.documentElement.getAttribute('data-mode');
 
 export async function adversarial(base) {
   const checks = [];
@@ -15,60 +14,90 @@ export async function adversarial(base) {
     }
   };
 
-  // 1. No WebGL at all: auto-detection picks the page, and forcing the studio falls back.
+  // Visitors who cannot have the studio read the original portfolio at /page/. (Headless
+  // browsers count as crawlers and keep the static HTML, so these checks pose as a desktop.)
+  const REAL_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+  // the original page asks for an unfilled '{{ cvHref }}' once before it renders (it does on
+  // its own site too); that one 404 is expected, any other is not
+  const quirk = (u) => /%7B%7B|\{\{/.test(u);
+  const onOriginal = async (page, reason, errors) => {
+    const missing = [];
+    page.on('response', (r) => r.status() === 404 && missing.push(r.url()));
+    await page.waitForURL((u) => u.pathname === '/page/' && (!reason || u.search.includes(`reason=${reason}`)), { timeout: 60000 });
+    const src = await page.locator('iframe.original').getAttribute('src');
+    if (src !== './original/') throw new Error(`iframe src ${src}`);
+    await page.frameLocator('iframe.original').locator('text=Béleczki').first().waitFor({ timeout: 60000 });
+    const unexpected = missing.filter((u) => !quirk(u));
+    if (unexpected.length) throw new Error(`404: ${unexpected.join(', ')}`);
+    if (errors) errors.splice(0, errors.length, ...errors.filter((e) => !/status of 404/.test(e) || unexpected.length));
+    return page.url().replace(base, '');
+  };
+
+  // 1. No WebGL at all: auto-detection sends a visitor to the page; forcing the studio fails over.
   {
     const b = await browser(['--disable-webgl', '--disable-3d-apis']);
-    await run('no WebGL → page by default', async (errors) => {
-      const page = await b.newPage();
+    await run('no WebGL → the original page', async (errors) => {
+      const ctx = await b.newContext({ userAgent: REAL_UA });
+      const page = await ctx.newPage();
       watch(page, errors);
-      await page.goto(`${base}/`, { waitUntil: 'networkidle' });
-      const mode = await page.evaluate(MODE);
-      const why = await page.evaluate(() => document.documentElement.getAttribute('data-studio-why'));
-      if (mode !== 'page') throw new Error(`mode=${mode}`);
-      return { mode, why };
+      await page.goto(`${base}/`, { waitUntil: 'load' });
+      const at = await onOriginal(page, 'unsupported', errors);
+      await ctx.close();
+      return { at };
     });
-    await run('no WebGL + ?studio → falls back to page with a notice', async (errors) => {
-      const page = await b.newPage();
+    await run('no WebGL + ?studio → the original page with a note', async (errors) => {
+      const ctx = await b.newContext({ userAgent: REAL_UA });
+      const page = await ctx.newPage();
       watch(page, errors);
       await page.goto(`${base}/?studio`, { waitUntil: 'load' });
-      await page.waitForFunction(() => document.documentElement.getAttribute('data-mode') === 'page', null, { timeout: 30000 });
-      const toast = await page.locator('.toast').textContent().catch(() => '');
+      const at = await onOriginal(page, 'studio-error', errors);
+      const note = await page.locator('.note').textContent();
+      await ctx.close();
       // the WebGL failure is expected here; keep only unexpected errors
-      errors.splice(0, errors.length, ...errors.filter((e) => !/WebGL|webgl|context/i.test(e)));
-      return { toast };
+      errors.splice(0, errors.length, ...errors.filter((e) => !/WebGL|webgl|context|stopped|failed to start/i.test(e)));
+      return { at, note };
     });
     await b.close();
   }
 
   const b = await browser();
-  // 2. Reduced motion preference → page by default.
-  await run('prefers-reduced-motion → page by default', async (errors) => {
-    const ctx = await b.newContext({ reducedMotion: 'reduce' });
+  // 2. Reduced motion preference → the page.
+  await run('prefers-reduced-motion → the original page', async (errors) => {
+    const ctx = await b.newContext({ reducedMotion: 'reduce', userAgent: REAL_UA });
     const page = await ctx.newPage();
     watch(page, errors);
-    await page.goto(`${base}/`, { waitUntil: 'networkidle' });
-    const mode = await page.evaluate(MODE);
+    await page.goto(`${base}/`, { waitUntil: 'load' });
+    const at = await onOriginal(page, undefined, errors);
     await ctx.close();
-    if (mode !== 'page') throw new Error(`mode=${mode}`);
-    return { mode };
+    return { at };
   });
 
-  // 3. Missing model → fall back to the page with a notice, no crash.
-  await run('studio.glb missing → page with notice', async (errors) => {
-    const ctx = await b.newContext();
+  // 3. Software-only WebGL (this test browser) → the page, with a word on why.
+  await run('software WebGL → the original page', async (errors) => {
+    const ctx = await b.newContext({ userAgent: REAL_UA });
+    const page = await ctx.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/`, { waitUntil: 'load' });
+    const at = await onOriginal(page, 'unsupported', errors);
+    await ctx.close();
+    return { at };
+  });
+
+  // 4. Missing model → the page, no crash.
+  await run('studio.glb missing → the original page', async (errors) => {
+    const ctx = await b.newContext({ userAgent: REAL_UA });
     const page = await ctx.newPage();
     watch(page, errors);
     await page.route('**/models/studio.glb*', (r) => r.fulfill({ status: 404, body: 'gone' }));
     await page.goto(`${base}/?studio`, { waitUntil: 'load' });
-    await page.waitForFunction(() => document.documentElement.getAttribute('data-mode') === 'page', null, { timeout: 60000 });
-    const toast = await page.locator('.toast').textContent().catch(() => '');
+    const at = await onOriginal(page, 'studio-error', errors);
     await ctx.close();
-    errors.splice(0, errors.length, ...errors.filter((e) => !/studio\.glb|404|assets failed|Failed to load/i.test(e)));
-    return { toast };
+    errors.splice(0, errors.length, ...errors.filter((e) => !/studio\.glb|404|assets failed|Failed to load|failed to start/i.test(e)));
+    return { at };
   });
 
-  // 4. Hammering: rapid chapter switching, keys, resizes.
-  await run('rapid input: keys 0-7, clicks, resizes', async (errors) => {
+  // 5. Hammering: rapid dossier picks with the number keys, resizes, light switching.
+  await run('rapid input: keys 0-7, Escape, resizes', async (errors) => {
     const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await ctx.newPage();
     watch(page, errors);
@@ -85,37 +114,40 @@ export async function adversarial(base) {
       await page.setViewportSize({ width: w, height: h });
       await page.evaluate(() => window.__studio.step(1 / 30, 3));
     }
+    await page.evaluate(() => window.__studio.step(1 / 30, 60));
+    const held = await page.evaluate(() => window.__studio.hand());
     await page.keyboard.press('Escape');
     await page.keyboard.press('l');
     await page.keyboard.press('l');
     await page.evaluate(() => window.__studio.step(1 / 30, 90));
-    const info = await page.evaluate(() => window.__studio.info());
+    const after = await page.evaluate(() => window.__studio.hand());
     await ctx.close();
-    // the last key pressed was 4 → folio 04 (Career)
-    if (info.module !== 'career') throw new Error(`expected the last chapter pressed (career), got ${info.module}`);
-    return info;
+    // the last key pressed was 4 → dossier 04 (Career), open in the reader's hands
+    if (!held || held.id !== 'career' || held.open < 0.9) throw new Error(`expected the Career dossier open, got ${JSON.stringify(held)}`);
+    if (after) throw new Error(`Escape should put it back: ${JSON.stringify(after)}`);
+    return { held };
   });
 
-  // 5. Losing the WebGL context → back to the page within a few seconds.
-  await run('WebGL context lost → page', async (errors) => {
+  // 6. Losing the WebGL context → the page within a few seconds.
+  await run('WebGL context lost → the original page', async (errors) => {
     const ctx = await b.newContext();
     const page = await ctx.newPage();
     watch(page, errors);
     await page.goto(`${base}/?studio`, { waitUntil: 'load' });
     await waitForStudio(page);
     await page.evaluate(() => window.__studio.loseContext());
-    await page.waitForFunction(() => document.documentElement.getAttribute('data-mode') === 'page', null, { timeout: 15000 });
+    const at = await onOriginal(page, 'studio-error', errors);
     await ctx.close();
-    errors.splice(0, errors.length, ...errors.filter((e) => !/context/i.test(e)));
-    return { mode: 'page' };
+    errors.splice(0, errors.length, ...errors.filter((e) => !/context|stopped/i.test(e)));
+    return { at };
   });
 
-  // 6. Keyboard only on the page: skip link and visible focus on the first controls.
-  await run('keyboard: skip link + focus order on the page', async (errors) => {
+  // 7. Keyboard only on the static page (what crawlers and no-JS visitors read).
+  await run('keyboard: skip link + focus order on the static page', async (errors) => {
     const ctx = await b.newContext();
     const page = await ctx.newPage();
     watch(page, errors);
-    await page.goto(`${base}/?page`, { waitUntil: 'networkidle' });
+    await page.goto(`${base}/?static`, { waitUntil: 'networkidle' });
     const seen = [];
     for (let i = 0; i < 6; i++) {
       await page.keyboard.press('Tab');
@@ -126,8 +158,8 @@ export async function adversarial(base) {
     return { tabStops: seen };
   });
 
-  // 7. Studio HUD reachable by keyboard; Chapters menu opens a chapter.
-  await run('keyboard: studio chapters menu', async (errors) => {
+  // 8. Studio HUD reachable by keyboard; the Chapters menu takes a dossier down.
+  await run('keyboard: chapters menu opens a dossier', async (errors) => {
     const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await ctx.newPage();
     watch(page, errors);
@@ -137,11 +169,61 @@ export async function adversarial(base) {
     await page.keyboard.press('Enter');
     await page.locator('[data-open="career"]').focus();
     await page.keyboard.press('Enter');
-    await page.evaluate(() => window.__studio.step(1 / 30, 40));
-    const info = await page.evaluate(() => window.__studio.info());
+    await page.evaluate(() => window.__studio.step(1 / 30, 90));
+    const held = await page.evaluate(() => window.__studio.hand());
     await ctx.close();
-    if (info.module !== 'career') throw new Error(`module=${info.module}`);
-    return info;
+    if (!held || held.id !== 'career') throw new Error(`in hand: ${JSON.stringify(held)}`);
+    return held;
+  });
+
+  // 9. Reading a dossier: it opens, pages turn both ways, it goes back on the shelf.
+  await run('dossier: opens, turns pages, goes back', async (errors) => {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/?studio&capture`, { waitUntil: 'load' });
+    await waitForStudio(page);
+    await page.evaluate(() => window.__studio.open('work'));
+    await page.evaluate(() => window.__studio.step(1 / 30, 90));
+    const opened = await page.evaluate(() => window.__studio.hand());
+    for (let i = 0; i < 3; i++) await page.evaluate(() => (window.__studio.turn(1), window.__studio.step(1 / 30, 30)));
+    await page.evaluate(() => (window.__studio.turn(-1), window.__studio.step(1 / 30, 30)));
+    const turned = await page.evaluate(() => window.__studio.hand());
+    await page.evaluate(() => (window.__studio.putDown(), window.__studio.step(1 / 30, 120)));
+    const back = await page.evaluate(() => window.__studio.hand());
+    await ctx.close();
+    if (!opened || opened.open < 0.95 || opened.total < 8) throw new Error(`opened: ${JSON.stringify(opened)}`);
+    if (turned.left !== 4 || turned.right !== 5) throw new Error(`after 3 forward, 1 back: ${JSON.stringify(turned)}`);
+    if (back) throw new Error(`still in hand: ${JSON.stringify(back)}`);
+    return { opened, turned };
+  });
+
+  // 10. The desk: every object can be picked up (or used), and the dots show where they are.
+  await run('desk: cards, phone, CV, notebook; hotspots', async (errors) => {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/?studio&capture`, { waitUntil: 'load' });
+    await waitForStudio(page);
+    await page.evaluate(() => window.__studio.step(1 / 30, 90));
+    const homeSpots = await page.evaluate(() => window.__studio.spots());
+    await page.evaluate(() => (window.__studio.focus('objects'), window.__studio.step(1 / 30, 90)));
+    const deskSpots = await page.evaluate(() => window.__studio.spots());
+    const held = {};
+    for (const id of ['cards', 'phone', 'cv', 'notebook']) {
+      await page.evaluate((id) => (window.__studio.use(id), window.__studio.step(1 / 30, 80)), id);
+      held[id] = await page.evaluate(() => window.__studio.hand());
+      await page.keyboard.press('Escape');
+      await page.evaluate(() => window.__studio.step(1 / 30, 80));
+    }
+    for (const id of ['globe', 'coffee', 'about']) await page.evaluate((id) => (window.__studio.use(id), window.__studio.step(1 / 30, 10)), id);
+    const caption = await page.locator('.hud__caption.is-on h3').textContent().catch(() => null);
+    await ctx.close();
+    for (const id of Object.keys(held)) if (!held[id] || held[id].id !== id || held[id].travel < 0.95) throw new Error(`${id}: ${JSON.stringify(held[id])}`);
+    if (homeSpots.length < 4) throw new Error(`home dots: ${homeSpots.join(', ')}`);
+    if (deskSpots.length < 6) throw new Error(`desk dots: ${deskSpots.join(', ')}`);
+    if (!caption) throw new Error('no caption for the portrait');
+    return { homeSpots, deskSpots, caption };
   });
 
   // 8. The role game: keys reach it at the desk, walking away pauses it.
@@ -151,7 +233,7 @@ export async function adversarial(base) {
     watch(page, errors);
     await page.goto(`${base}/?studio&capture`, { waitUntil: 'load' });
     await waitForStudio(page);
-    await page.evaluate(() => window.__studio.open('role'));
+    await page.evaluate(() => (window.__studio.focus('desk'), window.__studio.showOnScreen('role')));
     await page.evaluate(() => window.__studio.step(1 / 60, 30));
     await page.keyboard.press('g');
     await page.keyboard.press('Enter');
@@ -188,7 +270,7 @@ export async function adversarial(base) {
   await run('page: seven animated case figures', async (errors) => {
     const page = await b.newPage();
     watch(page, errors);
-    await page.goto(`${base}/?page`, { waitUntil: 'load' });
+    await page.goto(`${base}/?static`, { waitUntil: 'load' });
     const figs = await page.evaluate(() => [...document.querySelectorAll('svg.fig__svg')].map((s) => s.querySelectorAll('animateMotion, animate, animateTransform, [style*="animation"]').length));
     await page.close();
     if (figs.length !== 7) throw new Error(`${figs.length} figures`);
@@ -196,10 +278,27 @@ export async function adversarial(base) {
     return { animationsPerFigure: figs };
   });
 
-  // 11. Every generated page and feed responds.
-  await run('routes: /, /cv/, /notes/, note, rss, sitemap, robots', async () => {
+  // The page view: the original portfolio, untouched, inside a full-screen frame.
+  await run('page view: the original portfolio in a frame, a way back to the studio', async (errors) => {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await ctx.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/page/`, { waitUntil: 'load' });
+    const frame = page.frameLocator('iframe.original');
+    await frame.locator('text=Béleczki').first().waitFor({ timeout: 60000 });
+    const href = await page.locator('[data-studio]').getAttribute('href');
+    const title = await page.title();
+    await ctx.close();
+    // the original page asks for an unfilled '{{ cvHref }}' before it renders (as it does live)
+    errors.splice(0, errors.length, ...errors.filter((e) => !/cvHref|%7B%7B|404/.test(e)));
+    if (href !== '/?studio') throw new Error(`pill href ${href}`);
+    return { title };
+  });
+
+  // Every generated page and feed responds.
+  await run('routes: pages, original, CVs, feeds, assets', async () => {
     const out = {};
-    for (const p of ['/', '/cv/', '/notes/', '/notes/building-the-studio/', '/rss.xml', '/sitemap.xml', '/robots.txt', '/models/studio.json']) {
+    for (const p of ['/', '/cv/', '/notes/', '/notes/building-the-studio/', '/rss.xml', '/sitemap.xml', '/robots.txt', '/models/studio.json', '/page/', '/page/original/', '/page/cv/', '/page/cv-long/', '/models/vehicles.json', '/textures/vehicles_day.webp', '/textures/cv_page.webp']) {
       const r = await fetch(base + p);
       out[p] = r.status;
       if (r.status !== 200) throw new Error(`${p} → ${r.status}`);

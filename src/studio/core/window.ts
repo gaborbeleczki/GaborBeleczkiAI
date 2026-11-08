@@ -53,6 +53,7 @@ export const WINDOW_VIEW: Record<State, { hfov: number; yaw: number; pitch: numb
 };
 
 const NS = 24; // moving things per photo
+const NSPR = 16; // vehicle sprites
 
 const vertex = /* glsl */ `
   varying vec2 vUv;
@@ -64,6 +65,7 @@ const vertex = /* glsl */ `
 
 const fragment = /* glsl */ `
   #define NS ${NS}
+  #define NSPR ${NSPR}
   uniform sampler2D plateA;
   uniform sampler2D dataA;
   uniform sampler2D fillA;
@@ -88,6 +90,12 @@ const fragment = /* glsl */ `
   uniform vec2 windowSize;
   uniform vec3 viewer;      // eye in window space (x right, y up, z into the city)
   uniform vec3 glassTint;
+  // vehicles modelled in Blender (blender/vehicles.py): side views, premultiplied alpha
+  uniform sampler2D vehDay;
+  uniform sampler2D vehNight;
+  uniform vec4 spr[NSPR];   // sprite box in the atlas (u, v, w, h)
+  uniform vec4 lamps[NSPR]; // head lamp (x, y) and tail lamp (x, y), as fractions of the sprite
+  uniform float atlasW;
   varying vec2 vUv;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -117,28 +125,24 @@ const fragment = /* glsl */ `
 
   // ---------------------------------------------------------------- moving things
 
-  float box(vec2 p, vec2 lo, vec2 hi, float px) {
-    vec2 q = min(p - lo, hi - p);
-    return clamp(min(q.x, q.y) / px + 0.5, 0.0, 1.0);
-  }
-
   float glow(vec2 p, vec2 c, float r) {
     vec2 d = (p - c) / r;
     return exp(-dot(d, d));
   }
 
-  // two rows of cabin windows, soft-edged so they read at a few pixels tall
-  float rows(vec2 t, float tf) {
-    float band1 = smoothstep(0.2, 0.27, t.y) * (1.0 - smoothstep(0.36, 0.43, t.y)) * step(0.06, tf) * step(tf, 0.92);
-    float band2 = smoothstep(0.5, 0.56, t.y) * (1.0 - smoothstep(0.68, 0.74, t.y)) * step(0.14, tf) * step(tf, 0.84);
-    float panes1 = 0.55 + 0.45 * smoothstep(0.15, 0.4, abs(fract(tf * 26.0) - 0.5) * 2.0);
-    float panes2 = 0.5 + 0.5 * smoothstep(0.1, 0.35, abs(fract(tf * 16.0) - 0.5) * 2.0);
-    return max(band1 * panes1, band2 * panes2);
+  // A vehicle sprite, sampled at the detail its size on screen needs. Returns linear colour
+  // premultiplied by coverage.
+  vec4 vehicle(int id, vec2 t, bool night, float lod) {
+    vec4 r = spr[id];
+    vec2 uv = r.xy + clamp(t, 0.0, 1.0) * r.zw;
+    vec4 c = night ? textureLod(vehNight, uv, lod) : textureLod(vehDay, uv, lod);
+    if (c.a < 0.002) return vec4(0.0);
+    return vec4(pow(c.rgb / c.a, vec3(2.2)) * c.a, c.a);
   }
 
-  // One thing: base line a -> b (front at b) in plate uv, height h (v units), half width hw (u
-  // units), kind.variant, and sqrt(10 m / depth) for where it stands.
-  vec3 thing(vec3 col, vec4 s0, vec4 s1, vec2 uvInf, vec2 delta, float wHit, float water, float aspect, float px) {
+  // One thing: base line a -> b (back to front) in plate uv, height h (v units), kind.sprite,
+  // sqrt(10 m / depth) for where it stands, and an extra (brake light, or a boat's wake).
+  vec3 thing(vec3 col, vec4 s0, vec4 s1, vec2 uvInf, vec2 delta, float wHit, float water, float aspect, float px, bool night) {
     float kind = floor(s1.z);
     float variant = fract(s1.z);
     float ws = s1.y * kb;
@@ -147,99 +151,65 @@ const fragment = /* glsl */ `
     vec2 a = vec2(s0.x * aspect, s0.y);
     vec2 b = vec2(s0.z * aspect, s0.w);
     float h = s1.x;
-    float hw = s1.w * aspect;
-    float front = b.x >= a.x ? 1.0 : -1.0;
-    vec2 lo = vec2(min(a.x, b.x) - hw, min(a.y, b.y));
-    vec2 hi = vec2(max(a.x, b.x) + hw, max(a.y, b.y) + h);
     // something nearer (a bridge tower, the deck) stands in front
     bool hidden = ws < wHit * 0.9 - 1e-5;
 
-    if (kind < 1.5) {
-      // evening car: head light at the front, tail light at the back
-      if (hidden) return col;
-      float r = max(h * 0.32, px * 0.9);
-      vec2 head = vec2(b.x + front * hw, b.y + h * 0.35);
-      vec2 tail = vec2(a.x - front * hw, a.y + h * 0.4);
-      vec3 hc = mix(vec3(1.0, 0.9, 0.72), vec3(0.95, 0.95, 1.0), variant);
-      col += hc * (glow(p, head, r) * 1.1 + glow(p, head, r * 3.0) * 0.12);
-      col += vec3(1.0, 0.1, 0.05) * (glow(p, tail, r * 0.8) * 0.9 + glow(p, tail, r * 2.4) * 0.08);
-      return col;
-    }
-    if (kind < 2.5) {
-      // daytime car: a small box with a window band and a shadow
-      if (hidden) return col;
-      float m = box(p, lo, hi, px);
-      if (m <= 0.0) return col;
-      vec2 t = (p - lo) / max(hi - lo, vec2(1e-6));
-      vec3 paint = variant < 0.25 ? vec3(0.92) : variant < 0.45 ? vec3(0.62, 0.64, 0.66) : variant < 0.6 ? vec3(0.08) : variant < 0.75 ? vec3(0.95, 0.75, 0.1) : variant < 0.88 ? vec3(0.55, 0.08, 0.06) : vec3(0.12, 0.2, 0.4);
-      vec3 c = mix(paint, vec3(0.1, 0.12, 0.14), step(0.5, t.y) * step(t.y, 0.82) * 0.8);
-      c *= mix(0.55, 1.0, step(0.15, t.y));
-      return mix(col, c, m);
-    }
-    if (kind < 3.5) {
-      // tram 2: yellow by day, a strip of lit windows in the evening
-      if (hidden) return col;
-      float m = box(p, lo, hi, px);
-      vec2 t = (p - lo) / max(hi - lo, vec2(1e-6));
-      float tf = front > 0.0 ? t.x : 1.0 - t.x;
-      float win = step(0.42, t.y) * step(t.y, 0.8) * step(0.18, fract(tf * 11.0)) * step(0.03, tf) * step(tf, 0.97);
-      float joint = max(step(abs(tf - 0.333), 0.006), step(abs(tf - 0.666), 0.006));
-      vec3 c;
-      if (variant < 0.5) {
-        c = vec3(0.94, 0.73, 0.12);
-        c = mix(c, vec3(0.86, 0.86, 0.84), step(0.86, t.y));
-        c = mix(c, vec3(0.13, 0.15, 0.16), win);
-        c = mix(c, vec3(0.2), step(t.y, 0.12));
-        c = mix(c, vec3(0.15), joint * 0.8);
-        return mix(col, c, m);
-      }
-      c = vec3(0.2, 0.15, 0.07);
-      c = mix(c, vec3(1.0, 0.86, 0.6), win);
-      c = mix(c, vec3(0.04), joint);
-      col = mix(col, c, m);
-      vec2 lamp = vec2(front > 0.0 ? hi.x : lo.x, lo.y + h * 0.25);
-      col += vec3(1.0, 0.95, 0.8) * glow(p, lamp, max(h * 0.35, px)) * 1.4;
-      return col;
-    }
     if (kind < 4.5) {
-      // river boat, and its reflection on the water below
-      vec2 t = (p - lo) / max(hi - lo, vec2(1e-6));
-      float tf = front > 0.0 ? t.x : 1.0 - t.x;
-      bool night = variant >= 0.5;
-      if (t.y >= 0.0) {
-        if (hidden) return col;
-        // hull and two decks, stepping in towards the top
-        float hull = box(p, lo, vec2(hi.x, lo.y + h * 0.45), px);
-        float deck = box(p, vec2(mix(lo.x, hi.x, 0.1), lo.y), vec2(mix(lo.x, hi.x, 0.86), lo.y + h * 0.78), px);
-        float cab = box(p, vec2(mix(lo.x, hi.x, 0.3), lo.y), vec2(mix(lo.x, hi.x, 0.62), hi.y), px);
-        float m = max(hull, max(deck, cab));
-        if (m <= 0.0) return col;
-        vec3 c;
-        if (night) {
-          // a dark hull picked out by the city, warm cabins, a few deck lamps
-          c = mix(vec3(0.07, 0.055, 0.045), vec3(1.0, 0.74, 0.42), rows(t, tf) * 0.95);
-          c += vec3(0.9, 0.85, 0.75) * glow(vec2(fract(tf * 7.0), t.y), vec2(0.5, 0.95), 0.12) * cab * 0.8;
-        } else {
-          c = vec3(0.9, 0.92, 0.95);
-          c = mix(c, vec3(0.16, 0.24, 0.42), step(t.y, 0.12));
-          c = mix(c, vec3(0.12, 0.15, 0.18), rows(t, tf) * 0.85);
+      // cars, buses, the tram and boats: a sprite stretched along the road (or the river), so it
+      // follows the slope of the bridge and the curve of the embankment
+      float span = b.x - a.x;
+      if (abs(span) < 1e-6) return col;
+      int id = int(variant * 64.0 + 0.5);
+      float extra = s1.w;
+      float tx = (p.x - a.x) / span;
+      float yb = mix(a.y, b.y, clamp(tx, 0.0, 1.0));
+      float ty = (p.y - yb) / max(h, 1e-6);
+      // texels per screen pixel along the length: pick the mip level to match
+      float lod = log2(max(spr[id].z * atlasW * px / abs(span), 1.0));
+      vec4 lp = lamps[id];
+      bool boat = kind > 3.5;
+      if (!boat && !hidden) {
+        // a soft contact shadow on the road by day
+        if (!night && ty < 0.02 && ty > -0.16) {
+          float sh = smoothstep(-0.16, 0.0, ty) * smoothstep(-0.02, 0.06, tx) * smoothstep(1.02, 0.94, tx);
+          col *= 1.0 - 0.32 * sh;
         }
-        return mix(col, c, m);
+        // lamps: dipped beams ahead, tail lights behind (brighter when braking)
+        vec2 head = vec2(mix(a.x, b.x, lp.x) + sign(span) * px, mix(a.y, b.y, lp.x) + lp.y * h);
+        vec2 tail = vec2(mix(a.x, b.x, lp.z) - sign(span) * px, mix(a.y, b.y, lp.z) + lp.w * h);
+        float r = max(h * 0.16, px * 0.8);
+        if (night) {
+          col += vec3(1.0, 0.92, 0.78) * (glow(p, head, r) * 1.1 + glow(p, head + vec2(sign(span) * r * 2.5, 0.0), r * 3.2) * 0.1);
+          col += vec3(1.0, 0.12, 0.05) * (glow(p, tail, r * 0.8) * (0.7 + 1.3 * extra) + glow(p, tail, r * 2.6) * (0.06 + 0.12 * extra));
+        } else {
+          col += vec3(1.0, 0.1, 0.04) * glow(p, tail, r * 0.7) * extra * 0.7;
+        }
       }
-      // reflection: mirrored about the waterline, broken up by the current
-      float under = -t.y;
-      if (under > 0.9 || water < 0.3) return col;
-      float wob = (noise(vec2(p.x * 900.0, p.y * 2400.0 - time * 3.0)) - 0.5) * 0.08;
-      vec2 q = vec2(p.x + wob * (hi.x - lo.x) * 0.15, lo.y + (lo.y - p.y) * 1.15);
-      if (q.x < lo.x || q.x > hi.x) return col;
-      vec2 tq = vec2((q.x - lo.x) / max(hi.x - lo.x, 1e-6), (q.y - lo.y) / max(h, 1e-6));
-      float tfq = front > 0.0 ? tq.x : 1.0 - tq.x;
-      float fade = (1.0 - under / 0.9) * water;
-      if (night) {
-        float streak = rows(tq, tfq) * (0.5 + 0.5 * noise(vec2(p.x * 3000.0, time * 4.0)));
-        return col + vec3(1.0, 0.72, 0.38) * streak * fade * 0.4;
+      if (tx < -0.6 || tx > 1.1) return col;
+      if (ty >= 0.0 && ty <= 1.0 && tx >= 0.0 && tx <= 1.0) {
+        if (hidden) return col;
+        vec4 sp = vehicle(id, vec2(tx, ty), night, lod);
+        return col * (1.0 - sp.a) + sp.rgb;
       }
-      return mix(col, mix(col * 0.75, vec3(0.75, 0.8, 0.85), step(0.12, tq.y)), fade * 0.45 * step(tq.y, 0.45));
+      if (!boat || hidden) return col;
+      // the river: a reflection mirrored at the waterline, broken by the current, a wake behind
+      float under = -ty;
+      if (under <= 0.0 || water < 0.3) return col;
+      float fade = (1.0 - smoothstep(0.0, 0.85, under)) * water;
+      if (tx >= 0.0 && tx <= 1.0 && under < 0.85) {
+        float wob = (noise(vec2(p.x * 900.0, p.y * 2400.0 - time * 3.0)) - 0.5) * 0.05;
+        vec4 rf = vehicle(id, vec2(tx + wob, under * 1.15), night, lod + 0.5);
+        col = mix(col, col * (1.0 - rf.a) + rf.rgb * (night ? 0.75 : 0.55), fade * (night ? 0.8 : 0.55));
+      }
+      if (!night) {
+        // foam: a bow wave and a widening wake astern, stronger the faster the boat goes
+        float back = -tx;
+        float wake = smoothstep(0.0, 0.05, back) * (1.0 - smoothstep(0.1, 0.6, back)) * smoothstep(0.12 + back * 0.25, 0.0, under);
+        float bow = smoothstep(0.9, 1.0, tx) * (1.0 - smoothstep(1.0, 1.06, tx)) * smoothstep(0.08, 0.0, under);
+        float churn = noise(vec2(p.x * 1800.0 + time * 2.0, p.y * 3000.0));
+        col = mix(col, vec3(0.92, 0.94, 0.95), clamp((wake * 0.55 + bow * 0.45) * churn * extra * water, 0.0, 0.6));
+      }
+      return col;
     }
     if (kind < 5.5) {
       // plane: blinking lights at night, a speck and a contrail by day
@@ -271,7 +241,7 @@ const fragment = /* glsl */ `
     return mix(col, vec3(0.13, 0.13, 0.14), m * 0.9);
   }
 
-  #define THINGS(S0, S1, COUNT) for (int i = 0; i < NS; i++) { if (i >= COUNT) break; col = thing(col, S0[i], S1[i], uvInf, delta, wHit, water, cam.y, px); }
+  #define THINGS(S0, S1, COUNT, NIGHT) for (int i = 0; i < NS; i++) { if (i >= COUNT) break; col = thing(col, S0[i], S1[i], uvInf, delta, wHit, water, cam.y, px, NIGHT); }
 
   // ---------------------------------------------------------------- one photo
 
@@ -325,7 +295,7 @@ const fragment = /* glsl */ `
       col += vec3(1.0, 0.97, 0.9) * pow(g, 14.0) * spark * water * 2.5;                               \\
     }                                                                                                 \\
     /* the small world: traffic, tram, boats, plane, birds */                                         \\
-    THINGS(S0, S1, COUNT)                                                                             \\
+    THINGS(S0, S1, COUNT, NIGHT)                                                                      \\
     /* foreground plane: trees and roofs right below the terrace, swaying */                          \\
     vec2 uf = uvInf + delta * FG.x;                                                                   \\
     vec3 df = texture2D(DATA, edge(uf)).rgb;                                                          \\
@@ -400,12 +370,20 @@ interface Mover {
   track: Track;
   s: number;
   dir: 1 | -1;
-  speed: number;
+  /** speed now and the speed it would like (m/s) */
+  v: number;
+  v0: number;
+  acc: number;
   length: number;
   height: number;
-  width: number;
   kind: number;
-  variant: number;
+  sprite: number;
+  /** brake lights 0..1 (smoothed) */
+  brake: number;
+  /** tram: where it will stop next (metres along the track) and how long it has left there */
+  stops: number[];
+  dwell: number;
+  phase: number;
 }
 
 interface Lane {
@@ -415,11 +393,36 @@ interface Lane {
   max: number;
   gap: [number, number];
   speed: [number, number];
-  size: [number, number, number]; // length, height, width (m)
+  /** which sprites this lane draws, with weights */
+  pool: { sprite: number; w: number }[];
+  stops?: number[];
   timer: number;
 }
 
+export interface VehicleSprite {
+  name: string;
+  kind: 'car' | 'bus' | 'tram' | 'boat';
+  length: number;
+  height: number;
+  uv: [number, number, number, number];
+  lamps: { head: [number, number]; tail: [number, number] };
+}
+
+export interface VehicleMeta {
+  size: [number, number];
+  sprites: VehicleSprite[];
+}
+
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
+
+/** Car-following (the intelligent driver model): ease up behind whoever is ahead, keep a time gap. */
+function idm(v: number, v0: number, gap: number, dv: number, amax: number, bcomf: number): number {
+  const s0 = 2.0;
+  const T = 1.3;
+  const sStar = s0 + Math.max(0, v * T + (v * dv) / (2 * Math.sqrt(amax * bcomf)));
+  const free = 1 - Math.pow(v / Math.max(v0, 0.1), 4);
+  return amax * (free - (gap < Infinity ? Math.pow(sStar / Math.max(gap, 0.3), 2) : 0));
+}
 
 /** Traffic, tram, boats, plane and birds for one photo, packed into shader uniforms. */
 class World {
@@ -431,6 +434,7 @@ class World {
   private birdT = rand(6, 14);
   private readonly sky?: Track;
   private readonly flock?: Track;
+  private clock = 0;
   count = 0;
 
   constructor(
@@ -438,53 +442,75 @@ class World {
     private readonly night: boolean,
     private readonly s0: THREE.Vector4[],
     private readonly s1: THREE.Vector4[],
+    private readonly sprites: VehicleSprite[],
   ) {
     const p = photo.paths;
     const fx = photo.fx;
-    const car = night ? 1 : 2;
-    const lane = (raw: Path, dir: 1 | -1, kind: number, max: number, gap: [number, number], speed: [number, number], size: [number, number, number], offsetV = 0) =>
-      this.lanes.push({ track: new Track(raw, fx, offsetV), dir, kind, max, gap, speed, size, timer: rand(0, gap[1]) });
+    const idx = (name: string) => Math.max(0, sprites.findIndex((x) => x.name === name));
+    const cars = sprites
+      .map((x, i) => ({ x, i }))
+      .filter(({ x }) => x.kind === 'car')
+      .map(({ x, i }) => ({ sprite: i, w: x.name === 'taxi' ? 1.6 : x.name.startsWith('van') ? 0.6 : 1 }));
+    const road = [...cars, { sprite: idx('bus'), w: 0.9 }];
+    const lane = (raw: Path, dir: 1 | -1, kind: number, max: number, gap: [number, number], speed: [number, number], pool: Lane['pool'], offsetV = 0, stops?: number[]) =>
+      this.lanes.push({ track: new Track(raw, fx, offsetV), dir, kind, max, gap, speed, pool, stops, timer: rand(0, gap[1]) });
     // the bridge, both directions
-    lane(p.deck as Path, 1, car, 5, [3, 9], [8, 11], [4.4, 1.5, 1.8], night ? 0.0016 : 0);
-    lane(p.deck as Path, -1, car, 5, [3, 9], [8, 11], [4.4, 1.5, 1.8], night ? -0.0016 : 0);
-    // the Pest embankment
-    lane(p.upper as Path, 1, car, 4, [2.5, 7], [10, 14], [4.4, 1.5, 1.8]);
-    lane(p.upper as Path, -1, car, 4, [2.5, 7], [10, 14], [4.4, 1.5, 1.8], 0.002);
-    lane(p.quay as Path, night ? 1 : -1, car, 3, [4, 10], [9, 12], [4.4, 1.5, 1.8]);
-    // tram 2 runs along the river on the Pest side
+    lane(p.deck as Path, 1, 1, 5, [3, 9], [9, 12.5], cars, night ? 0.0016 : 0);
+    lane(p.deck as Path, -1, 1, 5, [3, 9], [9, 12.5], cars, night ? -0.0016 : 0);
+    // the Pest embankment, buses among the cars
+    lane(p.upper as Path, 1, 1, 4, [2.5, 7], [11, 14.5], road);
+    lane(p.upper as Path, -1, 1, 4, [2.5, 7], [11, 14.5], road, 0.002);
+    lane(p.quay as Path, night ? 1 : -1, 1, 3, [4, 10], [9.5, 12.5], cars);
+    // tram 2 runs along the river on the Pest side and stops on the way
     const tram = (night ? p.quay : p.tram) as Path;
-    lane(tram, 1, 3, 1, [35, 70], [8, 9.5], [30, 3.4, 2.4], night ? -0.0005 : 0);
-    lane(tram, -1, 3, 1, [45, 80], [8, 9.5], [30, 3.4, 2.4], night ? -0.0005 : 0);
-    // river boats, slow
+    lane(tram, 1, 3, 1, [35, 70], [9, 10.5], [{ sprite: idx('tram'), w: 1 }], night ? -0.0005 : 0, [0.38, 0.74]);
+    lane(tram, -1, 3, 1, [45, 80], [9, 10.5], [{ sprite: idx('tram'), w: 1 }], night ? -0.0005 : 0, [0.3, 0.66]);
+    // river boats, slow: a sightseeing boat and a cruise ship
     const river = p.river as Path[];
-    lane(river[0], -1, 4, 1, [50, 110], [3.2, 4.2], [46, 6, 9]);
-    lane(river[1], 1, 4, 1, [40, 90], [3.6, 4.8], [56, 7, 11]);
+    lane(river[0], -1, 4, 1, [50, 110], [3.2, 4.2], [{ sprite: idx('sightseeing'), w: 1 }]);
+    lane(river[1], 1, 4, 1, [40, 90], [3.6, 4.8], [{ sprite: idx('cruise'), w: 1 }]);
     if (p.sky) this.sky = new Track(p.sky as Path, fx);
     if (p.birds) this.flock = new Track(p.birds as Path, fx);
     // start with the world already busy
-    for (let i = 0; i < 240; i++) this.update(0.5, true);
+    for (let i = 0; i < 300; i++) this.update(0.5, true);
+  }
+
+  private pick(pool: Lane['pool']): number {
+    const total = pool.reduce((a, b) => a + b.w, 0);
+    let r = Math.random() * total;
+    for (const e of pool) if ((r -= e.w) <= 0) return e.sprite;
+    return pool[0].sprite;
   }
 
   private spawn(l: Lane): void {
     const busy = this.movers.filter((m) => m.track === l.track && m.dir === l.dir && m.kind === l.kind);
     if (busy.length >= l.max) return;
     const start = l.dir > 0 ? 0 : l.track.length;
-    if (busy.some((m) => Math.abs(m.s - start) < m.length + 14)) return;
-    const bus = l.kind <= 2 && Math.random() < 0.12;
+    if (busy.some((m) => Math.abs(m.s - start) < m.length + 16)) return;
+    const sprite = this.pick(l.pool);
+    const sp = this.sprites[sprite];
+    const v0 = sp.kind === 'bus' ? l.speed[0] * 0.85 : rand(l.speed[0], l.speed[1]);
+    const stops = (l.stops ?? []).map((f) => f * l.track.length).sort((x, y) => (x - y) * l.dir);
     this.movers.push({
       track: l.track,
       s: start,
       dir: l.dir,
-      speed: rand(l.speed[0], l.speed[1]),
-      length: bus ? 12 : l.size[0] * rand(0.9, 1.1),
-      height: bus ? 3.1 : l.size[1],
-      width: bus ? 2.5 : l.size[2],
+      v: v0 * 0.9,
+      v0,
+      acc: 0,
+      length: sp?.length ?? 4.4,
+      height: sp?.height ?? 1.5,
       kind: l.kind,
-      variant: bus && !this.night ? 0.8 : Math.random() * 0.98,
+      sprite,
+      brake: 0,
+      stops,
+      dwell: 0,
+      phase: Math.random() * Math.PI * 2,
     });
   }
 
   update(dt: number, warm = false): void {
+    this.clock += dt;
     for (const l of this.lanes) {
       l.timer -= dt;
       if (l.timer <= 0) {
@@ -492,13 +518,13 @@ class World {
         l.timer = rand(l.gap[0], l.gap[1]);
       }
     }
+    // integrate in small steps so the following model stays smooth at any frame rate
+    const n = Math.max(1, Math.ceil(dt / 0.1));
+    const h = dt / n;
+    for (let k = 0; k < n; k++) this.drive(h);
     for (let i = this.movers.length - 1; i >= 0; i--) {
       const m = this.movers[i];
-      // keep a distance to the one in front
-      const ahead = this.movers.find((o) => o !== m && o.track === m.track && o.dir === m.dir && (o.s - m.s) * m.dir > 0 && (o.s - m.s) * m.dir < m.length / 2 + o.length / 2 + 8);
-      const v = ahead ? Math.min(m.speed, ahead.speed * 0.9) : m.speed;
-      m.s += m.dir * v * dt;
-      if (m.s < -m.length || m.s > m.track.length + m.length) this.movers.splice(i, 1);
+      if (m.s < -m.length - 20 || m.s > m.track.length + m.length + 20) this.movers.splice(i, 1);
     }
     if (this.sky) {
       this.planeT -= dt;
@@ -525,6 +551,51 @@ class World {
     if (!warm) this.pack();
   }
 
+  private drive(h: number): void {
+    for (const m of this.movers) {
+      const tram = m.kind === 3;
+      const boat = m.kind === 4;
+      const amax = tram ? 0.9 : boat ? 0.12 : m.length > 8 ? 1.0 : 1.6;
+      const bcomf = tram ? 1.1 : boat ? 0.1 : 2.2;
+      // whoever is ahead in the same lane
+      let gap = Infinity;
+      let dv = 0;
+      for (const o of this.movers) {
+        if (o === m || o.track !== m.track || o.dir !== m.dir || o.kind !== m.kind) continue;
+        const d = (o.s - m.s) * m.dir - (o.length + m.length) / 2;
+        if (d > -1 && d < gap) {
+          gap = Math.max(d, 0.05);
+          dv = m.v - o.v;
+        }
+      }
+      // a tram stop is a car that never moves, until the doors have closed
+      if (tram && m.stops.length) {
+        const stopGap = (m.stops[0] - m.s) * m.dir - m.length / 2;
+        if (m.dwell > 0) {
+          m.dwell -= h;
+          m.v = 0;
+          m.acc = -1;
+          if (m.dwell <= 0) m.stops.shift();
+          m.brake += (1 - m.brake) * Math.min(1, h * 6);
+          continue;
+        }
+        if (stopGap < 0.6 && m.v < 0.25) {
+          m.dwell = rand(12, 22);
+          continue;
+        }
+        if (stopGap < gap) {
+          gap = Math.max(stopGap, 0.05);
+          dv = m.v;
+        }
+      }
+      m.acc = Math.max(-6, idm(m.v, m.v0, gap, dv, amax, bcomf));
+      m.v = Math.max(0, m.v + m.acc * h);
+      m.s += m.dir * m.v * h;
+      const braking = m.acc < -0.5 || (m.v < 0.3 && gap < 12) ? 1 : 0;
+      m.brake += (braking - m.brake) * Math.min(1, h * 6);
+    }
+  }
+
   hurry(): void {
     for (const l of this.lanes) if (l.kind >= 3) l.timer = Math.min(l.timer, rand(1, 4));
     if (!this.plane) this.planeT = Math.min(this.planeT, 3);
@@ -532,21 +603,30 @@ class World {
   }
 
   private pack(): void {
-    const { fx, fy } = this.photo;
+    const { fy } = this.photo;
     let n = 0;
-    const put = (a: { u: number; v: number }, b: { u: number; v: number }, h: number, R: number, kind: number, hw: number) => {
+    const put = (a: { u: number; v: number }, b: { u: number; v: number }, h: number, R: number, kind: number, extra: number) => {
       if (n >= NS) return;
       this.s0[n].set(a.u, a.v, b.u, b.v);
-      this.s1[n].set(h, R, kind, hw);
+      this.s1[n].set(h, R, kind, extra);
       n++;
     };
     // far things first, so nearer ones paint over them
     const sorted = this.movers.map((m) => ({ m, D: m.track.at(m.s).D })).sort((p, q) => q.D - p.D);
     for (const { m, D } of sorted) {
-      const back = m.track.at(m.s - (m.dir * m.length) / 2);
-      const front = m.track.at(m.s + (m.dir * m.length) / 2);
-      const variant = m.kind === 3 || m.kind === 4 ? (this.night ? 0.75 : 0.25) : m.variant;
-      put(back, front, (m.height * fy) / D, Math.sqrt(10 / D), m.kind + Math.min(variant, 0.99), ((m.width / 2) * fx) / D);
+      const back = { ...m.track.at(m.s - (m.dir * m.length) / 2) };
+      const front = { ...m.track.at(m.s + (m.dir * m.length) / 2) };
+      const hv = (m.height * fy) / D;
+      let extra = m.brake;
+      if (m.kind === 4) {
+        // boats ride the swell: a slow bob and a little pitch
+        const bob = Math.sin(this.clock * 0.7 + m.phase) * 0.035 * hv;
+        const pitch = Math.sin(this.clock * 0.43 + m.phase * 1.7) * 0.02 * hv;
+        back.v += bob - pitch;
+        front.v += bob + pitch;
+        extra = m.v / Math.max(m.v0, 0.1);
+      }
+      put(back, front, hv, Math.sqrt(10 / D), m.kind + m.sprite / 64, extra);
     }
     if (this.plane && this.sky) {
       const s = (this.plane.t / this.plane.dur) * this.sky.length;
@@ -584,7 +664,7 @@ export class WindowView {
     return 1 / (Math.sqrt(10 / metres) * WindowView.KB);
   }
 
-  constructor(opts: { center: THREE.Vector3; size: [number, number]; meta: WindowMeta; evening: WindowTextures; day: WindowTextures }) {
+  constructor(opts: { center: THREE.Vector3; size: [number, number]; meta: WindowMeta; evening: WindowTextures; day: WindowTextures; vehicles: VehicleMeta; vehicleTextures: { day: THREE.Texture; night: THREE.Texture } }) {
     const { meta } = opts;
     // the plane sits just behind the frame, facing into the room (+z)
     this.origin = opts.center.clone().add(new THREE.Vector3(0, 0, -0.04));
@@ -622,14 +702,24 @@ export class WindowView {
         windowSize: { value: new THREE.Vector2(opts.size[0], opts.size[1]) },
         viewer: { value: new THREE.Vector3(0, 0, -3) },
         glassTint: { value: new THREE.Color('#8b6a4c') },
+        vehDay: { value: opts.vehicleTextures.day },
+        vehNight: { value: opts.vehicleTextures.night },
+        spr: { value: Array.from({ length: NSPR }, (_, i) => new THREE.Vector4(...(opts.vehicles.sprites[i]?.uv ?? [0, 0, 0, 0]))) },
+        lamps: {
+          value: Array.from({ length: NSPR }, (_, i) => {
+            const l = opts.vehicles.sprites[i]?.lamps;
+            return l ? new THREE.Vector4(l.head[0], l.head[1], l.tail[0], l.tail[1]) : new THREE.Vector4();
+          }),
+        },
+        atlasW: { value: opts.vehicles.size[0] },
       },
       vertexShader: vertex,
       fragmentShader: fragment,
       toneMapped: false,
     });
     this.worlds = {
-      evening: new World(meta.evening, true, sA0, sA1),
-      day: new World(meta.day, false, sB0, sB1),
+      evening: new World(meta.evening, true, sA0, sA1, opts.vehicles.sprites),
+      day: new World(meta.day, false, sB0, sB1, opts.vehicles.sprites),
     };
     // a little larger than the opening, so no gap shows in the reveal at grazing angles
     const plane: [number, number] = [opts.size[0] + 0.24, opts.size[1] + 0.24];

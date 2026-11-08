@@ -25,9 +25,10 @@
     <meta property="og:url" content="%SITE_URL%/" />
     <meta name="twitter:card" content="summary_large_image" />
     <script>
-      // Decide before first paint whether this browser gets the 3D studio or the static page.
-      // Rules: WebGL 2 without a software fallback, enough memory, not a phone-sized touch screen,
-      // no reduced-motion preference and no crawler. ?page / ?studio and a saved choice override.
+      // Decide before first paint whether this browser gets the 3D studio or the page view (the
+      // original portfolio at /page/). Rules: WebGL 2 without a software fallback, enough memory,
+      // not a phone-sized touch screen, no reduced-motion preference. ?page / ?studio and a saved
+      // choice override. Crawlers (and ?static) read the static HTML of this document instead.
       (function () {
         var d = document.documentElement;
         var q = location.search;
@@ -39,7 +40,13 @@
         var forceStudio = /[?&]studio(\b|=)/.test(q);
         var why = '';
         var ok = true;
+        // crawlers keep the static HTML whatever their graphics (search engines index it)
+        if (/bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent)) {
+          ok = false;
+          why = 'crawler';
+        }
         try {
+          if (!ok) throw 0;
           var c = document.createElement('canvas');
           var gl = c.getContext('webgl2', { failIfMajorPerformanceCaveat: true });
           if (!gl) {
@@ -56,8 +63,8 @@
             if (lose) lose.loseContext();
           }
         } catch (e) {
+          if (ok) why = 'webgl2';
           ok = false;
-          why = 'webgl2';
         }
         if (ok && navigator.deviceMemory && navigator.deviceMemory < 4) {
           ok = false;
@@ -71,14 +78,17 @@
           ok = false;
           why = 'reduced-motion';
         }
-        if (ok && /bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent)) {
-          ok = false;
-          why = 'crawler';
-        }
         var mode = ok ? 'studio' : 'page';
         if (saved === 'page' || saved === 'studio') mode = saved;
         if (forcePage) mode = 'page';
         if (forceStudio) mode = 'studio';
+        // the page view is the original portfolio (/page/); crawlers, ?static and no-JS
+        // visitors read the static HTML below instead
+        if (mode === 'page' && why !== 'crawler' && !/[?&]static\b/.test(q)) {
+          d.style.visibility = 'hidden';
+          location.replace('/page/' + ((why === 'webgl2' || why === 'software-gl') && !forcePage && saved !== 'page' ? '?reason=unsupported' : '') + location.hash);
+          return;
+        }
         d.setAttribute('data-mode', mode);
         if (mode === 'studio') {
           // start fetching the 3D room while the page boots

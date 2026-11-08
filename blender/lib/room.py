@@ -1,7 +1,7 @@
 """Room shell: oak floor, plaster walls, a deep window reveal with a painted frame, curtains.
 
-Layout (metres, Z up). Interior x in [-2.6, 2.6], y in [-2.4, 2.2], z in [0, 2.85].
-The window wall is at y = +2.2 and looks west across the Danube.
+A small, focused study (metres, Z up): interior x in [-1.9, 1.7], y in [-1.05, 2.2],
+z in [0, 2.75]. The window wall is at y = +2.2 and looks across the Danube.
 """
 
 from __future__ import annotations
@@ -15,11 +15,11 @@ from mathutils import Vector
 from . import materials as M
 from .util import RNG, add_bevel, box, mesh_object, smooth, tag, tube_along
 
-X0, X1 = -2.6, 2.6
-Y0, Y1 = -2.4, 2.2
-H = 2.85
-WIN_X0, WIN_X1 = -1.25, 1.25
-WIN_Z0, WIN_Z1 = 0.86, 2.48
+X0, X1 = -1.9, 1.7
+Y0, Y1 = -1.05, 2.2
+H = 2.75
+WIN_X0, WIN_X1 = -1.2, 1.2
+WIN_Z0, WIN_Z1 = 0.86, 2.42
 REVEAL = 0.24  # wall depth at the window
 GLASS_Y = Y1 + REVEAL - 0.05
 
@@ -105,11 +105,11 @@ def build_shell(coll_floor, coll_walls) -> dict:
         tag(s, bake='walls')
 
     # Curtain rod and two sheer linen curtains gathered at the sides.
-    rod = tube_along('curtain_rod', [(WIN_X0 - 0.55, Y1 - 0.09, WIN_Z1 + 0.16), (WIN_X1 + 0.55, Y1 - 0.09, WIN_Z1 + 0.16)], 0.011, coll_walls, M.matte('#2E2E30', 'black_iron', 0.45))
+    rod = tube_along('curtain_rod', [(WIN_X0 - 0.42, Y1 - 0.09, WIN_Z1 + 0.16), (WIN_X1 + 0.42, Y1 - 0.09, WIN_Z1 + 0.16)], 0.011, coll_walls, M.matte('#2E2E30', 'black_iron', 0.45))
     tag(rod, bake='walls')
     out['curtains'] = [
-        curtain('curtain_l', WIN_X0 - 0.5, WIN_X0 + 0.08, coll_walls),
-        curtain('curtain_r', WIN_X1 - 0.08, WIN_X1 + 0.5, coll_walls),
+        curtain('curtain_l', WIN_X0 - 0.38, WIN_X0 + 0.08, coll_walls),
+        curtain('curtain_r', WIN_X1 - 0.08, WIN_X1 + 0.38, coll_walls),
     ]
     return out
 

@@ -338,3 +338,293 @@
     transition: none;
   }
 }
+
+/* ---- hotspots: a dot on each thing you can use */
+
+.spots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.spot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.35s;
+  will-change: transform;
+}
+
+.spot.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spot__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 0 0 1.5px rgba(29, 45, 61, 0.28), 0 2px 10px rgba(10, 20, 30, 0.35);
+  transition: transform 0.2s;
+}
+
+.spot::before {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  animation: spot-pulse 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes spot-pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.spot__label {
+  position: absolute;
+  left: 30px;
+  top: 50%;
+  transform: translate(-4px, -50%);
+  padding: 5px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1d1d1f;
+  background: rgba(250, 248, 244, 0.86);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  box-shadow: 0 4px 16px rgba(10, 20, 30, 0.2);
+  opacity: 0;
+  transition: opacity 0.18s, transform 0.18s;
+  pointer-events: none;
+}
+
+.spot.is-left .spot__label {
+  left: auto;
+  right: 30px;
+  transform: translate(4px, -50%);
+}
+
+.spot:hover .spot__label,
+.spot:focus-visible .spot__label,
+.spot.is-named .spot__label {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.spot:hover .spot__dot,
+.spot:focus-visible .spot__dot {
+  transform: scale(1.25);
+}
+
+.spot:focus-visible {
+  outline: none;
+}
+
+.spot:focus-visible .spot__dot {
+  box-shadow: 0 0 0 3px rgba(42, 93, 143, 0.7), 0 2px 10px rgba(10, 20, 30, 0.35);
+}
+
+/* ---- reading: page controls under a dossier, actions under the other things you hold */
+
+.hud__reader {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  transform: translate(-50%, 10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  max-width: calc(100vw - 24px);
+}
+
+.hud__reader.is-on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.hud__reader [hidden] {
+  display: none;
+}
+
+.hud__reader .hud__btn[disabled] {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.hud__reader-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 12px;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.hud__reader-title strong {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46vw;
+}
+
+.hud__reader-title span {
+  font-size: 11.5px;
+  color: #6e6e73;
+  white-space: nowrap;
+}
+
+.hud__reader-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.hud__reader-actions:empty {
+  display: none;
+}
+
+.hud__link {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #1d2d3d;
+  color: #f5f5f7;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.hud__link.is-quiet {
+  background: rgba(29, 29, 31, 0.08);
+  color: #1d1d1f;
+}
+
+.hud__link:focus-visible {
+  outline: 3px solid rgba(42, 93, 143, 0.6);
+  outline-offset: 2px;
+}
+
+/* ---- a small card about the thing you just touched */
+
+.hud__caption {
+  position: absolute;
+  left: 50%;
+  bottom: 74px;
+  width: min(420px, calc(100vw - 24px));
+  padding: 18px 20px 16px;
+  border-radius: 22px;
+  transform: translate(-50%, 10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.hud__caption.is-on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.hud__caption h3 {
+  margin: 0 30px 6px 0;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.hud__caption p {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #3d3d41;
+}
+
+.hud__caption-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hud__caption-x {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(29, 29, 31, 0.07);
+  color: #3d3d41;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.studio.is-reading .hud__hint,
+.studio.is-reading .hud__caption {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .hud__reader {
+    bottom: 12px;
+  }
+  .hud__reader-title strong {
+    max-width: 38vw;
+  }
+  .hud__caption {
+    bottom: 60px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spot::before {
+    animation: none;
+    opacity: 0;
+  }
+  .spot,
+  .hud__reader,
+  .hud__caption {
+    transition: none;
+  }
+}

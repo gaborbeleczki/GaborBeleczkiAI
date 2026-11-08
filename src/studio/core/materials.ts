@@ -58,13 +58,14 @@ const fragment = /* glsl */ `
   uniform float scaleB;
   uniform float mixT;
   uniform float boost;
+  uniform float dim;
   varying vec2 vUv;
   void main() {
     vec3 albedo = texture2D(albedoMap, vUv).rgb;
     vec3 la = texture2D(lightA, vUv).rgb * scaleA;
     vec3 lb = texture2D(lightB, vUv).rgb * scaleB;
     vec3 light = mix(la, lb, mixT);
-    gl_FragColor = vec4(albedo * light * boost, 1.0);
+    gl_FragColor = vec4(albedo * light * boost * (1.0 - 0.42 * dim), 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
@@ -84,10 +85,12 @@ export interface MotionUniforms {
   wind: { value: number };
   pendant: { value: THREE.Vector2 };
   pivot: { value: THREE.Vector3 };
+  /** 0..1: the room recedes while something is held up to read */
+  dim: { value: number };
 }
 
 export function motionUniforms(pivot: THREE.Vector3): MotionUniforms {
-  return { time: { value: 0 }, wind: { value: 0 }, pendant: { value: new THREE.Vector2() }, pivot: { value: pivot.clone() } };
+  return { time: { value: 0 }, wind: { value: 0 }, pendant: { value: new THREE.Vector2() }, pivot: { value: pivot.clone() }, dim: { value: 0 } };
 }
 
 export function bakedMaterial(set: BakedSet, motion: MotionUniforms, sway: boolean): THREE.ShaderMaterial {

@@ -86,6 +86,15 @@ async function envMaps() {
   console.log('[assets] env maps copied');
 }
 
+async function printedArt() {
+  // the one-page CV printed on the desk (blender/out/art/cv_page.png, a render of the original
+  // portfolio's CV): the browser shows it on the sheet you pick up
+  const src = out('blender/out/art/cv_page.png');
+  if (!exists(src)) return;
+  await sharp(src).resize(1400).webp({ quality: 90, effort: 6 }).toFile(out('public/textures/cv_page.webp'));
+  console.log('[assets] printed CV written');
+}
+
 fs.mkdirSync(out('public/models'), { recursive: true });
 fs.mkdirSync(out('public/textures'), { recursive: true });
 fs.mkdirSync(out('public/img'), { recursive: true });
@@ -93,3 +102,4 @@ await optimizeGlb();
 await atlasPreviews();
 await stills();
 await envMaps();
+await printedArt();

@@ -1,66 +1,73 @@
 {
-  "passed": 11,
-  "total": 12,
+  "passed": 16,
+  "total": 16,
   "checks": [
     {
-      "name": "no WebGL → page by default",
+      "name": "no WebGL → the original page",
       "pass": true,
       "detail": {
-        "mode": "page",
-        "why": "webgl2"
+        "at": "/page/?reason=unsupported"
       },
       "errors": []
     },
     {
-      "name": "no WebGL + ?studio → falls back to page with a notice",
+      "name": "no WebGL + ?studio → the original page with a note",
       "pass": true,
       "detail": {
-        "toast": "The 3D studio could not start on this device. Showing the page instead."
+        "at": "/page/?reason=studio-error",
+        "note": "The 3D studio could not start on this device, so here is the page."
       },
       "errors": []
     },
     {
-      "name": "prefers-reduced-motion → page by default",
+      "name": "prefers-reduced-motion → the original page",
       "pass": true,
       "detail": {
-        "mode": "page"
+        "at": "/page/?reason=unsupported"
       },
       "errors": []
     },
     {
-      "name": "studio.glb missing → page with notice",
+      "name": "software WebGL → the original page",
       "pass": true,
       "detail": {
-        "toast": "The 3D studio could not start on this device. Showing the page instead."
+        "at": "/page/?reason=unsupported"
       },
       "errors": []
     },
     {
-      "name": "rapid input: keys 0-7, clicks, resizes",
+      "name": "studio.glb missing → the original page",
       "pass": true,
       "detail": {
-        "focus": "home",
-        "module": "career",
-        "screenReady": true,
-        "night": true,
-        "dpr": 1,
-        "size": [
-          1280,
-          720
-        ]
+        "at": "/page/?reason=studio-error"
       },
       "errors": []
     },
     {
-      "name": "WebGL context lost → page",
+      "name": "rapid input: keys 0-7, Escape, resizes",
       "pass": true,
       "detail": {
-        "mode": "page"
+        "held": {
+          "id": "career",
+          "open": 0.9998600426616401,
+          "travel": 0.9998459808057721,
+          "left": 0,
+          "right": 1,
+          "total": 3
+        }
       },
       "errors": []
     },
     {
-      "name": "keyboard: skip link + focus order on the page",
+      "name": "WebGL context lost → the original page",
+      "pass": true,
+      "detail": {
+        "at": "/page/?reason=studio-error"
+      },
+      "errors": []
+    },
+    {
+      "name": "keyboard: skip link + focus order on the static page",
       "pass": true,
       "detail": {
         "tabStops": [
@@ -75,18 +82,62 @@
       "errors": []
     },
     {
-      "name": "keyboard: studio chapters menu",
+      "name": "keyboard: chapters menu opens a dossier",
       "pass": true,
       "detail": {
-        "focus": "desk",
-        "module": "career",
-        "screenReady": true,
-        "night": true,
-        "dpr": 1,
-        "size": [
-          1280,
-          720
-        ]
+        "id": "career",
+        "open": 0.9999978846443521,
+        "travel": 0.9999905002604134,
+        "left": 0,
+        "right": 1,
+        "total": 3
+      },
+      "errors": []
+    },
+    {
+      "name": "dossier: opens, turns pages, goes back",
+      "pass": true,
+      "detail": {
+        "opened": {
+          "id": "work",
+          "open": 0.9999978846443521,
+          "travel": 0.9999905002604134,
+          "left": 0,
+          "right": 1,
+          "total": 10
+        },
+        "turned": {
+          "id": "work",
+          "open": 1,
+          "travel": 0.9999999999999872,
+          "left": 4,
+          "right": 5,
+          "total": 10
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "desk: cards, phone, CV, notebook; hotspots",
+      "pass": true,
+      "detail": {
+        "homeSpots": [
+          "Dossiers · one per chapter",
+          "Record player",
+          "Sit at the desk",
+          "On the desk"
+        ],
+        "deskSpots": [
+          "Business cards",
+          "Phone",
+          "CV",
+          "Notebook · build notes",
+          "About me",
+          "Global network",
+          "Coffee?",
+          "Music"
+        ],
+        "caption": "Gábor Béleczki"
       },
       "errors": []
     },
@@ -109,19 +160,37 @@
       "name": "music: 16 s offline render, no clipping, not silent",
       "pass": true,
       "detail": {
-        "peak": 0.551,
-        "rms": 0.104
+        "peak": 0.558,
+        "rms": 0.103
       },
       "errors": []
     },
     {
       "name": "page: seven animated case figures",
-      "pass": false,
-      "detail": "a figure without motion: 5,26,12,0,19,40,4",
+      "pass": true,
+      "detail": {
+        "animationsPerFigure": [
+          10,
+          59,
+          28,
+          105,
+          294,
+          120,
+          14
+        ]
+      },
       "errors": []
     },
     {
-      "name": "routes: /, /cv/, /notes/, note, rss, sitemap, robots",
+      "name": "page view: the original portfolio in a frame, a way back to the studio",
+      "pass": true,
+      "detail": {
+        "title": "Gábor Béleczki · Applied AI in Finance"
+      },
+      "errors": []
+    },
+    {
+      "name": "routes: pages, original, CVs, feeds, assets",
       "pass": true,
       "detail": {
         "/": 200,
@@ -131,7 +200,14 @@
         "/rss.xml": 200,
         "/sitemap.xml": 200,
         "/robots.txt": 200,
-        "/models/studio.json": 200
+        "/models/studio.json": 200,
+        "/page/": 200,
+        "/page/original/": 200,
+        "/page/cv/": 200,
+        "/page/cv-long/": 200,
+        "/models/vehicles.json": 200,
+        "/textures/vehicles_day.png": 200,
+        "/textures/cv_page.webp": 200
       },
       "errors": []
     }

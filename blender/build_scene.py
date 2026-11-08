@@ -37,6 +37,12 @@ def build():
     reset_scene()
     os.makedirs(OUT, exist_ok=True)
     arts = art.make_all(os.path.join(OUT, 'art'))
+    # the printed CV on the desk is the original one-pager (scripts/cv-texture.mjs renders it)
+    arts['cv'] = os.path.join(OUT, 'art', 'cv_page.png')
+    arts['portrait'] = os.path.join(PUBLIC, 'img', 'gabor.jpg')
+    for k in ('cv', 'portrait'):
+        if not os.path.exists(arts[k]):
+            del arts[k]
 
     c_floor = collection('BAKE_floor')
     c_walls = collection('BAKE_walls')
@@ -51,24 +57,19 @@ def build():
     R.build_shell(c_floor, c_walls)
     F.build_desk(c_furn)
     F.build_desk_chair(c_furn)
-    F.build_lounge_chair(c_furn)
     F.build_sideboard(c_furn)
     F.build_shelves(c_furn)
-    F.build_side_table(c_furn)
     F.build_rug(c_furn)
     pendant = F.build_pendant(c_furn, c_dyn)
-    floor_lamp = F.build_floor_lamp(c_furn, c_dyn)
     desk_lamp = F.build_desk_lamp(c_furn, c_dyn)
 
     display = P.build_display(c_dyn, c_props)
-    P.build_desk_things(c_props)
+    desk = P.build_desk_things(c_props, c_dyn, arts)
     shelf = P.build_shelf_things(c_dyn, c_props)
     turntable = P.build_record_player(c_dyn, c_props)
     P.big_plant(c_props)
     P.sill_things(c_props)
-    P.sideboard_things(c_props, arts)
-    side = P.side_table_things(c_props)
-    P.framed_print(c_props, arts['print'])
+    side = P.sideboard_things(c_props, arts)
 
     # ---- city backdrop: the Budapest photo on an emissive plane behind the window (stills only)
     city_img = WINDOW_PLATE
@@ -95,24 +96,42 @@ def build():
 
     # ---- hit areas for the browser (invisible)
     P.hit_box('hit_window', (R.WIN_X1 - R.WIN_X0, 0.05, R.WIN_Z1 - R.WIN_Z0), (0, R.Y1 + 0.08, (R.WIN_Z0 + R.WIN_Z1) / 2), c_hit, 'window', 'Window · Budapest')
-    P.hit_box('hit_desk_lamp', (0.32, 0.3, 0.5), (desk_lamp['light_pos'][0] - 0.08, desk_lamp['light_pos'][1] + 0.08, F.DESK['top'] + 0.25), c_hit, 'lights', 'Desk lamp')
+    P.hit_box('hit_desk_lamp', (0.26, 0.26, 0.5), (desk_lamp['light_pos'][0] - 0.08, desk_lamp['light_pos'][1] + 0.08, F.DESK['top'] + 0.25), c_hit, 'lights', 'Desk lamp')
     P.hit_box('hit_pendant', (0.46, 0.46, 0.26), (pendant['light_pos'][0], pendant['light_pos'][1], pendant['light_pos'][2] + 0.02), c_hit, 'lights', 'Pendant')
-    P.hit_box('hit_floor_lamp', (0.46, 0.46, 0.4), (floor_lamp['light_pos'][0], floor_lamp['light_pos'][1], 1.55), c_hit, 'lights', 'Floor lamp')
-    P.hit_box('hit_chair', (0.56, 0.56, 0.86), (-0.02, 1.0, 0.43), c_hit, 'desk', 'Sit at the desk')
-    P.hit_box('hit_record', (0.42, 0.5, 0.2), (F.SIDEBOARD['x0'] + F.SIDEBOARD['depth'] / 2, 0.88, F.SIDEBOARD['z1'] + 0.09), c_hit, 'record', 'Record player')
-    P.hit_box('hit_print', (0.6, 0.06, 0.78), (-1.93, R.Y1 - 0.03, 1.66), c_hit, 'print', 'Print · Duna')
+    P.hit_box('hit_chair', (0.62, 0.62, 0.86), (F.CHAIR['x'], F.CHAIR['y'], 0.43), c_hit, 'desk', 'Sit at the desk')
+    tt = turntable['center']
+    P.hit_box('hit_record', (0.38, 0.48, 0.16), (tt[0], tt[1], tt[2] + 0.08), c_hit, 'record', 'Record player')
+    P.hit_box('hit_print', (0.12, 0.42, 0.52), (F.SIDEBOARD['x0'] + 0.06, 0.38, F.SIDEBOARD['z1'] + 0.26), c_hit, 'print', 'Print · Duna')
+    # the desk objects (generous boxes: they are small)
+    top = F.DESK['top']
+    a = desk['anchors']
+    desk_hits = {
+        'cards': ((0.15, 0.11, 0.06), (a['cards'][0], a['cards'][1], top + 0.02), 'Business cards'),
+        'phone': ((0.11, 0.18, 0.04), (a['phone'][0], a['phone'][1], top + 0.012), 'Phone'),
+        'about': ((0.17, 0.12, 0.22), (0.21, 2.03, top + 0.09), 'Portrait'),
+        'cv': ((0.23, 0.31, 0.03), (a['cv'][0], a['cv'][1], top + 0.008), 'CV, printed'),
+        'notebook': ((0.19, 0.24, 0.05), (a['notebook'][0], a['notebook'][1], top + 0.015), 'Notebook'),
+        'globe': ((0.19, 0.19, 0.25), (a['globe'][0], a['globe'][1], top + 0.115), 'Armillary sphere'),
+        'coffee': ((0.13, 0.11, 0.12), (a['coffee'][0] + 0.012, a['coffee'][1], top + 0.05), 'Coffee'),
+        'music': ((0.3, 0.27, 0.14), (a['music'][0], a['music'][1] + 0.03, top + 0.07), 'Headphones'),
+    }
+    for key, (size, loc, label) in desk_hits.items():
+        P.hit_box(f'hit_{key}', size, loc, c_hit, key, label)
 
     # ---- camera poses (empties in Blender, JSON for the runtime)
     disp_center = Vector((P.DISPLAY_POS[0], P.DISPLAY_POS[1], F.DESK['top'] + 0.33))
     disp_normal = Vector((math.sin(P.DISPLAY_ROT), -math.cos(P.DISPLAY_ROT), 0))
     desk_cam = disp_center + disp_normal * 0.93 + Vector((0, 0, 0.035))
-    folio_mid = (shelf['folios'][0].location + shelf['folios'][-1].location) / 2 + Vector((0, 0, 0.16))
+    folio_mid = Vector(shelf['mid']) + Vector((0, 0, 0.15))
+    tt_c = Vector(turntable['center'])
     poses = {
-        'home': {'pos': (2.15, -2.15, 1.56), 'target': (-0.62, 1.42, 1.0), 'fit': (6.3, 3.3)},
+        'home': {'pos': (0.95, -0.8, 1.5), 'target': (-0.42, 1.55, 1.0), 'fit': (3.2, 1.8)},
         'desk': {'pos': tuple(desk_cam), 'target': tuple(disp_center + Vector((0, 0, -0.005))), 'fit': (0.7, 0.45)},
-        'shelf': {'pos': (-1.12, -0.12, 1.52), 'target': tuple(folio_mid), 'fit': (1.35, 0.78)},
-        'record': {'pos': (-1.5, 0.3, 1.3), 'target': (-2.37, 0.84, 0.74), 'fit': (0.8, 0.5)},
-        'window': {'pos': (0.78, 0.62, 1.42), 'target': (0.12, 2.7, 1.74), 'fit': (2.9, 1.6)},
+        'shelf': {'pos': (-0.62, 0.86, 1.46), 'target': tuple(folio_mid), 'fit': (0.62, 0.42)},
+        'record': {'pos': (-1.02, 0.82, 1.12), 'target': tuple(tt_c + Vector((0.0, 0.0, 0.07))), 'fit': (0.72, 0.44)},
+        'window': {'pos': (0.5, 0.95, 1.36), 'target': (0.08, 2.6, 1.6), 'fit': (2.4, 1.56)},
+        # the desk top seen from the chair: phone, cards, CV, notebook, frame, sphere
+        'objects': {'pos': (-0.08, 0.9, 1.42), 'target': (-0.06, 1.78, 0.76), 'fit': (1.62, 0.64)},
     }
     for name, p in poses.items():
         empty(f'CAM_{name}', p['pos'], c_meta, target=list(p['target']))
@@ -122,13 +141,12 @@ def build():
         'pendant': pendant['light_pos'],
         'desk_lamp': desk_lamp['light_pos'],
         'desk_lamp_aim': desk_lamp['aim'],
-        'floor_lamp': floor_lamp['light_pos'],
         'candle': side['flame'],
     }
 
     # ---- per-vertex motion data (curtains breathe, leaves sway, the pendant swings)
     bpy.context.view_layer.update()
-    pendant_top = 2.85
+    pendant_top = R.H
     pendant_bottom = pendant['light_pos'][2] - 0.09
     for ob in [o for o in bpy.data.objects if o.get('sway')]:
         kind = ob['sway']
@@ -172,10 +190,12 @@ def build():
         'poses': {k: {'pos': blender_to_three(v['pos']), 'target': blender_to_three(v['target']), 'fit': list(v['fit'])} for k, v in poses.items()},
         'screen': {'size': [P.SCREEN_W, P.SCREEN_H], 'pixels': [1600, 1000]},
         'folios': [{'id': fid, 'object': f'folio_{i:02d}', 'color': col} for i, (fid, col) in enumerate(zip(P.FOLIO_IDS, P.FOLIO_COLORS))],
-        'folioSize': [0.245, 0.315, 0.078],
+        'dossier': {k: v for k, v in P.DOSSIER.items()},
+        'objects': {k: blender_to_three(v) for k, v in desk['anchors'].items()},
         'lights': {k: blender_to_three(v) for k, v in anchors.items() if k != 'desk_lamp_aim'},
         'flame': blender_to_three(side['flame']),
-        'pendantPivot': blender_to_three((pendant['light_pos'][0], pendant['light_pos'][1], 2.85)),
+        'pendantPivot': blender_to_three((pendant['light_pos'][0], pendant['light_pos'][1], R.H)),
+        'room': {'min': blender_to_three((R.X0, R.Y1, 0)), 'max': blender_to_three((R.X1, R.Y0, R.H))},
         'tonearm': {'pivot': blender_to_three(turntable['pivot'])},
         'window': {
             'center': blender_to_three((0, R.GLASS_Y, (R.WIN_Z0 + R.WIN_Z1) / 2)),

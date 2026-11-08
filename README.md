@@ -2,15 +2,17 @@
 
 A personal site in two layers:
 
-- **The studio** — a calm Nordic room in Budapest, modeled in Blender with Python, lit and baked with Cycles, and rendered live in the browser with Three.js. Folios on the shelf open chapters on the desk display; the window looks out on real photographs of Budapest — the Chain Bridge at night, the Parliament by day — rebuilt in depth, with traffic, tram 2, boats and wind; lamps switch between day and evening; a record player plays generated lounge deep house.
-- **The page** — a minimal single-column portfolio with the same content (Nordic palette, Apple-style type and controls). It is what crawlers, phones, reduced-motion users and browsers without WebGL 2 get, and it is always one click away.
+- **The studio** — a small, focused Nordic study in Budapest, modeled in Blender with Python, lit and baked with Cycles, and rendered live in the browser with Three.js. Chapter dossiers on the shelf open in your hands as typeset A4 pages that turn; the desk display shows the chapters as interactive modules; the things on the desk (business cards, the printed CV, a phone, the notebook, a brass armillary sphere, coffee) are ways into the portfolio, each marked with a dot; the window looks out on real photographs of Budapest rebuilt in depth, with Blender-modelled traffic, tram 2 and river boats; lamps switch between day and evening; a record player plays generated lounge deep house.
+- **The page** — the original portfolio, served untouched at `/page/` (with the original one-page and long CVs at `/page/cv/` and `/page/cv-long/`). Phones, reduced-motion users, browsers without WebGL 2 and anyone who presses *Page* get it. Crawlers and no-JS visitors read a static HTML version of the same content at `/` (also at `/?static`).
 
 ```
 content/            profile.ts (single source of content) · notes/*.md (blog posts)
 src/site/           static page: build-time HTML, styles, mode switching
 src/studio/         Three.js studio
-  core/             baked materials, window shader, camera rig, folios, turntable
-  screen/           display canvas + one module per folio (hello … contact)
+  core/             baked materials, window shader + traffic, camera rig, dossiers (book.ts, shelf.ts),
+                    things you hold (held.ts, desk.ts), turntable
+  print/            typesetting the chapters onto A4 pages for the dossiers and the notebook
+  screen/           display canvas + one module per chapter (hello … contact)
   ui/  audio/       frosted HUD, generative Web Audio soundtrack
 blender/            Python pipeline that builds, bakes, renders and exports the scene
 scripts/            asset optimisation, QA (Playwright) and video capture
@@ -43,6 +45,7 @@ BLENDER_PY=/path/to/venv/bin/python npm run blender
 | Step | Script | Output |
 | --- | --- | --- |
 | Window | `blender/fetch_photos.py` + `blender/window_photos.py` | two Budapest photos (evening, day) → colour plates, a depth/river/lights/foreground data map, a fill for what the trees hide, and paths for traffic, tram 2, boats, a plane and birds (`public/models/window.json`) |
+| Vehicles | `blender/vehicles.py` | cars, a taxi, a van, a city bus, the line 2 tram and two river boats modelled in Blender, rendered as side views by day and by night into sprite atlases (`public/textures/vehicles_*.webp`, layout in `public/models/vehicles.json`) |
 | Scene | `blender/build_scene.py` | the room from primitives + procedural materials, merged into four bake groups with packed UV atlases; camera poses and click targets in `public/models/studio.json` |
 | Bake | `blender/bake.py` | per group: albedo (up to 4096²) and light (2048², evening + day, denoised with OpenImageDenoise); `_lo` previews load first, then the full set on desktops or the 2K `_md` set on tablets and low-memory devices |
 | Env maps | `blender/envmap.py` | small HDR panoramas that light the moving objects |
@@ -52,11 +55,11 @@ BLENDER_PY=/path/to/venv/bin/python npm run blender
 
 Open `blender/studio.blend` to look at or restyle the room in Blender; rerun the pipeline to bake the changes.
 
-The browser recombines the bake as `albedo × light` and cross-fades the two light maps, so day and evening share one colour atlas. Moving or glowing things (display, folios, record, tonearm, bulbs, candle) are lit live from the HDR panoramas.
+The browser recombines the bake as `albedo × light` and cross-fades the two light maps, so day and evening share one colour atlas. Moving or glowing things (display, dossiers, the things you can pick up, record, tonearm, bulbs, candle) are lit live from the HDR panoramas. The things you can lift are left out of the light bake (no dark patch where they stood); the browser draws their contact shadows.
 
 The window is a photograph turned into a small 3D scene: every pixel of the glass follows the viewer's ray into the photo's depth (the city and river by fixed-point parallax, the trees below the terrace as a plane in front, with a guessed background behind them). On top runs a little world simulated in `src/studio/core/window.ts`: cars and buses on the Chain Bridge and the embankment, tram 2, river boats with reflections, a plane at night, birds by day, ripples drifting downstream, twinkling lights, wind in the trees.
 
-Motion runs on a fixed 120 Hz physics step (`src/studio/core/physics.ts`): the camera glides on critically damped springs and leans at the window, folios spring out and rock when they land, the record player has inertia and a cueing tonearm, the pendant swings as a pendulum, curtains and leaves move in the vertex shader from per-vertex data written in Blender, and dust drifts in the light.
+Motion runs on a fixed 120 Hz physics step (`src/studio/core/physics.ts`): the camera glides on critically damped springs, holds still at the desk and leans at the window, dossiers slide out of the shelf and open on a sprung hinge with curling page turns, the armillary sphere coasts on its bearings, window traffic follows a car-following model (tram 2 stops at its stops, boats bob with wakes), the record player has inertia and a cueing tonearm, the pendant swings as a pendulum, curtains and leaves move in the vertex shader from per-vertex data written in Blender, and dust drifts in the light.
 
 The case studies carry the motion figures of the original portfolio (`src/shared/figures.ts`), drawn once and rendered twice: on the display's canvas and as animated SVG on the page. The Role chapter includes the original platformer, playable on the display.
 
@@ -81,7 +84,7 @@ Vercel builds it as a Vite static site (`vercel.json`): `npm run build`, output 
 
 ## Credits
 
-Everything in the room — geometry, materials, the print and the record sleeves — is generated by the scripts in `blender/`. The soundtrack ("Budapest sessions", lounge deep house) is synthesised live with the Web Audio API: no samples, no recordings.
+Everything in the room — geometry, materials, the print, the record sleeves and the vehicles outside — is generated by the scripts in `blender/`. The printed CV on the desk and the page view are the author's original portfolio. The soundtrack ("Budapest sessions", lounge deep house) is synthesised live with the Web Audio API: no samples, no recordings.
 
 Window photos, via Wikimedia Commons:
 - [Széchenyi Chain Bridge in Budapest at night](https://commons.wikimedia.org/wiki/File:Sz%C3%A9chenyi_Chain_Bridge_in_Budapest_at_night.jpg) by Wilfredor — CC0 1.0.

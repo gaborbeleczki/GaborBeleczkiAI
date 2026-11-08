@@ -30,6 +30,9 @@ def main():
                     me.uv_layers.remove(layer)
             me.materials.clear()
             keep.append(ob)
+        elif ob.get('dyn') and ob.type == 'EMPTY':
+            # a group the browser moves as one (the dossiers): keep the hierarchy
+            keep.append(ob)
         elif ob.get('dyn') and ob.type == 'MESH':
             # dynamic objects keep a simple UV only if they need one (screen); drop ArtUV/BakeUV
             keep.append(ob)

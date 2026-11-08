@@ -1,0 +1,43 @@
+{
+  "shots": [
+    "page-original-desktop",
+    "page-desktop-top",
+    "page-desktop-full",
+    "cv-desktop",
+    "note-desktop",
+    "page-phone-original",
+    "page-phone-top",
+    "page-phone-full",
+    "page-dark-top",
+    "studio-evening-home",
+    "studio-display-hello",
+    "studio-display-approach",
+    "studio-display-role",
+    "studio-display-work",
+    "studio-display-career",
+    "studio-display-toolkit",
+    "studio-display-faq",
+    "studio-display-contact",
+    "studio-dossier-hello",
+    "studio-dossier-role",
+    "studio-dossier-work",
+    "studio-dossier-work-p2",
+    "studio-dossier-career",
+    "studio-dossier-contact",
+    "studio-objects",
+    "studio-hold-cards",
+    "studio-hold-phone",
+    "studio-hold-cv",
+    "studio-hold-notebook",
+    "studio-globe",
+    "studio-shelf",
+    "studio-record",
+    "studio-evening-window",
+    "studio-day-home",
+    "studio-day-window"
+  ],
+  "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

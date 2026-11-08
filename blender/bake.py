@@ -49,6 +49,9 @@ def load():
         return {k: tuple(v) for k, v in json.load(fh).items()}
 
 
+MOVABLE = {'phone', 'phone_part', 'notebook', 'notebook_part', 'card', 'cv'}
+
+
 def scene_setup(samples: int):
     sc = bpy.context.scene
     sc.render.engine = 'CYCLES'
@@ -68,6 +71,10 @@ def scene_setup(samples: int):
     bk.margin_type = 'EXTEND'
     for ob in bpy.data.objects:
         if ob.get('invisible') or ob.name.startswith('hit_'):
+            ob.hide_render = True
+        # things the visitor picks up leave no baked shadow behind: the browser draws a soft
+        # live shadow under them while they rest
+        if ob.get('dyn') in MOVABLE:
             ob.hide_render = True
 
 
