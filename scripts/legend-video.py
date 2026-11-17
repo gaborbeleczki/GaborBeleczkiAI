@@ -3,13 +3,22 @@
 
   python3 scripts/legend-video.py            ->  public/media/legend.mp4 (+ poster, captions)
 
-Sources (media/legend/): eight stills made with an image model, the narration (a preset
-text-to-speech voice) and its word timings (forced alignment). The ninth shot is the studio
-itself: media/legend/09_studio.jpg if present, else the page's evening poster.
+The film is cut together from snippets, the way footage is edited: a quick dissolve between
+scenes, hard cuts to a closer framing within one. A snippet's source is a video clip when there
+is one and a still when there is not:
 
-Everything else is made here: slow camera moves over the stills, cross-dissolves, captions set
-from the word timings, a vignette, and a small score (a drone, four chords, a plucked
-string) synthesised with numpy. Frames are piped straight into FFmpeg.
+- media/legend/NN_name.mp4: a clip made with an image-to-video model from the still of the same
+  name (prompts and settings in media/legend/clips.json). Played as filmed, slowed a little if
+  it is shorter than its place in the cut.
+- media/legend/NN_name.jpg: a still made with an image model. It gets a camera move, a punch-in
+  for a closer shot, flickering candle- and firelight, and drifting dust or drizzle, so the few
+  shots still waiting for their clip sit among the others.
+- The last shot is the studio itself: the page's own recording of the room
+  (public/media/studio-loop.mp4), else its evening poster.
+
+The narration is a preset text-to-speech voice with word timings from a forced alignment; the
+captions are set from those timings, and the score (a drone, four chords, a plucked string) is
+synthesised with numpy. Frames are piped straight into FFmpeg.
 
 Needs: python3 with numpy and Pillow, ffmpeg.
 """
@@ -29,26 +38,44 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 SRC = os.path.join(ROOT, 'media', 'legend')
-OUT = os.path.join(ROOT, 'public', 'media')
+OUT = os.environ.get('LEGEND_OUT') or os.path.join(ROOT, 'public', 'media')   # LEGEND_OUT for a preview
 TMP = os.path.join(ROOT, 'renders', 'legend')
 
 W, H, FPS = 1600, 900, 24
 LEAD = 2.2            # seconds of picture before the first word
 TAIL = 3.8            # seconds after the last word
-XFADE = 0.9
+XFADE = 0.5           # the dissolve between scenes; within a scene the cut is hard
 
-# shot, the narration time (s) at which it takes over, camera move (zoom from, zoom to, pan x, pan y)
+# the snippets in order: source (media/legend/<name>.mp4 or .jpg), the narration time (s) at
+# which it takes over, the camera move on a still (zoom from, zoom to, drift x, drift y, and
+# optionally where the frame sits: -1..1 of the room the zoom leaves), and how it comes in
 SHOTS = [
-    ('01_tome.jpg', -LEAD, (1.10, 1.02, 0.25, -0.1)),
-    ('02_scriptorium.jpg', 3.45, (1.03, 1.12, -0.3, 0.1)),
-    ('03_traveller.jpg', 14.35, (1.12, 1.03, 0.2, -0.3)),
-    ('04_council.jpg', 23.3, (1.04, 1.12, 0.35, 0.0)),
-    ('05_mountain.jpg', 30.0, (1.12, 1.04, -0.2, 0.3)),
-    ('06_hall.jpg', 35.9, (1.03, 1.10, 0.1, -0.2)),
-    ('07_dragon.jpg', 39.3, (1.02, 1.12, 0.3, -0.1)),
-    ('08_runner.jpg', 43.45, (1.12, 1.03, -0.15, 0.1)),
-    ('09_studio.jpg', 52.6, (1.08, 1.0, -0.2, 0.0)),
+    ('01_tome', -LEAD, (1.10, 1.02, 0.25, -0.1)),
+    ('02_scriptorium', 3.45, (1.03, 1.10, -0.3, 0.1)),
+    ('02_scriptorium', 10.6, (1.40, 1.47, 0.12, -0.05, -0.95, -0.1), 'cut'),     # mighty ones
+    ('03_traveller', 14.35, (1.12, 1.04, 0.2, -0.3)),
+    ('03_traveller', 20.8, (1.38, 1.46, 0.12, 0.0, 0.2, -0.95), 'cut'),          # a roadmap
+    ('04_council', 23.3, (1.04, 1.10, 0.35, 0.0)),
+    ('04_council', 27.0, (1.38, 1.45, 0.08, 0.05, -0.95, 0.05), 'cut'),          # could this meeting
+    ('05_mountain', 30.0, (1.12, 1.05, -0.2, 0.3)),
+    ('05_mountain', 33.3, (1.36, 1.43, -0.1, 0.0, -0.45, 0.85), 'cut'),          # every single one
+    ('06_hall', 35.9, (1.03, 1.10, 0.1, -0.2)),
+    ('07_dragon', 39.3, (1.02, 1.10, 0.3, -0.1)),
+    ('08_runner', 43.45, (1.10, 1.03, -0.15, 0.1)),
+    ('08_runner', 46.6, (1.42, 1.50, 0.06, 0.0, -0.25, 0.35), 'cut'),            # no! he ran
+    ('08_runner', 49.0, (1.30, 1.37, 0.12, 0.0, 0.95, -0.2), 'cut'),             # at night
+    ('09_studio', 52.6, (1.08, 1.0, -0.2, 0.0)),
 ]
+
+# what moves on the stills besides the camera
+LIFE = {
+    '01_tome': ('dust',),
+    '02_scriptorium': ('dust',),
+    '04_council': ('dust',),
+    '06_hall': ('dust',),
+    '07_dragon': ('dust',),
+    '08_runner': ('drizzle',),
+}
 
 # captions, in order; each takes as many words of the narration as it has
 CAPTIONS = [
@@ -183,15 +210,198 @@ def cover(im: Image.Image) -> Image.Image:
 
 def frame_of(im: Image.Image, move, u: float) -> Image.Image:
     """The camera on a still at progress u (0..1): zoom and drift, sub-pixel smooth."""
-    z0, z1, px, py = move
+    z0, z1, px, py = move[:4]
+    ox, oy = move[4:6] if len(move) > 4 else (0.0, 0.0)
     e = u * u * (3 - 2 * u) * 0.35 + u * 0.65
     zoom = z0 + (z1 - z0) * e
     vw, vh = W * 1.16 / zoom, H * 1.16 / zoom
     max_x, max_y = (im.width - vw) / 2, (im.height - vh) / 2
-    cx = im.width / 2 + px * max_x * (2 * e - 1)
-    cy = im.height / 2 + py * max_y * (2 * e - 1)
+    cx = im.width / 2 + max_x * max(-1.0, min(1.0, ox + px * (2 * e - 1) * (0.3 if len(move) > 4 else 1.0)))
+    cy = im.height / 2 + max_y * max(-1.0, min(1.0, oy + py * (2 * e - 1) * (0.3 if len(move) > 4 else 1.0)))
     sx, sy = vw / W, vh / H
     return im.transform((W, H), Image.AFFINE, (sx, 0, cx - vw / 2, 0, sy, cy - vh / 2), resample=Image.BICUBIC)
+
+
+def warm_mask(im: Image.Image) -> Image.Image:
+    """Where the candles, torches and fires are: bright and warm, softened into a glow."""
+    a = np.asarray(im, dtype=np.float32)
+    y = a @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
+    m = np.clip((y - 165) / 70, 0, 1) * np.clip((a[..., 0] - a[..., 2] - 25) / 70, 0, 1)
+    g = Image.fromarray((m * 255).astype(np.uint8), 'L').filter(ImageFilter.GaussianBlur(14))
+    g = np.asarray(g, dtype=np.float32)
+    return Image.fromarray(np.clip(g / max(1.0, np.percentile(g, 99.7)) * 255, 0, 255).astype(np.uint8), 'L')
+
+
+_PHASE = None
+
+
+def flicker(t: float) -> np.ndarray:
+    """Candlelight: a few incommensurate wobbles, out of step from one flame to the next."""
+    global _PHASE
+    if _PHASE is None:
+        rng = np.random.default_rng(3)
+        small = rng.uniform(0, 2 * math.pi, (9, 16)).astype(np.float32)
+        _PHASE = np.asarray(Image.fromarray(small).resize((W, H), Image.BICUBIC), dtype=np.float32)
+    p = _PHASE
+    return (0.045 * np.sin(2 * math.pi * 4.7 * t + p) + 0.03 * np.sin(2 * math.pi * 8.3 * t + 2.1 * p)
+            + 0.025 * np.sin(2 * math.pi * 1.9 * t + 3.3 * p))
+
+
+class Motes:
+    """Dust in the light: soft specks drifting slowly, seen only where the picture is lit."""
+
+    def __init__(self, seed: int, n: int = 70):
+        rng = np.random.default_rng(seed)
+        self.p = rng.uniform((0, 0), (W, H), (n, 2))
+        self.v = np.stack([rng.uniform(-9, 9, n), rng.uniform(-14, -3, n)], 1)
+        self.r = rng.uniform(1.2, 3.6, n)
+        self.a = rng.uniform(0.25, 0.75, n)
+        self.ph = rng.uniform(0, 2 * math.pi, n)
+        self.sprites = {}
+
+    def sprite(self, r: float) -> np.ndarray:
+        k = round(r * 2) / 2
+        if k not in self.sprites:
+            n = int(math.ceil(k * 3))
+            yy, xx = np.mgrid[-n:n + 1, -n:n + 1]
+            self.sprites[k] = np.exp(-(xx * xx + yy * yy) / (2 * k * k)).astype(np.float32)
+        return self.sprites[k]
+
+    def draw(self, arr: np.ndarray, t: float) -> None:
+        lum = arr.mean(axis=2)
+        for i in range(len(self.p)):
+            x = (self.p[i, 0] + self.v[i, 0] * t + 7 * math.sin(0.31 * t + self.ph[i])) % W
+            y = (self.p[i, 1] + self.v[i, 1] * t + 4 * math.sin(0.23 * t + 2 * self.ph[i])) % H
+            sp = self.sprite(self.r[i])
+            n = sp.shape[0] // 2
+            x0, y0 = int(x) - n, int(y) - n
+            if x0 < 0 or y0 < 0 or x0 + sp.shape[1] > W or y0 + sp.shape[0] > H:
+                continue
+            light = min(1.0, (lum[int(y), int(x)] / 200.0) ** 1.4)
+            a = self.a[i] * light * (0.65 + 0.35 * math.sin(1.3 * t + self.ph[i]))
+            if a < 0.02:
+                continue
+            arr[y0:y0 + sp.shape[0], x0:x0 + sp.shape[1]] += sp[..., None] * np.array((255, 236, 205), np.float32) * a * 0.5
+
+
+class Drizzle:
+    """Fine rain caught in the street lights: thin streaks falling fast at a slight slant."""
+
+    def __init__(self, seed: int, n: int = 170):
+        rng = np.random.default_rng(seed)
+        self.x = rng.uniform(-100, W + 100, n)
+        self.y = rng.uniform(0, H, n)
+        self.s = rng.uniform(900, 1400, n)
+        self.l = rng.uniform(12, 26, n)
+        self.a = rng.uniform(0.05, 0.13, n)
+
+    def draw(self, arr: np.ndarray, t: float) -> None:
+        layer = Image.new('L', (W, H), 0)
+        d = ImageDraw.Draw(layer)
+        for i in range(len(self.x)):
+            y = (self.y[i] + self.s[i] * t) % (H + 60) - 30
+            x = self.x[i] + 0.18 * (y - self.y[i])
+            x = (x + 100) % (W + 200) - 100
+            d.line((x, y, x - 0.18 * self.l[i], y - self.l[i]), fill=int(255 * self.a[i]), width=1)
+        a = np.asarray(layer, dtype=np.float32)[..., None] / 255
+        arr += a * (np.array((205, 215, 235), np.float32) - arr) * 0.9
+
+
+def probe(path: str) -> float:
+    out = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', path],
+                         capture_output=True, text=True, check=True).stdout
+    return float(out.strip())
+
+
+class Clip:
+    """A video snippet, read frame by frame as the film reaches it (time only moves forward)."""
+
+    def __init__(self, path: str):
+        self.path = path
+        self.duration = probe(path)
+        self.n = max(1, int(self.duration * FPS))
+        self.proc = None
+        self.read = 0
+        self.cache: dict[int, np.ndarray] = {}
+
+    def _next(self):
+        if self.proc is None:
+            self.proc = subprocess.Popen([
+                'ffmpeg', '-loglevel', 'error', '-i', self.path, '-an', '-vf',
+                f'fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H},unsharp=5:5:0.45:5:5:0',
+                '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        buf = self.proc.stdout.read(W * H * 3)
+        if len(buf) < W * H * 3:
+            return None
+        return np.frombuffer(buf, dtype=np.uint8).reshape(H, W, 3)
+
+    def get(self, k: int) -> np.ndarray:
+        k = max(0, min(k, self.n - 1))
+        while self.read <= k:
+            f = self._next()
+            if f is None:
+                self.n = self.read
+                k = min(k, self.n - 1)
+                break
+            self.cache[self.read] = f
+            self.read += 1
+            for old in [i for i in self.cache if i < self.read - 3]:
+                del self.cache[old]
+        return self.cache[k]
+
+    def at(self, seconds: float) -> Image.Image:
+        f = max(0.0, seconds) * FPS
+        k = int(f)
+        a = f - k
+        A = self.get(k)
+        if a < 0.02 or k + 1 >= self.n:
+            return Image.fromarray(A)
+        B = self.get(k + 1)
+        return Image.fromarray((A.astype(np.float32) * (1 - a) + B.astype(np.float32) * a).astype(np.uint8))
+
+    def close(self):
+        # the cut may not use the whole clip: stop the decoder rather than drain it
+        if self.proc:
+            self.proc.kill()
+            self.proc.stdout.close()
+            self.proc.wait()
+
+
+class Snippet:
+    def __init__(self, name: str, t0: float, move, mode: str, sources: dict):
+        self.name, self.t0, self.move, self.mode = name, t0, move, mode
+        self.src = sources[name]
+        self.life = []
+        if not isinstance(self.src, Clip):
+            seed = sum(map(ord, name)) + int(t0 * 10)
+            for kind in LIFE.get(name, ()):
+                self.life.append(Motes(seed) if kind == 'dust' else Drizzle(seed))
+
+    # set for clips once the cut is known: where the clip starts, how fast it plays, the punch-in
+    clip_a = 0.0
+    clip_speed = 1.0
+    punch = 1.0
+
+    def frame(self, t: float, a: float, b: float) -> Image.Image:
+        """This snippet at film time t; it is on screen from a to b."""
+        if isinstance(self.src, Clip):
+            img = self.src.at((t - self.clip_a) * self.clip_speed)
+            if self.punch > 1.001:
+                ox, oy = self.move[4:6] if len(self.move) > 4 else (0.0, 0.0)
+                vw, vh = W / self.punch, H / self.punch
+                cx, cy = W / 2 + ox * (W - vw) / 2, H / 2 + oy * (H - vh) / 2
+                img = img.transform((W, H), Image.AFFINE, (vw / W, 0, cx - vw / 2, 0, vh / H, cy - vh / 2), resample=Image.BICUBIC)
+            return img
+        im, glow = self.src
+        u = min(1.0, max(0.0, (t - a) / max(b - a, 1e-3)))
+        img = frame_of(im, self.move, u)
+        arr = np.asarray(img, dtype=np.float32).copy()
+        if glow is not None:
+            g = np.asarray(frame_of(glow, self.move, u), dtype=np.float32)[..., None] / 255
+            arr *= 1 + flicker(t)[..., None] * g
+        for life in self.life:
+            life.draw(arr, t - a)
+        return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
 
 def vignette() -> Image.Image:
@@ -250,14 +460,53 @@ def main() -> int:
     total = LEAD + end_voice + TAIL
     nframes = int(round(total * FPS))
 
-    studio = os.path.join(SRC, '09_studio.jpg')
-    if not os.path.exists(studio):
-        studio = os.path.join(ROOT, 'public', 'img', 'studio-evening.jpg')
-    stills = []
-    for name, start, move in SHOTS:
-        path = studio if name == '09_studio.jpg' else os.path.join(SRC, name)
-        stills.append((cover(Image.open(path).convert('RGB')), LEAD + start, move))
-    starts = [s for _, s, _ in stills] + [total]
+    # each source once: a clip if there is one, else the still (with its candlelight)
+    sources = {}
+    for name, *_ in SHOTS:
+        if name in sources:
+            continue
+        clip = os.path.join(SRC, name + '.mp4')
+        if name == '09_studio' and not os.path.exists(clip):
+            clip = os.path.join(ROOT, 'public', 'media', 'studio-loop.mp4')
+        if os.path.exists(clip) and not os.environ.get('LEGEND_STILLS'):
+            sources[name] = Clip(clip)
+            print(f'[legend] {name}: clip {os.path.relpath(clip, ROOT)} ({sources[name].duration:.1f}s)', flush=True)
+            continue
+        still = os.path.join(SRC, name + '.jpg')
+        if name == '09_studio' and not os.path.exists(still):
+            still = os.path.join(ROOT, 'public', 'img', 'studio-evening.jpg')
+        im = cover(Image.open(still).convert('RGB'))
+        sources[name] = (im, warm_mask(im) if name != '09_studio' else None)
+        print(f'[legend] {name}: still', flush=True)
+    snippets = []
+    for shot in SHOTS:
+        name, start, move = shot[:3]
+        mode = shot[3] if len(shot) > 3 else 'dissolve'
+        snippets.append(Snippet(name, LEAD + start, move, mode, sources))
+    starts = [sn.t0 for sn in snippets] + [total]
+
+    def on_screen(i):
+        """When snippet i is on screen: from its start (or 0) to the next start, plus the dissolve."""
+        a = snippets[i].t0 if i else 0.0
+        b = starts[i + 1]
+        if i + 1 < len(snippets) and snippets[i + 1].mode != 'cut':
+            b += XFADE
+        return a, b
+
+    # a clip runs on through all the snippets cut from it (a punch-in is a crop of the same take),
+    # slowed by up to a quarter if it is shorter than its place in the cut
+    for name, src in sources.items():
+        if not isinstance(src, Clip):
+            continue
+        idx = [i for i, sn in enumerate(snippets) if sn.name == name]
+        a0, b1 = on_screen(idx[0])[0], on_screen(idx[-1])[1]
+        speed = max(0.75, min(1.0, src.duration / max(b1 - a0, 1e-3)))
+        for j, i in enumerate(idx):
+            snippets[i].clip_a, snippets[i].clip_speed = a0, speed
+            if j:
+                snippets[i].punch = max(1.0, snippets[i].move[0] / snippets[idx[0]].move[0])
+        if src.duration < (b1 - a0) * 0.75:
+            print(f'[legend] {name}: the clip is {src.duration:.1f}s for {b1 - a0:.1f}s of film; it will hold its last frame', flush=True)
 
     # captions and titles as layers
     cap_font = font('Caladea-Italic', 46)
@@ -309,17 +558,15 @@ def main() -> int:
     poster_at = int(3.0 * FPS)
     for fi in range(nframes):
         t = fi / FPS
-        # the shot on screen, and the next one dissolving in
-        si = max(i for i in range(len(stills)) if starts[i] <= t + 1e-6)
-        im, s0, move = stills[si]
-        s1 = starts[si + 1]
-        span = (s1 + XFADE) - (s0 if si else 0.0)
-        img = frame_of(im, move, min(1.0, max(0.0, (t - (s0 if si else 0.0)) / span)))
-        if si > 0 and t < s0 + XFADE:
-            pim, ps0, pmove = stills[si - 1]
-            pspan = (s0 + XFADE) - (ps0 if si - 1 else 0.0)
-            prev = frame_of(pim, pmove, min(1.0, (t - (ps0 if si - 1 else 0.0)) / pspan))
-            k = (t - s0) / XFADE
+        # the snippet on screen, and the one before it while it dissolves away
+        si = max(i for i in range(len(snippets)) if starts[i] <= t + 1e-6)
+        a, b = on_screen(si)
+        img = snippets[si].frame(t, a, b)
+        sn = snippets[si]
+        if si > 0 and sn.mode != 'cut' and t < sn.t0 + XFADE:
+            pa, pb = on_screen(si - 1)
+            prev = snippets[si - 1].frame(t, pa, pb)
+            k = (t - sn.t0) / XFADE
             img = Image.blend(prev, img, k * k * (3 - 2 * k))
         img = ImageChops.multiply(img, Image.merge('RGB', (vig, vig, vig)))
         rgba = img.convert('RGBA')
@@ -345,6 +592,9 @@ def main() -> int:
             print(f'[legend] {t:5.1f}s / {total:.1f}s', flush=True)
     enc.stdin.close()
     enc.wait()
+    for src in sources.values():
+        if isinstance(src, Clip):
+            src.close()
     cues_json = [{'t0': round(LEAD + words[a][1] - 0.12, 2), 't1': round(LEAD + words[b][2] + 0.28, 2), 'text': text} for a, b, text in CUES]
     with open(os.path.join(OUT, 'legend.json'), 'w') as fh:
         json.dump({'duration': round(total, 2), 'size': [W, H], 'cues': cues_json}, fh, indent=1, ensure_ascii=False)

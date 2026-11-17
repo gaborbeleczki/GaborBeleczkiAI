@@ -232,8 +232,10 @@ def build_pendant(coll, coll_dyn, loc=(-0.12, 1.66), bottom=1.88) -> dict:
     return {'parts': parts, 'light_pos': (loc[0], loc[1], bottom + 0.09)}
 
 
-def build_desk_lamp(coll, coll_dyn, base=(-0.74, 1.96)) -> dict:
-    """A slim task lamp: weighted base, bent arm, small conical head aimed at the desk."""
+def build_desk_lamp(coll, coll_dyn, base=(-0.77, 2.0), yaw=math.radians(-35)) -> dict:
+    """A slim task lamp: weighted base, bent arm, small conical head aimed at the desk. It stands
+    at the back-left corner and is turned (yaw, about its base) towards the front-left of the
+    desk, so its head stays clear of the display from every camera."""
     paint = M.matte('#E9E4DA', 'lamp_paint', 0.4)
     top = DESK['top']
     head_pos = Vector((base[0] + 0.2, base[1] - 0.2, top + 0.40))
@@ -247,6 +249,13 @@ def build_desk_lamp(coll, coll_dyn, base=(-0.74, 1.96)) -> dict:
     parts.append(head)
     bulb = sphere('dl_bulb', 0.022, head_pos + Vector((0, 0, 0.02)), coll_dyn, M.emission('#FFE6C4', 4.0, 'bulb_warm'))
     tag(bulb, dyn='emitter', glow='#FFE6C4', strength=4.0)
+    # turn the whole lamp about its base
+    b = Vector((base[0], base[1], 0.0))
+    turn = Matrix.Translation(b) @ Matrix.Rotation(yaw, 4, 'Z') @ Matrix.Translation(-b)
+    for ob in parts + [bulb]:
+        ob.matrix_basis = turn @ ob.matrix_basis
     for p in parts:
         tag(p, bake='furniture')
-    return {'parts': parts, 'light_pos': tuple(head_pos + Vector((0, 0, 0.01))), 'aim': (base[0] + 0.32, base[1] - 0.38, top)}
+    light = turn @ (head_pos + Vector((0, 0, 0.01)))
+    aim = turn @ Vector((base[0] + 0.32, base[1] - 0.38, top))
+    return {'parts': parts, 'light_pos': tuple(light), 'aim': tuple(aim)}

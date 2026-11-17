@@ -225,8 +225,12 @@ const fragment = /* glsl */ `
     vec2 a = vec2(s0.x * aspect, s0.y);
     vec2 b = vec2(s0.z * aspect, s0.w);
     float h = s1.x;
-    // something nearer (a bridge tower, the deck) stands in front
+    // something nearer (a bridge tower, the deck) stands in front. Boats pass close behind the
+    // bridge and the tram runs under its Pest end, so a hull or a tram gives way at a small
+    // difference in depth (the bridge is entered a little nearer in the depth map for this);
+    // a boat's reflection keeps to the water.
     bool hidden = ws < wHit * 0.9 - 1e-5;
+    bool hiddenBody = ws < wHit * (kind < 4.5 ? 0.97 : 0.9) - 1e-5;
 
     if (kind < 4.5) {
       // cars, buses, the tram and boats: a sprite stretched along the road (or the river), so it
@@ -242,7 +246,7 @@ const fragment = /* glsl */ `
       float lod = log2(max(spr[id].z * atlasW * px / abs(span), 1.0));
       vec4 lp = lamps[id];
       bool boat = kind > 3.5;
-      if (!boat && !hidden) {
+      if (!boat && !hiddenBody) {
         // a soft contact shadow on the road by day
         if (!night && ty < 0.02 && ty > -0.16) {
           float sh = smoothstep(-0.16, 0.0, ty) * smoothstep(-0.02, 0.06, tx) * smoothstep(1.02, 0.94, tx);
@@ -261,7 +265,7 @@ const fragment = /* glsl */ `
       }
       if (tx < -0.6 || tx > 1.1) return col;
       if (ty >= 0.0 && ty <= 1.0 && tx >= 0.0 && tx <= 1.0) {
-        if (hidden) return col;
+        if (hiddenBody) return col;
         vec4 sp = vehicle(id, vec2(tx, ty), night, lod);
         return col * (1.0 - sp.a) + sp.rgb;
       }
@@ -271,7 +275,7 @@ const fragment = /* glsl */ `
       if (under <= 0.0 || water < 0.3) return col;
       float fade = (1.0 - smoothstep(0.0, 0.85, under)) * water;
       if (tx >= 0.0 && tx <= 1.0 && under < 0.85) {
-        float wob = (noise(vec2(p.x * 900.0, p.y * 2400.0 - time * 3.0)) - 0.5) * 0.05;
+        float wob = (noise(vec2(p.x * 900.0, p.y * 2400.0 - time * 1.0)) - 0.5) * 0.04;
         vec4 rf = vehicle(id, vec2(tx + wob, under * 1.15), night, lod + 0.5);
         col = mix(col, col * (1.0 - rf.a) + rf.rgb * (night ? 0.75 : 0.55), fade * (night ? 0.8 : 0.55));
       }
@@ -347,9 +351,9 @@ const fragment = /* glsl */ `
     /* the current: ripples drift downstream, finer with distance */                                  \\
     float D = 10.0 / max(dat.r * dat.r, 1e-4);                                                        \\
     float xw = (uv.x - 0.5) * D * 2.0 * cam.x;                                                        \\
-    float n1 = noise(vec2(xw * 0.08 - time * 0.5, uv.y * 160.0));                                     \\
-    float n2 = noise(vec2(xw * 0.21 - time * 1.05, uv.y * 420.0 + 3.1));                              \\
-    vec2 rip = vec2((n1 - 0.5) * 1.1 + (n2 - 0.5) * 0.7, (n2 - 0.5) * 0.9) * (2.2 / D) * water;       \\
+    float n1 = noise(vec2(xw * 0.08 - time * 0.16, uv.y * 160.0));                                    \\
+    float n2 = noise(vec2(xw * 0.21 - time * 0.32, uv.y * 420.0 + 3.1));                              \\
+    vec2 rip = vec2((n1 - 0.5) * 1.1 + (n2 - 0.5) * 0.7, (n2 - 0.5) * 0.9) * (1.2 / D) * water;       \\
     vec2 cuv = edge(uv + rip);                                                                        \\
     vec3 base = textureGrad(PLATE, cuv, gx, gy).rgb;                                                            \\
     /* sky: a slow drift of the clouds (two offsets cross-faded so it never jumps) */                 \\
@@ -363,12 +367,11 @@ const fragment = /* glsl */ `
     /* where the photo has a tree in front, use the guessed background instead */                     \\
     vec3 col = mix(base, textureGrad(FILL, cuv, gx, gy).rgb, coverOf(dat));                                     \\
     if (NIGHT) {                                                                                      \\
-      float tw = noise(uv * vec2(820.0, 460.0) + vec2(time * 1.7, -time * 1.1));                      \\
-      col *= 1.0 + spark * (tw - 0.45) * 0.8;                                                         \\
-      col *= 1.0 + water * (n2 - 0.5) * 0.35;                                                         \\
+      /* lights stay steady (no twinkle); reflections on the water breathe a little */                \\
+      col *= 1.0 + water * (n2 - 0.5) * 0.1;                                                          \\
     } else {                                                                                          \\
-      float g = noise(vec2(xw * 0.7 - time * 0.9, uv.y * 1300.0 + time * 1.6));                       \\
-      col += vec3(1.0, 0.97, 0.9) * pow(g, 14.0) * spark * water * 2.5;                               \\
+      float g = noise(vec2(xw * 0.7 - time * 0.25, uv.y * 1300.0 + time * 0.4));                      \\
+      col += vec3(1.0, 0.97, 0.9) * pow(g, 16.0) * spark * water * 1.2;                               \\
     }                                                                                                 \\
     /* the small world: traffic, tram, boats, plane, birds */                                         \\
     THINGS(S0, S1, COUNT, NIGHT)                                                                      \\
@@ -378,8 +381,8 @@ const fragment = /* glsl */ `
     float sw = coverOf(df) > 0.0 ? df.g : 0.0;                                                        \\
     float gust = 0.6 + 0.4 * sin(time * 0.31) * sin(time * 0.17 + 1.3);                               \\
     vec2 bend = vec2(                                                                                 \\
-      sin(time * 1.15 + uf.y * 9.0 + uf.x * 4.0) * 0.6 + sin(time * 2.4 + uf.x * 23.0) * 0.25,        \\
-      sin(time * 1.7 + uf.x * 13.0) * 0.35) * FG.y * wind * gust * sw;                                \\
+      sin(time * 0.7 + uf.y * 9.0 + uf.x * 4.0) * 0.6 + sin(time * 1.3 + uf.x * 23.0) * 0.25,         \\
+      sin(time * 0.9 + uf.x * 13.0) * 0.35) * FG.y * wind * gust * sw;                                \\
     vec2 ufs = edge(uf + bend * vec2(1.0, cam.y));                                                    \\
     float cover = coverOf(texture2D(DATA, ufs).rgb);                                                  \\
     col = mix(col, textureGrad(PLATE, ufs, gx, gy).rgb, cover);                                                 \\
@@ -524,16 +527,11 @@ function idm(v: number, v0: number, gap: number, dv: number, amax: number, bcomf
   return amax * (free - (gap < Infinity ? Math.pow(sStar / Math.max(gap, 0.3), 2) : 0));
 }
 
-/** Traffic, tram, boats, plane and birds for one photo, packed into shader uniforms. */
+/** Tram 2 and the river boats for one photo, packed into shader uniforms. (No cars, buses, plane
+ *  or birds: they made the view busy; the tram and the boats move slowly, as they do.) */
 class World {
   private readonly lanes: Lane[] = [];
   private readonly movers: Mover[] = [];
-  private planeT = rand(8, 25);
-  private plane: { t: number; dur: number } | null = null;
-  private birds: { t: number; dur: number; n: number; seed: number } | null = null;
-  private birdT = rand(6, 14);
-  private readonly sky?: Track;
-  private readonly flock?: Track;
   private clock = 0;
   count = 0;
 
@@ -547,30 +545,16 @@ class World {
     const p = photo.paths;
     const fx = photo.fx;
     const idx = (name: string) => Math.max(0, sprites.findIndex((x) => x.name === name));
-    const cars = sprites
-      .map((x, i) => ({ x, i }))
-      .filter(({ x }) => x.kind === 'car')
-      .map(({ x, i }) => ({ sprite: i, w: x.name === 'taxi' ? 1.6 : x.name.startsWith('van') ? 0.6 : 1 }));
-    const road = [...cars, { sprite: idx('bus'), w: 0.9 }];
     const lane = (raw: Path, dir: 1 | -1, kind: number, max: number, gap: [number, number], speed: [number, number], pool: Lane['pool'], offsetV = 0, stops?: number[]) =>
       this.lanes.push({ track: new Track(raw, fx, offsetV), dir, kind, max, gap, speed, pool, stops, timer: rand(0, gap[1]) });
-    // the bridge, both directions
-    lane(p.deck as Path, 1, 1, 5, [3, 9], [9, 12.5], cars, night ? 0.0016 : 0);
-    lane(p.deck as Path, -1, 1, 5, [3, 9], [9, 12.5], cars, night ? -0.0016 : 0);
-    // the Pest embankment, buses among the cars
-    lane(p.upper as Path, 1, 1, 4, [2.5, 7], [11, 14.5], road);
-    lane(p.upper as Path, -1, 1, 4, [2.5, 7], [11, 14.5], road, 0.002);
-    lane(p.quay as Path, night ? 1 : -1, 1, 3, [4, 10], [9.5, 12.5], cars);
-    // tram 2 runs along the river on the Pest side and stops on the way
+    // tram 2 runs along the river on the Pest side, at city speed, and stops on the way
     const tram = (night ? p.quay : p.tram) as Path;
-    lane(tram, 1, 3, 1, [35, 70], [9, 10.5], [{ sprite: idx('tram'), w: 1 }], night ? -0.0005 : 0, [0.38, 0.74]);
-    lane(tram, -1, 3, 1, [45, 80], [9, 10.5], [{ sprite: idx('tram'), w: 1 }], night ? -0.0005 : 0, [0.3, 0.66]);
-    // river boats, slow: a sightseeing boat and a cruise ship
+    lane(tram, 1, 3, 1, [40, 80], [5.2, 6.2], [{ sprite: idx('tram'), w: 1 }], night ? -0.0005 : 0, [0.38, 0.74]);
+    lane(tram, -1, 3, 1, [50, 90], [5.2, 6.2], [{ sprite: idx('tram'), w: 1 }], night ? -0.0005 : 0, [0.3, 0.66]);
+    // river boats, slow (about walking pace from up here): a sightseeing boat and a cruise ship
     const river = p.river as Path[];
-    lane(river[0], -1, 4, 1, [50, 110], [3.2, 4.2], [{ sprite: idx('sightseeing'), w: 1 }]);
-    lane(river[1], 1, 4, 1, [40, 90], [3.6, 4.8], [{ sprite: idx('cruise'), w: 1 }]);
-    if (p.sky) this.sky = new Track(p.sky as Path, fx);
-    if (p.birds) this.flock = new Track(p.birds as Path, fx);
+    lane(river[0], -1, 4, 1, [60, 120], [1.8, 2.3], [{ sprite: idx('sightseeing'), w: 1 }]);
+    lane(river[1], 1, 4, 1, [50, 100], [2.0, 2.6], [{ sprite: idx('cruise'), w: 1 }]);
     // start with the world already busy
     for (let i = 0; i < 300; i++) this.update(0.5, true);
   }
@@ -626,28 +610,6 @@ class World {
       const m = this.movers[i];
       if (m.s < -m.length - 20 || m.s > m.track.length + m.length + 20) this.movers.splice(i, 1);
     }
-    if (this.sky) {
-      this.planeT -= dt;
-      if (!this.plane && this.planeT <= 0) this.plane = { t: 0, dur: rand(55, 75) };
-      if (this.plane) {
-        this.plane.t += dt;
-        if (this.plane.t > this.plane.dur) {
-          this.plane = null;
-          this.planeT = rand(30, 70);
-        }
-      }
-    }
-    if (this.flock && !this.night) {
-      this.birdT -= dt;
-      if (!this.birds && this.birdT <= 0) this.birds = { t: 0, dur: rand(16, 24), n: 3 + Math.floor(Math.random() * 4), seed: Math.random() };
-      if (this.birds) {
-        this.birds.t += dt;
-        if (this.birds.t > this.birds.dur) {
-          this.birds = null;
-          this.birdT = rand(14, 30);
-        }
-      }
-    }
     if (!warm) this.pack();
   }
 
@@ -655,8 +617,8 @@ class World {
     for (const m of this.movers) {
       const tram = m.kind === 3;
       const boat = m.kind === 4;
-      const amax = tram ? 0.9 : boat ? 0.12 : m.length > 8 ? 1.0 : 1.6;
-      const bcomf = tram ? 1.1 : boat ? 0.1 : 2.2;
+      const amax = tram ? 0.55 : boat ? 0.08 : m.length > 8 ? 1.0 : 1.6;
+      const bcomf = tram ? 0.8 : boat ? 0.08 : 2.2;
       // whoever is ahead in the same lane
       let gap = Infinity;
       let dv = 0;
@@ -697,9 +659,7 @@ class World {
   }
 
   hurry(): void {
-    for (const l of this.lanes) if (l.kind >= 3) l.timer = Math.min(l.timer, rand(1, 4));
-    if (!this.plane) this.planeT = Math.min(this.planeT, 3);
-    if (!this.birds) this.birdT = Math.min(this.birdT, 2);
+    for (const l of this.lanes) l.timer = Math.min(l.timer, rand(1, 4));
   }
 
   private pack(): void {
@@ -727,21 +687,6 @@ class World {
         extra = m.v / Math.max(m.v0, 0.1);
       }
       put(back, front, hv, Math.sqrt(10 / D), m.kind + m.sprite / 64, extra);
-    }
-    if (this.plane && this.sky) {
-      const s = (this.plane.t / this.plane.dur) * this.sky.length;
-      put(this.sky.at(s), this.sky.at(Math.max(0, s - this.sky.length * 0.05)), 0.0009, 0, 5 + (this.night ? 0.75 : 0.25), 0);
-    }
-    if (this.birds && this.flock) {
-      const k = this.birds.t / this.birds.dur;
-      for (let i = 0; i < this.birds.n; i++) {
-        const lag = i * 0.012 + ((this.birds.seed * 7 + i * 3.1) % 1) * 0.01;
-        const p = this.flock.at((k - lag) * this.flock.length);
-        const bob = Math.sin(this.birds.t * 1.3 + i * 2.1) * 0.004;
-        const span = (0.45 * fy) / p.D;
-        const at = { u: p.u + i * 0.004, v: p.v + bob + (i % 2) * 0.006 };
-        put(at, at, span, Math.sqrt(10 / p.D), 6 + ((this.birds.seed + i * 0.17) % 0.99), 0);
-      }
     }
     this.count = n;
   }
@@ -786,8 +731,8 @@ export class WindowView {
         fillB: { value: opts.day.fill },
         camA: { value: cam(meta.evening, WINDOW_VIEW.evening) },
         camB: { value: cam(meta.day, WINDOW_VIEW.day) },
-        fgA: { value: new THREE.Vector4(1 / WindowView.virtualDepth(meta.evening.foreground), 0.0016, 0, 0) },
-        fgB: { value: new THREE.Vector4(1 / WindowView.virtualDepth(meta.day.foreground), 0.0022, 0, 0) },
+        fgA: { value: new THREE.Vector4(1 / WindowView.virtualDepth(meta.evening.foreground), 0.0008, 0, 0) },
+        fgB: { value: new THREE.Vector4(1 / WindowView.virtualDepth(meta.day.foreground), 0.0011, 0, 0) },
         sA0: { value: sA0 },
         sA1: { value: sA1 },
         sB0: { value: sB0 },
@@ -850,8 +795,9 @@ export class WindowView {
     (this.material.uniforms.gain.value as THREE.Vector2).set(WINDOW_VIEW.evening.gain, WINDOW_VIEW.day.gain);
   }
 
-  /** How wet the evening is (0 dry .. 1 pouring). The day outside is dry. */
-  rain = 0.45;
+  /** Rain on the pane (0 dry .. 1 pouring), evening only. Off: moving drops made the city
+   *  behind them shimmer. `?rain` turns it on. */
+  rain = /[?&]rain\b/.test(location.search) ? 0.4 : 0;
 
   setState(t: number): void {
     this.material.uniforms.mixT.value = t;
@@ -862,9 +808,8 @@ export class WindowView {
     const u = this.material.uniforms;
     u.time.value = reduceMotion ? 0 : time;
     u.wind.value = reduceMotion ? 0 : 1;
-    // showers come and go over a few minutes; by day the pane is dry
-    const shower = this.rain * (0.8 + 0.2 * Math.sin(time * 0.045) + 0.12 * Math.sin(time * 0.013 + 1.7));
-    u.rain.value = THREE.MathUtils.clamp(shower, 0, 1) * (1 - THREE.MathUtils.smoothstep(u.mixT.value as number, 0, 0.6));
+    // by day the pane is dry
+    u.rain.value = this.rain * (1 - THREE.MathUtils.smoothstep(u.mixT.value as number, 0, 0.6));
     const v = u.viewer.value as THREE.Vector3;
     const p = camera.position;
     // window space: x right, y up, z into the city (three.js -z)

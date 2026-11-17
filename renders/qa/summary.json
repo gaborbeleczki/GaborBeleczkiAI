@@ -1,6 +1,6 @@
 {
-  "generated": "2026-11-17T11:17:33.948Z",
-  "seconds": 1150,
+  "generated": "2026-11-17T15:53:53.430Z",
+  "seconds": 993,
   "screenshots": {
     "shots": [
       "page-original-desktop",
@@ -56,18 +56,18 @@
   "perf": {
     "errors": [],
     "page": {
-      "loadMs": 580,
-      "lcpMs": 212,
-      "transferKB": 2575
+      "loadMs": 556,
+      "lcpMs": 236,
+      "transferKB": 2255
     },
     "studio": {
-      "domLoadMs": 291,
-      "readyMs": 11711,
-      "transferKB": 15985,
+      "domLoadMs": 263,
+      "readyMs": 31528,
+      "transferKB": 15663,
       "frames": 2,
       "frameMs": {
-        "median": 11999.6,
-        "p95": 11999.6
+        "median": 3699.7,
+        "p95": 3699.7
       },
       "renderer": {
         "focus": "home",
@@ -83,25 +83,25 @@
       "note": "software WebGL (SwiftShader) in headless Chromium"
     },
     "dist": {
-      "totalKB": 34914,
+      "totalKB": 35265,
       "modelsKB": 1270,
-      "texturesKB": 12252,
-      "jsKB": 921
+      "texturesKB": 12240,
+      "jsKB": 922
     }
   },
   "pixeldiff": {
     "results": {
       "evening": {
-        "mismatchPct": 18.97,
-        "meanAbsLuma": 15.67,
-        "meanLumaWebGL": 104.9,
-        "meanLumaCycles": 103.5
+        "mismatchPct": 18.65,
+        "meanAbsLuma": 16.11,
+        "meanLumaWebGL": 102.6,
+        "meanLumaCycles": 103.7
       },
       "day": {
-        "mismatchPct": 20.07,
-        "meanAbsLuma": 15.32,
-        "meanLumaWebGL": 128.5,
-        "meanLumaCycles": 133.4
+        "mismatchPct": 18.47,
+        "meanAbsLuma": 15.09,
+        "meanLumaWebGL": 125.4,
+        "meanLumaCycles": 133.3
       }
     },
     "errors": []
@@ -236,7 +236,7 @@
             "On the desk",
             "Training log · Sub-2:55",
             "The runner’s corner",
-            "Side quests · behind you"
+            "Turn around · Side quests"
           ],
           "deskSpots": [
             "Business cards",
@@ -246,7 +246,8 @@
             "About me",
             "Global network",
             "Coffee?",
-            "Music"
+            "Music",
+            "Turn around · Side quests"
           ],
           "caption": "Gábor Béleczki"
         },
@@ -271,8 +272,8 @@
         "name": "music: 16 s offline render, no clipping, not silent",
         "pass": true,
         "detail": {
-          "peak": 0.548,
-          "rms": 0.103
+          "peak": 0.542,
+          "rms": 0.104
         },
         "errors": []
       },

@@ -22,9 +22,11 @@ In the evening it rains on the pane. The drops are procedural: they run down the
 
 ![The window up close: rain on the glass, the Chain Bridge behind it](/img/studio-window-rain.jpg)
 
+*A day later:* the rain made the window too busy, so the glass now stays dry unless you ask for it with `?rain`. The view holds still too, and only tram 2 and the boats on the river move through it, slowly. The picture above was taken with the rain on.
+
 ## Side quests
 
-Turn around and there is a cork board. None of it was on the roadmap; all of it shipped: a city break with a KPI (dwarfs found), kitchen-table maths puzzles, a scorekeeper for card night, an oven door repaired with a home-written guide, a family travel desk, home-made learning games. Most were built with an AI on a weekend, for an audience of one family. The policy is pinned to the board: it must ship; see rule one.
+Turn around (press Q, or use *Side quests* in the toolbar) and there is a cork board. None of it was on the roadmap; all of it shipped: a city break with a KPI (dwarfs found), kitchen-table maths puzzles, a scorekeeper for card night, an oven door repaired with a home-written guide, a family travel desk, home-made learning games. Most were built with an AI on a weekend, for an audience of one family. The policy is pinned to the board: it must ship; see rule one.
 
 ![The side-quest wall: a cork board, a poster, a bench](/img/studio-quests.jpg)
 
@@ -43,13 +45,14 @@ Sit at the desk for the first time and the display tells a story: *The Legend of
   <track kind="captions" src="/media/legend.vtt" srclang="en" label="English" default>
 </video>
 
-The script is mine. The voice is a preset text-to-speech voice; the eight pictures were made with an image model; the last shot is the studio itself. Everything else is assembled by a script: slow camera moves over the stills, captions timed from a forced alignment of the narration, and a small score (a drone, four chords and a plucked string) synthesised with numpy.
+The script is mine. The voice is a preset text-to-speech voice; the eight pictures were made with an image model; the last shot is the studio itself. Everything else is assembled by a script, which now cuts the film like footage rather than a slideshow: the dragon's scene is a real video clip, made with an image-to-video model from its still, the last shot is a recording of this room, and the stills still waiting for their clips get punch-in cuts, flickering candlelight and drifting dust in the meantime. The captions are timed from a forced alignment of the narration, and a small score (a drone, four chords and a plucked string) is synthesised with numpy.
 
 ## What was generated, and by what
 
 Worth being exact about, on a site about applied AI:
 
 - **Image model** (GPT Image, through Higgsfield): the film's eight stills, the poster on the wall, the crayon drawing, two photo prints on the cork board, three fabric and rug textures, and the restyled weather in the two window photos.
+- **Video model** (Seedance 2.0 Mini, through Higgsfield): the dragon's scene in the film, from its still.
 - **Text-to-speech** (a preset voice, through Higgsfield): the film's narration.
 - **Code**: everything else. The room, the cloth, the light, the rain, the pages, the score, and the jokes.
 

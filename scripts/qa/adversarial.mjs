@@ -309,6 +309,20 @@ export async function adversarial(base) {
     const step = (n) => page.evaluate((n) => window.__studio.step(1 / 30, n), n);
     await step(110); // the arrival dolly has to settle before the dots show
     const home = await page.evaluate(() => window.__studio.spots());
+    // easy to find: a button in the toolbar, and Q, both turn you round (and Q turns you back)
+    const focus = () => page.evaluate(() => window.__studio.info().focus);
+    const button = await page.locator('.hud__quests').isVisible();
+    await page.locator('.hud__quests').click();
+    await step(110);
+    const byButton = await focus();
+    await page.keyboard.press('q');
+    await step(110);
+    const qBack = await focus();
+    await page.keyboard.press('q');
+    await step(110);
+    const qThere = await focus();
+    await page.keyboard.press('q');
+    await step(110);
     await page.evaluate(() => window.__studio.use('quests'));
     await step(110);
     const wall = await page.evaluate(() => window.__studio.spots());
@@ -340,6 +354,7 @@ export async function adversarial(base) {
     const down = await page.evaluate(() => window.__studio.hand());
     await ctx.close();
     if (!home.some((x) => /Side quests/.test(x)) || !home.some((x) => /Training log/.test(x))) throw new Error(`home dots: ${home.join(', ')}`);
+    if (!button || byButton !== 'quests' || qBack !== 'home' || qThere !== 'quests') throw new Error(`finding the wall: button ${button} -> ${byButton}, Q -> ${qBack}, Q -> ${qThere}`);
     if (wall.length < 4) throw new Error(`wall dots: ${wall.join(', ')}`);
     if (board.focus !== 'board' || board.spots.length < 9) throw new Error(`board: ${JSON.stringify(board)}`);
     if (card !== 'Home repairs') throw new Error(`card caption: ${card}`);

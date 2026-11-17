@@ -32,6 +32,8 @@ interface StudioMeta {
   /** the cards on the cork board */
   quests?: Record<string, number[]>;
   runlog?: { w: number; h: number; cover_t: number; pages_t: number; page_w: number; page_h: number; page_x: number };
+  /** where a book is laid open to read: the desk's surface in front of the keyboard */
+  reading?: { spot: number[] };
   lights: Record<string, number[]>;
   flame: number[];
   pendantPivot?: number[];
@@ -57,7 +59,7 @@ const v3 = (a: number[]) => new THREE.Vector3(a[0], a[1], a[2]);
 const asset = (path: string) => `${path}?v=${import.meta.env.VITE_ASSET_V ?? '0'}`;
 
 const HINTS: Record<Focus, string> = {
-  home: 'The dots mark what you can use · take a dossier from the shelf, sit at the desk, look outside',
+  home: 'The dots mark what you can use · take a dossier from the shelf, sit at the desk, look outside · <kbd>Q</kbd> turn around for the side quests',
   desk: 'Use the dock on the display · <kbd>←</kbd> <kbd>→</kbd> to switch chapters · <kbd>Esc</kbd> to step back',
   shelf: 'Eight dossiers, one chapter each · click one to take it down and read',
   objects: 'Pick something up: the cards, the CV, the phone, the notebook · <kbd>Esc</kbd> to step back',
@@ -130,6 +132,8 @@ export class Studio {
   private readonly capture = /[?&]capture\b/.test(location.search);
   private drift = 0;
   private readonly adoption: Adoption;
+  /** the spot on the desk where books are read (world, on the desk's surface) */
+  private readingSpot = new THREE.Vector3(-0.1, 0.75, -1.56);
   /** bloom, vignette, grain (off with ?nopost, and on devices that are already struggling) */
   private post: Post | null = null;
   /** a line for the reading bar while a dossier is on its way */
@@ -357,7 +361,7 @@ export class Studio {
       vehicles,
       vehicleTextures: { day: vehDay, night: vehNight },
     });
-    this.windowView.mesh.layers.enable(GLOW_LAYER);
+    // (the window stays out of the glow pass: blooming city lights shimmered as the view moved)
     this.scene.add(this.windowView.mesh);
 
     // the dossiers on the shelf, the things on the desk, the record player
@@ -367,6 +371,14 @@ export class Studio {
     photo.src = '/img/gabor.jpg';
     this.shelf = new Shelf(root, meta.dossier, () => this.photo, this.reduceMotion);
     this.desk = new Desk(root, meta.objects?.coffee ? v3(meta.objects.coffee) : null, this.reduceMotion, { runlog: meta.runlog });
+    // every book is read lying open on the desk (not held up and tilted): how far each reaches
+    // below its page surface keeps it resting on the desk rather than in it
+    if (meta.reading?.spot) this.readingSpot = v3(meta.reading.spot);
+    const d = meta.dossier;
+    for (const e of this.shelf.list) e.book.readOnDesk(this.readingSpot, d.thick - d.board_t - 0.0005);
+    this.desk.notebook?.readOnDesk(this.readingSpot, 0.0022 + 0.0116);
+    const rl = meta.runlog;
+    this.desk.runlog?.readOnDesk(this.readingSpot, rl ? rl.cover_t + rl.pages_t : 0.0118);
     this.hotspots = new Hotspots(this.host, this.spotList(meta, root), (id) => this.use(id));
     // the tonearm swings about its bearing: give it a pivot there (the optimiser moved its origin)
     let arm = root.getObjectByName('tonearm');
@@ -515,10 +527,23 @@ export class Studio {
     this.host.classList.add('is-ready');
     this.hud.announce('Studio loaded. The dots mark what you can use. Press 0 to 7 to take a chapter dossier from the shelf, L for light, M for music.');
     this.exposeHooks();
+    if (!this.capture) window.setTimeout(() => this.nudge(), 9000);
     void this.screen.prefetch();
     this.sharpening = this.sharpen();
     if (!this.capture) this.resume();
     canvas.focus({ preventScroll: true });
+  }
+
+  /** Once per browser: point at the side-quest wall, which is behind the visitor. */
+  private nudge(): void {
+    if (this.disposed || this.focus !== 'home' || this.inHand || this.screen.introPlaying) return;
+    try {
+      if (localStorage.getItem('gb.studio.nudge.quests') === '1') return;
+      localStorage.setItem('gb.studio.nudge.quests', '1');
+    } catch {
+      /* private mode: nudge anyway */
+    }
+    this.hud.showToast('There is a wall behind you', 'Side quests, a cork board of them. Press Q, or use the button at the top.');
   }
 
   /** Test and capture hooks: window.__studio (always) and manual stepping with ?capture. */
@@ -573,6 +598,9 @@ export class Studio {
         return out;
       },
       focus: (f: Focus) => this.setFocus(f),
+      // try a camera pose without a rebuild (three.js coordinates)
+      pose: (pos: number[], target: number[], fit: [number, number]) =>
+        this.rig.goTo({ pos: new THREE.Vector3(...pos), target: new THREE.Vector3(...target), fit }, 0.1, true),
       night: (n: boolean) => this.setNight(n),
       lookAt: (x: number, y: number) => this.rig.setPointer(x, y),
       drift: (on: boolean) => (this.drift = on ? 1 : 0),
@@ -701,6 +729,7 @@ export class Studio {
     this.turntable?.update();
     this.pendant?.apply();
     this.dust?.update(this.dayT, this.dpr);
+    if (this.dust) this.dust.points.visible = !this.inHand;
     this.motion.time.value = this.reduceMotion ? 0 : this.time;
     // day/evening cross-fade
     if (this.dayT !== this.dayGoal) {
@@ -920,9 +949,25 @@ export class Studio {
     this.hud.announce(say);
   }
 
+  /** Looking straight down at a book open on the desk (a few degrees off, so the top of the page
+   *  is the top of the screen). The book sits a little above centre, clear of the reading bar. */
+  private readingPose(book: Book): Pose {
+    const g = book.geom;
+    const r = this.renderer.domElement;
+    const portrait = (r.clientWidth || window.innerWidth) / (r.clientHeight || window.innerHeight) < 0.95;
+    const w = portrait ? g.boardW + 0.03 : 2 * g.boardW + 0.07;
+    const h = g.boardH + 0.13;
+    const s = this.readingSpot;
+    // (the toolbar runs along the top, the reading bar along the bottom: leave room for both)
+    const target = new THREE.Vector3(s.x, s.y + 0.03, s.z + h * 0.035);
+    const H = 0.9;
+    return { pos: target.clone().add(new THREE.Vector3(0, H, H * Math.tan(THREE.MathUtils.degToRad(4)))), target, fit: [w, h] };
+  }
+
   private take(h: Exclude<InHand, null>): void {
     this.inHand = h;
     this.hud.setText(h.kind === 'book' ? h.book.html : null);
+    if (h.kind === 'book') this.rig.goTo(this.readingPose(h.book), 1.1);
     this.rig.setLook(LOOKS.read);
     this.rig.setPointer(0, 0);
     this.renderer.domElement.style.cursor = 'default';
@@ -935,8 +980,11 @@ export class Studio {
     const h = this.inHand;
     if (!h) return;
     this.inHand = null;
-    if (h.kind === 'book') h.book.close();
-    else h.held.close(this.reduceMotion);
+    if (h.kind === 'book') {
+      h.book.close();
+      // back to wherever the visitor was standing
+      this.rig.goTo(this.poses[this.focus] ?? this.poses.home, 1.1);
+    } else h.held.close(this.reduceMotion);
     this.rig.setLook(LOOKS[this.focus] ?? LOOKS.home);
     this.hud.setReader(null);
     this.hud.setText(null);
@@ -1122,6 +1170,10 @@ export class Studio {
     if (id === 'quests') {
       this.putDown(true);
       return this.setFocus('quests');
+    }
+    if (id === 'home') {
+      this.putDown(true);
+      return this.setFocus('home');
     }
   }
 
@@ -1334,6 +1386,7 @@ export class Studio {
       return;
     }
     if (e.key === 'l' || e.key === 'L') return this.setNight(!this.night);
+    if (e.key === 'q' || e.key === 'Q') return this.act(this.focus === 'quests' || this.focus === 'board' ? 'home' : 'quests');
     if (e.key === 'm' || e.key === 'M') return void this.toggleMusic();
     if (this.inHand) return;
     if (this.focus === 'desk' && this.screen.key(e)) {
@@ -1381,7 +1434,7 @@ export class Studio {
       // the warm layer and the side quests
       at('runlog', 0.03) && { id: 'runlog', label: 'Training log · Sub-2:55', at: at('runlog', 0.03)!, focus: ['home', 'run'] },
       at('bib') && { id: 'run', label: 'The runner’s corner', at: at('bib')!, focus: ['home'] },
-      at('board') && { id: 'quests', label: 'Side quests · behind you', at: at('board')!, focus: ['home'], edge: 'right' as const },
+      at('board') && { id: 'quests', label: 'Turn around · Side quests', at: at('board')!, focus: ['home', 'objects', 'run'], edge: 'right' as const },
       at('shoes', 0.06) && { id: 'shoes', label: 'Racing shoes', at: at('shoes', 0.06)!, focus: ['run'] },
       at('bib') && { id: 'bib', label: '255', at: at('bib')!, focus: ['run'] },
       at('medal') && { id: 'medal', label: 'Finisher medal', at: at('medal')!, focus: ['run'] },

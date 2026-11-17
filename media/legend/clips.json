@@ -1,0 +1,40 @@
+{
+  "about": "Image-to-video prompts for the film's snippets. Each clip starts from the still of the same name (start frame), 16:9, no audio (the film has its own sound). Save the result as media/legend/<shot>.mp4 and rerun scripts/legend-video.py; a shot without a clip falls back to its still.",
+  "model": "seedance_2_0_mini",
+  "settings": { "resolution": "480p", "aspect_ratio": "16:9", "generate_audio": false, "genre": "epic" },
+  "credits_per_second": { "480p": 0.5, "720p": 1.0 },
+  "shots": [
+    {
+      "shot": "01_tome", "seconds": 6, "status": "todo",
+      "prompt": "Candlelight flickers over an ancient open tome on a wooden desk; a thin curl of steam rises from the mug; the pages stir slightly in a draught; the brass armillary sphere turns very slowly. Slow push-in. Photorealistic, cinematic, warm candlelight, natural motion, no text appears."
+    },
+    {
+      "shot": "02_scriptorium", "seconds": 11, "status": "todo",
+      "prompt": "In a vast candle-lit scriptorium, monks work over endless scrolls of spreadsheets; the monk in front rubs his forehead in despair and shakes his head; scrolls unroll and slide off the desks; dust drifts in the shafts of light. Slow dolly forward. Photorealistic, cinematic, natural motion, no text appears."
+    },
+    {
+      "shot": "03_traveller", "seconds": 9, "status": "todo",
+      "prompt": "A hooded traveller on a hilltop at sunrise holds a large map up in the wind; the map flutters and his cloak blows; below, mist drifts over the Danube, the Chain Bridge and the Parliament. Slow arc around the traveller. Photorealistic, cinematic, golden light, natural motion, no text appears."
+    },
+    {
+      "shot": "04_council", "seconds": 7, "status": "todo",
+      "prompt": "A long council table in a torch-lit hall; the nobleman in front slowly nods off and jerks awake; others sigh and rest their heads on their hands; the sand in the hourglass runs; candle flames flicker. Slow push-in along the table. Photorealistic, cinematic, natural motion, no text appears."
+    },
+    {
+      "shot": "05_mountain", "seconds": 6, "status": "todo",
+      "prompt": "A mountain of scrolls and sticky notes under dramatic clouds; sunbeams break through and sweep across it; a hooded figure at its foot plants coloured flags among the scrolls; the flags flap in the wind; loose papers blow past. Slow crane up. Photorealistic, cinematic, natural motion, no text appears."
+    },
+    {
+      "shot": "06_hall", "seconds": 4, "status": "todo",
+      "prompt": "In a torch-lit amphitheatre, a hooded teacher raises a staff towards three glowing interlocking rings that pulse softly; students in the rows look up and take notes on glowing tablets; the torch flames flicker. Slow push-in. Photorealistic, cinematic, natural motion, no text appears."
+    },
+    {
+      "shot": "07_dragon", "seconds": 5, "status": "done",
+      "prompt": "The green dragon in the red robe slowly dips his quill and signs the long scroll, his eyes following the lines, then gives a small satisfied nod. The fire crackles in the hearth behind him and the candle flames flicker gently. The hooded figure in the foreground stays still. Slow, steady push-in. Photorealistic, cinematic, natural motion, warm firelight, no text appears."
+    },
+    {
+      "shot": "08_runner", "seconds": 10, "status": "todo",
+      "prompt": "At night a runner runs away from the camera along the wet stone embankment of the Danube; street lamps reflect in the puddles; the illuminated Chain Bridge glows across the river; light drizzle. Steady tracking shot following the runner. Photorealistic, cinematic, natural running motion, no text appears."
+    }
+  ]
+}

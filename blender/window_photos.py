@@ -160,6 +160,12 @@ def paint_over(plate, crop, src_size, region, shift):
     return Image.composite(moved, plate, mask)
 
 
+# A boat that passes just behind the bridge must be hidden by it, pixel for pixel. The depth map
+# is 8-bit, so the bridge is entered a little nearer than it is: a clear margin for the test in
+# the shader, and at five hundred metres the extra parallax is far below a pixel.
+OCCLUDE = 0.88
+
+
 # ---------------------------------------------------------------------------- evening
 
 NIGHT = {
@@ -224,7 +230,9 @@ def evening_maps(rgb, g: Grid):
     d_bridge = d_deck
     d_bridge = d_bridge * (1 - ta) + (K / (0.79 - yh)) * ta
     d_bridge = d_bridge * (1 - tb) + (K / (0.585 - yh)) * tb
-    depth = depth * (1 - bridge) + d_bridge * bridge
+    # the occluding depth reaches two pixels past the bridge's edge, so no hull shows along it
+    reach = maxf(bridge, 5)
+    depth = depth * (1 - reach) + maxf(d_bridge * bridge, 5) * OCCLUDE * reach
     water *= 1 - bridge
 
     # the moored cruise boat on the Pest side should not ripple with the river
@@ -331,7 +339,8 @@ def day_maps(rgb, g: Grid, close_boats=False):
     d_bridge = Kd / (np.clip(Y, 0.515, 0.735) - yh)
     d_bridge = d_bridge * (1 - ta) + 285.0 * ta
     d_bridge = d_bridge * (1 - tb) + 500.0 * tb
-    depth = depth * (1 - bridge) + d_bridge * bridge
+    reach = maxf(bridge, 5)
+    depth = depth * (1 - reach) + maxf(d_bridge * bridge, 5) * OCCLUDE * reach
     water *= 1 - bridge
 
     # trees: yellow-green to green (beige facades sit below 50° hue), or the shade inside a crown
@@ -375,9 +384,10 @@ def evening_paths():
         'deck': path(c['deck'], road, crop),
         'quay': path(quay, lambda x, y: K / (bank(x) - yh), crop),
         'upper': path(upper, lambda x, y: K / (bank(x) - yh), crop),
+        # the near lane passes in front of the cruise ship moored on the Pest side, not through it
         'river': [
-            path([(x, bank(x) + 0.03) for x in np.linspace(-0.15, 1.15, 12)], river, crop),
-            path([(x, bank(x) + 0.12) for x in np.linspace(-0.2, 1.2, 12)], river, crop),
+            path([(x, bank(x) + 0.075) for x in np.linspace(-0.15, 1.15, 12)], river, crop),
+            path([(x, bank(x) + 0.16) for x in np.linspace(-0.2, 1.2, 12)], river, crop),
         ],
         'sky': path([(-0.08, 0.11), (0.5, 0.075), (1.08, 0.045)], lambda x, y: 9000.0, crop),
     }

@@ -177,7 +177,8 @@ def build():
         'desk': {'pos': tuple(desk_cam), 'target': tuple(disp_center + Vector((0, 0, -0.005))), 'fit': (0.7, 0.45)},
         'shelf': {'pos': (-0.62, 0.86, 1.46), 'target': tuple(folio_mid), 'fit': (0.62, 0.42)},
         'record': {'pos': (-1.02, 0.82, 1.12), 'target': tuple(tt_c + Vector((0.0, 0.0, 0.07))), 'fit': (0.72, 0.44)},
-        'window': {'pos': (0.5, 0.95, 1.36), 'target': (0.08, 2.6, 1.6), 'fit': (2.4, 1.56)},
+        # standing at the right of the desk: the pendant stays out of the picture
+        'window': {'pos': (0.5, 1.4, 1.5), 'target': (0.4, 2.6, 1.65), 'fit': (1.6, 1.05)},  # clear of the pendant, the lamp and the display (ray-cast search)
         # the desk top seen from the chair: phone, cards, CV, notebook, frame, sphere
         'objects': {'pos': (-0.08, 0.9, 1.42), 'target': (-0.06, 1.78, 0.76), 'fit': (1.62, 0.64)},
         # turn around: the side-quest wall, then the cork board up close
@@ -263,6 +264,8 @@ def build():
         }.items()},
         'quests': {k: blender_to_three(v['pos']) for k, v in quests['cards'].items()},
         'runlog': {k: v for k, v in C.RUNLOG.items()},
+        # books are read lying open here, on the desk in front of the keyboard
+        'reading': {'spot': blender_to_three((F.DESK['x'], 1.56, F.DESK['top']))},
         'lights': {k: blender_to_three(v) for k, v in anchors.items() if not k.endswith('_aim')},
         'flame': blender_to_three(side['flame']),
         'pendantPivot': blender_to_three((pendant['light_pos'][0], pendant['light_pos'][1], R.H)),

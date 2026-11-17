@@ -129,7 +129,7 @@ export class Held {
       w: THREE.MathUtils.lerp(w, w * 0.42, z),
       h: THREE.MathUtils.lerp(h, h * 0.42, z),
       center: new THREE.Vector3(this.focus.x * w * z, this.focus.y * h * z, 0),
-      tilt: THREE.MathUtils.lerp(0.16, 0.04, z),
+      tilt: THREE.MathUtils.lerp(0.04, 0, z),
       fill: this.fill,
     };
     if (this.flight.away) readPose(cam, this.frame.quaternion, this.frame.position, fit, this.pos, this.quat);

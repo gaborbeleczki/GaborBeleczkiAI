@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 
-// The last touch on each frame: light that spills. Lamps, the fairy lights, the candle and the
-// brightest city lights bloom softly into what surrounds them; the corners fall away a little and
-// a trace of grain keeps flat areas from looking computed.
+// The last touch on each frame: light that spills. Lamps, the fairy lights and the candle bloom
+// softly into what surrounds them, and the corners fall away a little. (No grain: noise that
+// changes every frame reads as flicker.)
 //
 // Only things that actually emit light glow (they live on GLOW_LAYER). The room is drawn once
 // more, small and in black, so that a lamp behind the plant stays behind the plant.
@@ -74,7 +74,7 @@ export class Post {
       depthWrite: false,
     });
     this.comp = new THREE.ShaderMaterial({
-      uniforms: { near: { value: null }, far: { value: null }, strength: { value: 0.5 }, vignette: { value: 0.22 }, grain: { value: 0.022 }, time: { value: 0 } },
+      uniforms: { near: { value: null }, far: { value: null }, strength: { value: 0.5 }, vignette: { value: 0.22 }, grain: { value: 0 }, time: { value: 0 } },
       vertexShader: VERT,
       fragmentShader: /* glsl */ `
         uniform sampler2D near;

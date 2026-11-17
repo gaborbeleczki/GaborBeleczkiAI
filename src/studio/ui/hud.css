@@ -846,3 +846,54 @@
   opacity: 1;
   transform: translate(0, -50%);
 }
+
+/* ---- round 5: the side quests are easy to find */
+
+.hud__quests svg {
+  color: #c8432b;
+}
+
+/* the turn-around button at the screen's edge */
+.spot.is-edge {
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+}
+
+.spot.is-edge .spot__dot {
+  border-top-width: 11px;
+  border-bottom-width: 11px;
+  border-left-width: 16px;
+}
+
+.spot.is-edge .spot__label {
+  font-size: 14px;
+  padding: 9px 15px;
+  color: #f5f5f7;
+  background: rgba(29, 45, 61, 0.88);
+  box-shadow: 0 6px 22px rgba(10, 20, 30, 0.35);
+}
+
+.spot.is-edge:not(.is-hidden) {
+  animation: edge-nudge 2.8s ease-in-out infinite;
+}
+
+@keyframes edge-nudge {
+  0%,
+  70%,
+  100% {
+    translate: 0 0;
+  }
+  80% {
+    translate: 6px 0;
+  }
+  90% {
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spot.is-edge:not(.is-hidden) {
+    animation: none;
+  }
+}

@@ -26,8 +26,9 @@ export async function posters(base) {
         const b2 = await page.locator('canvas.studio__gl').screenshot({ timeout: 120000 });
         await sharp(b2).resize(1600, 900).jpeg({ quality: 82, mozjpeg: true }).toFile(img(`${name}.jpg`));
       };
-      await grab('studio-window-rain', () => (window.__studio.focus('window'), window.__studio.step(1 / 30, 150)));
-      await grab('studio-quests', () => (window.__studio.focus('quests'), window.__studio.step(1 / 30, 150)));
+      // the rain is off unless asked for (?rain); this picture is the one with it on
+      await grab('studio-window-rain', () => (window.__studio.rain(0.4), window.__studio.focus('window'), window.__studio.step(1 / 30, 150)));
+      await grab('studio-quests', () => (window.__studio.rain(0), window.__studio.focus('quests'), window.__studio.step(1 / 30, 150)));
       await grab('studio-runlog', () => {
         window.__studio.focus('home');
         window.__studio.step(1 / 30, 90);

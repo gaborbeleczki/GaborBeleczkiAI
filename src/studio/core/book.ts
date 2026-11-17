@@ -180,6 +180,9 @@ export class Book {
   private readonly pan = new Spring(0, 1.3, 1);
   /** extra parts that leave when the book opens (the notebook's elastic band) */
   band: THREE.Object3D | null = null;
+  /** where the book is read: lying open on the desk at this point (world), its pages facing up,
+   *  `depth` = how far the book reaches below its page surface. Without it, held in front of the eye. */
+  private desk: { spot: THREE.Vector3; depth: number } | null = null;
   private bandRest = new THREE.Vector3();
 
   constructor(
@@ -525,15 +528,22 @@ export class Book {
     // closed: the cover is centred; open: the spread (or, on a tall screen, the right page)
     const spreadW = 2 * (g.pageU + g.pageW) + 0.012;
     const coverU = g.pageU + g.pageW / 2;
-    const center = new THREE.Vector3(this.portrait ? this.pan.value : coverU * (1 - k), g.pageV + g.pageH / 2, 0);
-    const fit: ReadFit = {
-      w: this.portrait ? g.boardW + 0.012 : THREE.MathUtils.lerp(g.boardW + 0.02, spreadW, k),
-      h: g.boardH,
-      center,
-      tilt: 0.3,
-      fill: 0.84,
-    };
-    if (this.flight.away) readPose(cam, this.frame.quaternion, this.frame.position, fit, this.readPos, this.readQuat);
+    if (this.desk) {
+      // on the desk the book stays where it was put: the spine on the spot, the cover opening to
+      // the left (on a tall screen the book slides to bring one page under the eye)
+      const center = new THREE.Vector3(this.portrait ? this.pan.value : 0, g.pageV + g.pageH / 2, 0);
+      if (this.flight.away) this.deskPose(center, this.readPos, this.readQuat);
+    } else {
+      const center = new THREE.Vector3(this.portrait ? this.pan.value : coverU * (1 - k), g.pageV + g.pageH / 2, 0);
+      const fit: ReadFit = {
+        w: this.portrait ? g.boardW + 0.012 : THREE.MathUtils.lerp(g.boardW + 0.02, spreadW, k),
+        h: g.boardH,
+        center,
+        tilt: 0.3,
+        fill: 0.84,
+      };
+      if (this.flight.away) readPose(cam, this.frame.quaternion, this.frame.position, fit, this.readPos, this.readQuat);
+    }
     this.flight.place(this.readPos, this.readQuat);
     // the cover turns on its hinge (about the frame's v axis)
     this.hinge.quaternion.setFromAxisAngle(this.hingeAxis, -Math.max(0, this.cover.value));
@@ -548,6 +558,22 @@ export class Book {
       this.band.visible = off < 0.999;
       this.band.position.copy(this.bandRest).add(new THREE.Vector3(0.06 * off, 0, 0));
     }
+  }
+
+  /** Read this book lying open on the desk: the spine's middle lands on `spot` (the desk's
+   *  surface there), the pages face up, the top of the pages points away from the reader (-z). */
+  readOnDesk(spot: THREE.Vector3, depth: number): void {
+    this.desk = { spot: spot.clone(), depth };
+  }
+
+  private static readonly FLAT = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+
+  /** The pose that lays the reading frame flat on the desk with `center` (frame coords) on the spot. */
+  private deskPose(center: THREE.Vector3, outPos: THREE.Vector3, outQuat: THREE.Quaternion): void {
+    const d = this.desk!;
+    outQuat.copy(Book.FLAT).multiply(this.frame.quaternion.clone().invert());
+    const w = center.clone().applyQuaternion(this.frame.quaternion).add(this.frame.position).applyQuaternion(outQuat);
+    outPos.set(d.spot.x, d.spot.y + d.depth + 0.004, d.spot.z).sub(w);
   }
 
   attachBand(band: THREE.Object3D): void {

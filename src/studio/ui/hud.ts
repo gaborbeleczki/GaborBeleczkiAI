@@ -79,6 +79,7 @@ export class Hud {
       <div class="hud__controls glass" role="toolbar" aria-label="Studio controls">
         <button type="button" class="hud__btn" data-act="lights" aria-pressed="false" title="Day or evening (L)">${ICON.moon}<span class="label">Evening</span></button>
         <button type="button" class="hud__btn" data-act="sound" aria-pressed="false" title="Music (M)">${ICON.sound}<span class="label">Music</span></button>
+        <button type="button" class="hud__btn hud__quests" data-act="x:quests" title="Side quests, on the wall behind you (Q)">${ICON.pin}<span class="label">Side quests</span></button>
         <button type="button" class="hud__btn hud__meter" data-act="adoption" aria-expanded="false" title="Studio adoption (yes, it is measured)"><span class="hud__gauge" aria-hidden="true"></span><span class="label">Adoption</span> <b>0%</b></button>
         <button type="button" class="hud__btn" data-act="menu" aria-expanded="false" title="Chapters">${ICON.list}<span class="label">Chapters</span></button>
         <button type="button" class="hud__btn" data-act="page" title="Read as a page">${ICON.page}<span class="label">Page</span></button>
@@ -98,7 +99,7 @@ export class Hud {
         <p>Every programme needs a metric. This one counts what you have tried in the room. It stays in this browser.</p>
         <ul></ul>
       </div>
-      <div class="hud__toast glass" role="status" aria-live="polite"><span class="hud__toast-badge" aria-hidden="true">✓</span><div><strong></strong><span></span></div></div>
+      <div class="hud__toast glass" role="status" aria-live="polite"><span class="hud__toast-badge" aria-hidden="true">✓</span><div class="hud__toast-text"><strong></strong><span></span></div></div>
       <div class="hud__hint glass" aria-hidden="true"></div>
       <div class="hud__caption glass" role="region" aria-label="About this object">
         <button type="button" class="hud__caption-x" data-act="caption-close" aria-label="Close">×</button>
@@ -126,7 +127,8 @@ export class Hud {
     this.root = root;
     this.hint = root.querySelector('.hud__hint')!;
     this.tip = root.querySelector('.hud__tip')!;
-    this.live = root.querySelector('[aria-live]')!;
+    // the announcer has its own region: the toast is a live region too, and must keep its markup
+    this.live = root.querySelector('.sr-only[aria-live]')!;
     this.backBtn = root.querySelector('.hud__back')!;
     this.lightsBtn = root.querySelector('[data-act="lights"]')!;
     this.soundBtn = root.querySelector('[data-act="sound"]')!;
@@ -260,8 +262,8 @@ export class Hud {
 
   /** A small banner for a first: an achievement, or a line worth a moment. */
   showToast(title: string, text: string): void {
-    this.toast.querySelector('strong')!.textContent = title;
-    this.toast.querySelector('div span')!.textContent = text;
+    this.toast.querySelector('.hud__toast-text strong')!.textContent = title;
+    this.toast.querySelector('.hud__toast-text span')!.textContent = text;
     this.toast.classList.add('is-on');
     window.clearTimeout(this.toastTimer);
     this.toastTimer = window.setTimeout(() => this.toast.classList.remove('is-on'), 5200);
