@@ -74,7 +74,7 @@ export function footer(): string {
     <p class="footer__credits">
       Window photos: <a href="https://commons.wikimedia.org/wiki/File:Sz%C3%A9chenyi_Chain_Bridge_in_Budapest_at_night.jpg" rel="noopener" target="_blank">Széchenyi Chain Bridge at night</a> by Wilfredor (CC0) ·
       <a href="https://commons.wikimedia.org/wiki/File:View_from_Buda_Castle.jpg" rel="noopener" target="_blank">View from Buda Castle</a> by Yair-haklai
-      (<a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener license" target="_blank">CC BY-SA 4.0</a>; cropped, a parked tram painted out, depth added — the edited image is shared under the same licence).
+      (<a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener license" target="_blank">CC BY-SA 4.0</a>; cropped, a parked tram painted out, season and light restyled with an image model, depth added — the edited image is shared under the same licence). Both photos' weather was restyled with an image model; the film's stills, the narration and a few textures in the room were also made with generative models (<a href="/notes/side-quests-and-a-legend/">details</a>).
     </p>
     <p class="footer__meta">
       <span>© ${new Date().getFullYear()} Gábor Béleczki · Budapest</span>
