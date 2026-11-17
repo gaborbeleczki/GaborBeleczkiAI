@@ -118,7 +118,7 @@ function hero(): string {
       <video class="hero__video" autoplay muted loop playsinline preload="none" poster="/img/studio-evening.webp" aria-hidden="true" tabindex="-1">
         <source src="/media/studio-loop.mp4" type="video/mp4" />
       </video>
-      <img class="hero__img" src="/img/studio-evening.webp" width="1600" height="900" alt="A calm Nordic study at dusk: an oak desk under a wide window that looks across the Danube to the Chain Bridge, chapter dossiers on a shelf, a record player and warm lamps." fetchpriority="high" />
+      <img class="hero__img" src="/img/studio-evening.webp" width="1600" height="900" alt="A cozy Nordic study at dusk: an oak desk under a rain-streaked window that looks across the Danube to the Chain Bridge, fairy lights, a knitted throw over the chair, chapter dossiers on a shelf, a record player and warm lamps." fetchpriority="high" />
       <button type="button" class="hero__enter" data-set-mode="studio">${icon.cube}<span>Step inside</span></button>
     </div>
     <figcaption>The studio, modeled in Blender and baked with Cycles. Every dossier on the shelf opens a chapter of this page.</figcaption>

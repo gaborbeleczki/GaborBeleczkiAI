@@ -50,7 +50,7 @@ async function atlasPreviews() {
   const dir = out('public/textures');
   // _lo: shown first everywhere; _md: the sharp set for tablets and low-memory devices
   const tiers = { lo: { albedo: 1024, light_evening: 512, light_day: 512 }, md: { albedo: 2048, light_evening: 1024, light_day: 1024 } };
-  for (const g of ['floor', 'walls', 'furniture', 'props']) {
+  for (const g of ['floor', 'walls', 'furniture', 'props', 'quests']) {
     for (const [tier, sizes] of Object.entries(tiers)) {
       for (const [kind, px] of Object.entries(sizes)) {
         const src = path.join(dir, `${g}_${kind}.webp`);

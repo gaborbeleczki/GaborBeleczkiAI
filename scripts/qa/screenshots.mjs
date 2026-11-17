@@ -33,6 +33,8 @@ export async function screenshots(base) {
     await shot(page, 'cv-desktop', { fullPage: true });
     await page.goto(`${base}/notes/building-the-studio/`, { waitUntil: 'networkidle' });
     await shot(page, 'note-desktop', { fullPage: true });
+    await page.goto(`${base}/notes/side-quests-and-a-legend/`, { waitUntil: 'networkidle' });
+    await shot(page, 'note-side-quests', { fullPage: true });
     await ctx.close();
   }
   {
@@ -98,6 +100,34 @@ export async function screenshots(base) {
       }
       await page.evaluate(() => (window.__studio.use('globe'), window.__studio.step(1 / 30, 40)));
       await shot(page, 'studio-globe');
+      // the side quests: the wall behind the visitor, the cork board, a card
+      await page.evaluate(() => (window.__studio.focus('quests'), window.__studio.step(1 / 30, 110)));
+      await shot(page, 'studio-quests');
+      await page.evaluate(() => (window.__studio.focus('board'), window.__studio.step(1 / 30, 110)));
+      await page.evaluate(() => (window.__studio.use('quest:dwarf'), window.__studio.step(1 / 30, 5)));
+      await shot(page, 'studio-board-card');
+      // the runner's corner and the training log
+      await page.evaluate(() => (window.__studio.focus('home'), window.__studio.step(1 / 30, 60), window.__studio.use('medal'), window.__studio.step(1 / 30, 110)));
+      await shot(page, 'studio-run');
+      await page.evaluate(() => (window.__studio.use('runlog'), window.__studio.step(1 / 30, 140)));
+      await shot(page, 'studio-runlog');
+      for (let i = 0; i < 2; i++) await page.evaluate(() => (window.__studio.turn(1), window.__studio.step(1 / 30, 45)));
+      await shot(page, 'studio-runlog-chart');
+      await page.evaluate(() => (window.__studio.putDown(), window.__studio.focus('home'), window.__studio.step(1 / 30, 90)));
+      // a dossier with its sticky note, and the adoption meter's list
+      await page.evaluate(() => (window.__studio.open('approach'), window.__studio.step(1 / 30, 90)));
+      await shot(page, 'studio-dossier-approach');
+      await page.evaluate(() => (window.__studio.putDown(), window.__studio.step(1 / 30, 90)));
+      await page.locator('[data-act="adoption"]').click();
+      await shot(page, 'studio-adoption');
+      await page.locator('[data-act="adoption"]').click();
+      // the film on the display
+      await page.evaluate(() => (window.__studio.focus('desk'), window.__studio.step(1 / 30, 80), window.__studio.legend()));
+      await page.waitForTimeout(9000);
+      await page.evaluate(() => window.__studio.step(1 / 30, 4));
+      await shot(page, 'studio-legend');
+      await page.keyboard.press('Escape');
+      await page.evaluate(() => (window.__studio.focus('home'), window.__studio.step(1 / 30, 75)));
       await page.evaluate(() => window.__studio.focus('shelf'));
       await page.evaluate(() => window.__studio.step(1 / 30, 60));
       await shot(page, 'studio-shelf');

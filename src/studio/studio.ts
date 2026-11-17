@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import '@fontsource/caveat/500.css';
+import '@fontsource/caveat/700.css';
+import { adoptionDone, captions, openingLines, questCards } from '../../content/gags.ts';
 import { cases, folios, profile, type FolioId } from '../../content/profile.ts';
 import { Lounge } from './audio/lounge.ts';
 import type { Book } from './core/book.ts';
@@ -10,11 +13,13 @@ import { Dust } from './core/dust.ts';
 import { Shelf, type DossierDims } from './core/shelf.ts';
 import { bakedMaterial, configureTexture, emitterMaterial, motionUniforms, type MotionUniforms } from './core/materials.ts';
 import { Pendant } from './core/pendant.ts';
+import { GLOW_LAYER, Post } from './core/post.ts';
 import { FixedStep, Wander } from './core/physics.ts';
 import { CameraRig, LOOKS, type Pose } from './core/rig.ts';
 import { Turntable } from './core/turntable.ts';
 import { WindowView, type VehicleMeta, type WindowMeta, type WindowTextures } from './core/window.ts';
 import { Screen } from './screen/screen.ts';
+import { Adoption } from './ui/adoption.ts';
 import { Hotspots, type Spot } from './ui/hotspots.ts';
 import { Hud, type HudAction } from './ui/hud.ts';
 
@@ -24,6 +29,9 @@ interface StudioMeta {
   folios: { id: FolioId; object: string; color: string }[];
   dossier: DossierDims;
   objects: Record<string, number[]>;
+  /** the cards on the cork board */
+  quests?: Record<string, number[]>;
+  runlog?: { w: number; h: number; cover_t: number; pages_t: number; page_w: number; page_h: number; page_x: number };
   lights: Record<string, number[]>;
   flame: number[];
   pendantPivot?: number[];
@@ -38,7 +46,7 @@ export interface StudioOptions {
   onFatal(reason: string): void;
 }
 
-type Focus = 'home' | 'desk' | 'shelf' | 'window' | 'record' | 'objects';
+type Focus = 'home' | 'desk' | 'shelf' | 'window' | 'record' | 'objects' | 'quests' | 'board' | 'run';
 
 /** What is in the visitor's hands: a dossier or the notebook (a Book), or a card, the CV, the phone. */
 type InHand = { kind: 'book'; book: Book; id: string } | { kind: 'held'; held: Held; id: string } | null;
@@ -53,8 +61,11 @@ const HINTS: Record<Focus, string> = {
   desk: 'Use the dock on the display · <kbd>←</kbd> <kbd>→</kbd> to switch chapters · <kbd>Esc</kbd> to step back',
   shelf: 'Eight dossiers, one chapter each · click one to take it down and read',
   objects: 'Pick something up: the cards, the CV, the phone, the notebook · <kbd>Esc</kbd> to step back',
-  window: 'Budapest across the Danube · move to look around · watch for tram 2<br><small>Photos: Wilfredor (CC0) · Yair-haklai (CC BY-SA 4.0), via Wikimedia Commons</small>',
+  window: 'Budapest across the Danube · move to look around · watch for tram 2<br><small>Photos: Wilfredor (CC0) · Yair-haklai (CC BY-SA 4.0), Wikimedia Commons; weather restyled with an image model</small>',
   record: 'Budapest sessions: lounge deep house, generated live · click again to stop',
+  quests: 'The side-quest wall: none of it was on the roadmap · <kbd>Esc</kbd> to step back',
+  board: 'Ten things that shipped anyway · pick a card · <kbd>Esc</kbd> to step back',
+  run: 'The runner’s corner · the training log is on the sill · <kbd>Esc</kbd> to step back',
 };
 
 export class Studio {
@@ -118,6 +129,12 @@ export class Studio {
   private readonly lastEye = new THREE.Vector3();
   private readonly capture = /[?&]capture\b/.test(location.search);
   private drift = 0;
+  private readonly adoption: Adoption;
+  /** bloom, vignette, grain (off with ?nopost, and on devices that are already struggling) */
+  private post: Post | null = null;
+  /** a line for the reading bar while a dossier is on its way */
+  private openingLine = openingLines[0];
+  private legendBusy = false;
 
   constructor(private readonly host: HTMLElement, private readonly opts: StudioOptions) {
     host.classList.add('studio');
@@ -133,13 +150,17 @@ export class Studio {
     // calibrated against the Cycles reference renders (scripts/qa/pixeldiff.mjs): three.js AgX
     // reads ~18% brighter than Blender's AgX at the same exposure
     this.renderer.toneMappingExposure = 0.82;
+    if (!/[?&]nopost\b/.test(location.search)) {
+      const ext = this.renderer.extensions;
+      this.post = new Post(ext.has('EXT_color_buffer_half_float') || ext.has('EXT_color_buffer_float'));
+    }
     const canvas = this.renderer.domElement;
     canvas.className = 'studio__gl';
     canvas.tabIndex = 0;
     canvas.setAttribute('aria-label', '3D studio. Use the Chapters button or the number keys 0 to 7 to open chapters.');
     host.appendChild(canvas);
     this.hud = new Hud(host, {
-      back: () => (this.inHand ? this.putDown() : this.setFocus('home')),
+      back: () => (this.inHand ? this.putDown() : this.setFocus(this.focus === 'board' ? 'quests' : 'home')),
       toggleLights: () => this.setNight(!this.night),
       toggleSound: () => this.toggleMusic(),
       pageView: () => this.opts.onExit(),
@@ -153,6 +174,12 @@ export class Studio {
     this.dayT = this.dayGoal = night ? 0 : 1;
     this.hud.setNight(night);
     this.hud.setHint(HINTS.home);
+    this.adoption = new Adoption((a, percent, complete) => {
+      this.hud.setAdoption(percent, this.adoption.list());
+      if (this.capture) return;
+      this.hud.showToast(complete ? 'Adoption 100%' : `${a.title} · adoption ${percent}%`, complete ? adoptionDone : a.line);
+    });
+    this.hud.setAdoption(this.adoption.percent, this.adoption.list());
   }
 
   private initialNight(): boolean {
@@ -178,6 +205,11 @@ export class Studio {
     ]);
     this.meta = meta;
     this.windowMeta = view;
+    // the handwriting on sticky notes: have it ready before a page is typeset (or do without)
+    if (document.fonts?.load) {
+      const hand = Promise.all([document.fonts.load('700 36px Caveat'), document.fonts.load('500 36px Caveat')]).catch(() => null);
+      await Promise.race([hand, new Promise((r) => window.setTimeout(r, 2500))]);
+    }
     for (const [k, p] of Object.entries(meta.poses)) this.poses[k] = { pos: v3(p.pos), target: v3(p.target), fit: p.fit };
 
     const tl = new THREE.TextureLoader(manager);
@@ -281,6 +313,7 @@ export class Studio {
       } else if (ud.dyn === 'emitter' && mesh.isMesh) {
         const m = emitterMaterial(new THREE.Color(ud.base || '#1a1a1a'), new THREE.Color(ud.glow || '#ffd9a8'), Number(ud.strength || 1));
         mesh.material = m;
+        mesh.layers.enable(GLOW_LAYER);
         this.emitters.push(m);
       } else if (ud.dyn === 'screen' && mesh.isMesh) {
         this.screenMesh = mesh;
@@ -297,6 +330,7 @@ export class Studio {
       {
         // the display's dock switches its own chapters; nothing else in the room moves
         onOpen: (id) => this.showOnScreen(id),
+        onLegend: () => void this.playLegend(),
         onCursor: (c) => {
           if (this.focus === 'desk') this.renderer.domElement.style.cursor = c || 'default';
         },
@@ -323,6 +357,7 @@ export class Studio {
       vehicles,
       vehicleTextures: { day: vehDay, night: vehNight },
     });
+    this.windowView.mesh.layers.enable(GLOW_LAYER);
     this.scene.add(this.windowView.mesh);
 
     // the dossiers on the shelf, the things on the desk, the record player
@@ -331,7 +366,7 @@ export class Studio {
     photo.onload = () => (this.photo = photo);
     photo.src = '/img/gabor.jpg';
     this.shelf = new Shelf(root, meta.dossier, () => this.photo, this.reduceMotion);
-    this.desk = new Desk(root, meta.objects?.coffee ? v3(meta.objects.coffee) : null, this.reduceMotion);
+    this.desk = new Desk(root, meta.objects?.coffee ? v3(meta.objects.coffee) : null, this.reduceMotion, { runlog: meta.runlog });
     this.hotspots = new Hotspots(this.host, this.spotList(meta, root), (id) => this.use(id));
     // the tonearm swings about its bearing: give it a pivot there (the optimiser moved its origin)
     let arm = root.getObjectByName('tonearm');
@@ -350,6 +385,7 @@ export class Studio {
     this.flame = new THREE.Sprite(new THREE.SpriteMaterial({ map: flameTex, color: '#ffc27a', blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     this.flame.position.copy(v3(meta.flame));
     this.flame.scale.set(0.022, 0.05, 1);
+    this.flame.layers.enable(GLOW_LAYER);
     this.scene.add(this.flame);
 
     // a little directional help for the live-lit objects
@@ -416,8 +452,8 @@ export class Studio {
     const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
     const coarse = matchMedia('(pointer: coarse)').matches;
     const full = mem >= 8 && !coarse && this.renderer.capabilities.maxTextureSize >= 4096;
-    // (the walls' albedo is 2K already, so it has no smaller sibling)
-    const sharp = (g: string, kind: string) => (full || (g === 'walls' && kind === 'albedo') ? `/textures/${g}_${kind}.webp` : `/textures/${g}_${kind}_md.webp`);
+    // (the walls' albedo is 2K already, and the side-quest wall is small: neither has a smaller sibling)
+    const sharp = (g: string, kind: string) => (full || g === 'quests' || (g === 'walls' && kind === 'albedo') ? `/textures/${g}_${kind}.webp` : `/textures/${g}_${kind}_md.webp`);
     const states: ('evening' | 'day')[] = this.night ? ['evening', 'day'] : ['day', 'evening'];
     try {
       for (const m of this.baked) {
@@ -493,6 +529,8 @@ export class Studio {
       prefetched: () => this.screen.prefetch().then(() => true),
       sharpened: () => this.sharpening ?? Promise.resolve(false),
       window: (state: 'evening' | 'day', v: { hfov?: number; yaw?: number; pitch?: number; gain?: number }) => this.windowView?.frame(state, v),
+      rain: (v: number) => this.windowView && (this.windowView.rain = v),
+      post: (on: boolean) => this.post && (this.post.enabled = on),
       exposure: (v: number) => (this.renderer.toneMappingExposure = v),
       open: (id: FolioId, page = 0) => this.openDossier(id, page),
       use: (id: string) => this.use(id),
@@ -506,6 +544,9 @@ export class Studio {
       },
       spots: () => [...this.host.querySelectorAll<HTMLElement>('.spot:not(.is-hidden)')].map((el) => el.getAttribute('aria-label')),
       showOnScreen: (id: FolioId) => this.showOnScreen(id),
+      legend: () => this.playLegend(),
+      intro: () => this.screen.introPlaying,
+      adoption: () => ({ percent: this.adoption.percent, done: this.adoption.list().filter((x) => x.done).map((x) => x.a.id) }),
       debugBook: (id: FolioId) => {
         const book = this.shelf?.get(id);
         if (!book) return null;
@@ -602,11 +643,13 @@ export class Studio {
   private pause(): void {
     this.running = false;
     cancelAnimationFrame(this.raf);
+    this.screen?.holdIntro(true);
   }
 
   private resume(): void {
     if (this.running || this.disposed) return;
     this.running = true;
+    this.screen?.holdIntro(false);
     this.timer.update();
     const loop = () => {
       if (!this.running) return;
@@ -629,6 +672,7 @@ export class Studio {
       const mat = m.material as THREE.Material | THREE.Material[] | undefined;
       if (mat) (Array.isArray(mat) ? mat : [mat]).forEach((x) => x.dispose());
     });
+    this.post?.dispose();
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.hud.dispose();
@@ -681,6 +725,7 @@ export class Studio {
     }
     if (!draw) return;
     this.renderer.render(this.scene, this.rig.camera);
+    this.post?.render(this.renderer, this.scene, this.rig.camera, this.reduceMotion ? 0 : this.time, 1 - this.dayT);
     if (!this.capture) this.adapt(dt);
   }
 
@@ -713,6 +758,7 @@ export class Studio {
     const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
     this.frameTimes.length = 0;
     const max = Math.min(window.devicePixelRatio || 1, 2);
+    if (avg > 1 / 34 && this.post?.enabled && this.dpr <= 1) this.post.enabled = false; // the glow goes first
     if (avg > 1 / 40 && this.dpr > 0.75) this.dpr = Math.max(0.75, this.dpr - 0.25);
     else if (avg < 1 / 58 && this.dpr < max) this.dpr = Math.min(max, this.dpr + 0.25);
     else return;
@@ -725,6 +771,7 @@ export class Studio {
     const h = this.host.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h, false);
     this.rig?.setAspect(w / h);
+    this.post?.setSize(w * this.dpr, h * this.dpr);
   }
 
   // ------------------------------------------------------------------ state
@@ -745,6 +792,7 @@ export class Studio {
   }
 
   private setNight(night: boolean): void {
+    if (night !== this.night) this.adoption.mark('lights');
     this.night = night;
     this.pendant?.nudge(0.8);
     this.dayGoal = night ? 0 : 1;
@@ -756,11 +804,17 @@ export class Studio {
     const on = force ?? !this.music.playing;
     if (on) await this.music.start();
     else this.music.stop();
+    if (on) {
+      this.adoption.mark('music');
+      if (this.screen.introPlaying) this.music.hush(true);
+    }
     this.turntable?.setPlaying(on);
     this.hud.setSound(on);
   }
 
   private setFocus(f: Focus): void {
+    if (f !== 'desk' && this.screen.introPlaying) this.screen.skipIntro();
+    const arriving = f !== this.focus;
     this.focus = f;
     const pose = this.poses[f] ?? this.poses.home;
     this.rig.goTo(pose, f === 'home' ? 1.5 : 1.25);
@@ -769,10 +823,34 @@ export class Studio {
     this.hud.setFocused(f !== 'home');
     this.hud.setHint(HINTS[f]);
     this.hud.showCaption(null);
-    if (f === 'home' || f === 'objects') this.namedUntil = this.time + 1.6 + 3.5;
+    if (f === 'home' || f === 'objects' || f === 'quests' || f === 'board' || f === 'run') this.namedUntil = this.time + 1.6 + 3.5;
     if (f === 'window') this.windowView?.hurry();
+    if (f === 'desk') this.adoption.mark('desk');
+    if (f === 'window') this.adoption.mark('window');
+    if (f === 'quests' || f === 'board') this.adoption.mark('quests');
+    // the first time anyone sits down at the desk, the display tells the legend
+    if (f === 'desk' && arriving && !this.capture && !this.reduceMotion && !Adoption.legendSeen()) void this.playLegend();
     if (f !== 'desk') this.renderer.domElement.style.cursor = 'default';
     this.shelf?.setHover(null);
+  }
+
+  /**
+   * The intro film, on the display. It plays by itself the first time the visitor sits down
+   * (that click is the gesture browsers want before sound), and again from the dock or the menu.
+   */
+  private async playLegend(): Promise<void> {
+    if (this.legendBusy || this.inHand) return;
+    this.legendBusy = true;
+    Adoption.setLegendSeen();
+    if (this.focus !== 'desk') this.setFocus('desk');
+    this.hud.showCaption(null);
+    this.music.hush(true);
+    this.hud.setHint('The Legend of the AI Program Manager · <kbd>Esc</kbd> to skip');
+    const how = await this.screen.playIntro();
+    this.music.hush(false);
+    this.legendBusy = false;
+    if (how === 'ended') this.adoption.mark('legend');
+    if (this.focus === 'desk') this.hud.setHint(HINTS.desk);
   }
 
   /** The display's dock: switch the chapter on screen, nothing else moves. */
@@ -794,8 +872,10 @@ export class Studio {
     this.putDown(true);
     this.hud.setCurrent(id);
     this.hud.showCaption(null);
+    this.openingLine = openingLines[Math.floor(Math.random() * openingLines.length)];
     book.open(this.printScale(book), page);
     this.take({ kind: 'book', book, id });
+    this.adoption.mark('dossier');
     const f = folios.find((x) => x.id === id)!;
     this.hud.announce(`Folio ${f.n}, ${f.title}, opened. ${book.pageInfo.total} pages. Use the arrow keys to turn the pages, Escape to put it back.`);
   }
@@ -804,9 +884,28 @@ export class Studio {
     const book = this.desk?.notebook;
     if (!book) return;
     this.putDown(true);
+    this.openingLine = 'Opening… mind the coffee';
     book.open(this.printScale(book));
     this.take({ kind: 'book', book, id: 'notebook' });
     this.hud.announce('The notebook: notes on building the studio. Use the arrow keys to turn the pages.');
+  }
+
+  /** The training log on the window sill: the marathon plan, written up like a programme. */
+  private openRunlog(toc?: string): void {
+    const book = this.desk?.runlog;
+    if (!book) return;
+    if (!(this.inHand?.kind === 'book' && this.inHand.book === book)) {
+      this.putDown(true);
+      this.hud.showCaption(null);
+      this.openingLine = 'Opening… at an easy pace';
+      book.open(this.printScale(book));
+      this.take({ kind: 'book', book, id: 'runlog' });
+      this.adoption.mark('runlog');
+      this.hud.announce('The training log: Project Sub-2:55, a marathon plan written up like a programme. Use the arrow keys to turn the pages.');
+    }
+    const page = toc ? book.tocPage(toc) : null;
+    if (page) book.goToPage(page);
+    this.syncReader(true);
   }
 
   private pickUp(id: 'cards' | 'cv' | 'phone'): void {
@@ -816,6 +915,7 @@ export class Studio {
     this.putDown(true);
     held.open(this.reduceMotion);
     this.take({ kind: 'held', held, id });
+    this.adoption.mark('hands');
     const say = { cards: 'A business card. Click it to turn it over.', cv: 'The one-page CV. Click to read it closer.', phone: 'The phone. Its screen has links to LinkedIn and email.' }[id];
     this.hud.announce(say);
   }
@@ -873,9 +973,10 @@ export class Studio {
     if (h.kind === 'book') {
       const { left, right, total } = h.book.pageInfo;
       const f = folios.find((x) => x.id === h.id);
-      const title = f ? `Folio ${f.n} · ${f.title}` : 'Notebook · Building the studio';
+      const title = f ? `Folio ${f.n} · ${f.title}` : h.id === 'runlog' ? 'Training log · Sub-2:55' : 'Notebook · Building the studio';
       let sub: string;
-      if (h.book.openness < 0.5) sub = 'Opening…';
+      if (!h.book.canNext && h.book.openness > 0.9 && total > 1) this.adoption.mark('finisher');
+      if (h.book.openness < 0.5) sub = this.openingLine;
       else if (left && right) sub = `Pages ${left}–${right} of ${total}`;
       else if (right || left) sub = `Page ${right || left} of ${total}`;
       else sub = h.book.showingLeft ? `Contents · ${total} pages` : 'The end';
@@ -898,6 +999,15 @@ export class Studio {
   /** What happens when a thing in the room (or its dot) is used. */
   private use(id: string): void {
     if (id.startsWith('folio:')) return this.openDossier(id.slice(6) as FolioId);
+    if (id.startsWith('quest:')) {
+      // a card on the cork board: step up to the board first, then read it
+      if (this.focus !== 'board') return this.setFocus('board');
+      const key = id.slice(6);
+      const c = questCards[key];
+      if (!c) return;
+      this.adoption.card(key);
+      return this.hud.showCaption(c);
+    }
     switch (id) {
       case 'shelf':
         return this.setFocus('shelf');
@@ -920,20 +1030,48 @@ export class Studio {
         return this.pickUp(id);
       case 'notebook':
         return this.openNotebook();
+      case 'runlog':
+        return this.openRunlog();
       case 'globe':
         this.desk?.spinGlobe(1);
-        return this.hud.showCaption({
-          title: 'A global network',
-          text: 'The Global AI Innovator programme: 80+ innovators and ambassadors, a hub-and-spoke network of AI champions across regions. Give the sphere another spin.',
-          actions: [{ label: 'Read the case', act: 'case:4' }, { label: 'Spin', act: 'spin', quiet: true }],
-        });
+        this.adoption.mark('sphere');
+        return this.hud.showCaption({ ...captions.globe, actions: [{ label: 'Read the case', act: 'case:4' }, { label: 'Spin', act: 'spin', quiet: true }] });
       case 'coffee':
         this.desk?.pour();
+        return this.hud.showCaption({ ...captions.coffee, actions: [{ label: 'Email', href: `mailto:${profile.email}` }, { label: 'LinkedIn ↗', href: profile.linkedin, quiet: true }] });
+      // ---- the warm layer
+      case 'throw':
+        return this.hud.showCaption(captions.throw);
+      case 'pouf':
+        return this.hud.showCaption(captions.pouf);
+      case 'drawing':
+        return this.hud.showCaption(captions.drawing);
+      // ---- the runner's corner
+      case 'run':
+        return this.setFocus('run');
+      case 'shoes':
+      case 'bib':
+      case 'medal': {
+        if (this.focus !== 'run') this.setFocus('run');
+        const c = captions[id];
         return this.hud.showCaption({
-          title: 'Coffee in Budapest?',
-          text: 'Always up for a conversation about applied AI, enablement and adoption, over coffee in Budapest or on a call.',
-          actions: [{ label: 'Email', href: `mailto:${profile.email}` }, { label: 'LinkedIn ↗', href: profile.linkedin, quiet: true }],
+          ...c,
+          actions: id === 'medal' ? [{ label: 'Lessons learned', act: 'runlog:Lessons learned' }, { label: 'Open the log', act: 'runlog', quiet: true }] : [{ label: 'Open the training log', act: 'runlog' }],
         });
+      }
+      // ---- the side-quest wall
+      case 'quests':
+        return this.setFocus('quests');
+      case 'board':
+        return this.setFocus(this.focus === 'board' ? 'quests' : 'board');
+      case 'poster':
+        if (this.focus !== 'quests' && this.focus !== 'board') this.setFocus('quests');
+        return this.hud.showCaption({ ...captions.poster, actions: [{ label: 'Watch the legend', act: 'legend' }] });
+      case 'kettlebell':
+      case 'padel':
+      case 'bench':
+        if (this.focus !== 'quests' && this.focus !== 'board') this.setFocus('quests');
+        return this.hud.showCaption(captions[id]);
       case 'about':
         return this.hud.showCaption({
           title: profile.name,
@@ -941,16 +1079,10 @@ export class Studio {
           actions: [{ label: 'Read “Hello”', act: 'open:hello' }, { label: 'Contact', act: 'open:contact', quiet: true }],
         });
       case 'music':
-        void this.toggleMusic().then(() =>
-          this.hud.showCaption({
-            title: 'Budapest sessions',
-            text: this.music.playing ? 'Lounge deep house, generated live in your browser. Now playing.' : 'Lounge deep house, generated live in your browser. Stopped.',
-            actions: [{ label: this.music.playing ? 'Stop' : 'Play', act: 'music' }],
-          }),
-        );
+        void this.toggleMusic().then(() => this.hud.showCaption({ ...(this.music.playing ? captions.musicOn : captions.musicOff), actions: [{ label: this.music.playing ? 'Stop' : 'Play', act: 'music' }] }));
         return;
       case 'print':
-        return this.hud.showCaption({ title: '“Duna”', text: 'A print drawn for the studio in the site’s palette: a low sun, layered hills, the river.' });
+        return this.hud.showCaption(captions.print);
       case 'screen':
         return this.setFocus('desk');
     }
@@ -974,8 +1106,23 @@ export class Studio {
       this.syncReader(true);
       return;
     }
-    if (id === 'spin') return this.desk?.spinGlobe(1);
+    if (id === 'spin') {
+      this.adoption.mark('sphere');
+      return this.desk?.spinGlobe(1);
+    }
     if (id === 'music') return this.use('music');
+    if (id === 'legend') {
+      this.hud.showCaption(null);
+      return void this.playLegend();
+    }
+    if (id === 'runlog' || id.startsWith('runlog:')) {
+      this.hud.showCaption(null);
+      return this.openRunlog(id.slice(7) || undefined);
+    }
+    if (id === 'quests') {
+      this.putDown(true);
+      return this.setFocus('quests');
+    }
   }
 
   // ------------------------------------------------------------------ input
@@ -1081,7 +1228,10 @@ export class Studio {
     else if (hitId === 'record' || hitId === 'music') label = this.music.playing ? `${label} · stop the music` : `${label} · play a record`;
     else if (hitId === 'screen') label = 'Sit at the desk';
     else if (hitId === 'cards') label = 'Business cards · take one';
-    else if (hitId === 'cv' || hitId === 'phone' || hitId === 'notebook') label = `${label} · pick up`;
+    else if (hitId === 'cv' || hitId === 'phone' || hitId === 'notebook' || hitId === 'runlog') label = `${label} · pick up`;
+    else if (hitId.startsWith('quest:')) label = this.focus === 'board' ? `${label} · read` : 'Side quests · step closer';
+    else if (hitId === 'board') label = this.focus === 'board' ? 'Step back' : 'Side quests · step closer';
+    else if (hitId === 'shoes' || hitId === 'bib' || hitId === 'medal') label = this.focus === 'run' ? label : `${label} · the runner’s corner`;
     this.renderer.domElement.style.cursor = target ? 'pointer' : 'default';
     this.hud.showTip(target && e.pointerType === 'mouse' ? label : null, e.clientX, e.clientY);
   }
@@ -1129,7 +1279,11 @@ export class Studio {
     }
     if (id) return this.use(id);
     if (this.hud.captionOpen) return this.hud.showCaption(null);
-    if (this.focus !== 'home') this.setFocus('home');
+    if (this.hud.panelOpen) {
+      this.hud.toggleMenu(false);
+      return this.hud.toggleAdoption(false);
+    }
+    if (this.focus !== 'home') this.setFocus(this.focus === 'board' ? 'quests' : 'home');
   }
 
   private onWheel(e: WheelEvent): void {
@@ -1149,6 +1303,10 @@ export class Studio {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const target = e.target as HTMLElement;
     if (target && target.closest('.hud, .spots') && (e.key === 'Enter' || e.key === ' ')) return;
+    if (this.screen.introPlaying && (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      return this.screen.skipIntro();
+    }
     if (this.inHand) {
       if (e.key === 'Escape') return this.putDown();
       if (this.inHand.kind === 'book' && (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'PageDown' || e.key === 'PageUp')) {
@@ -1162,8 +1320,13 @@ export class Studio {
     }
     if (e.key === 'Escape') {
       if (this.hud.captionOpen) return this.hud.showCaption(null);
-      if (this.focus !== 'home') this.setFocus('home');
-      else this.hud.toggleMenu(false);
+      if (this.hud.panelOpen) {
+        this.hud.toggleMenu(false);
+        return this.hud.toggleAdoption(false);
+      }
+      // from the cork board, one step back is the wall it hangs on
+      if (this.focus === 'board') this.setFocus('quests');
+      else if (this.focus !== 'home') this.setFocus('home');
       return;
     }
     if (/^[0-7]$/.test(e.key)) {
@@ -1215,6 +1378,19 @@ export class Studio {
       at('globe', 0.1) && { id: 'globe', label: 'Global network', at: at('globe', 0.1)!, focus: ['objects'] },
       at('coffee', 0.03) && { id: 'coffee', label: 'Coffee?', at: at('coffee', 0.03)!, focus: ['objects'] },
       at('music', 0.04) && { id: 'music', label: 'Music', at: at('music', 0.04)!, focus: ['objects'] },
+      // the warm layer and the side quests
+      at('runlog', 0.03) && { id: 'runlog', label: 'Training log · Sub-2:55', at: at('runlog', 0.03)!, focus: ['home', 'run'] },
+      at('bib') && { id: 'run', label: 'The runner’s corner', at: at('bib')!, focus: ['home'] },
+      at('board') && { id: 'quests', label: 'Side quests · behind you', at: at('board')!, focus: ['home'], edge: 'right' as const },
+      at('shoes', 0.06) && { id: 'shoes', label: 'Racing shoes', at: at('shoes', 0.06)!, focus: ['run'] },
+      at('bib') && { id: 'bib', label: '255', at: at('bib')!, focus: ['run'] },
+      at('medal') && { id: 'medal', label: 'Finisher medal', at: at('medal')!, focus: ['run'] },
+      at('board', 0.52) && { id: 'board', label: 'The cork board · step closer', at: at('board', 0.3)!, focus: ['quests'] },
+      at('poster') && { id: 'poster', label: 'The Dragon of Risk', at: at('poster')!, focus: ['quests'] },
+      at('kettlebell') && { id: 'kettlebell', label: 'Kettlebell', at: at('kettlebell')!, focus: ['quests'] },
+      at('padel') && { id: 'padel', label: 'Padel', at: at('padel')!, focus: ['quests'] },
+      at('bench') && { id: 'bench', label: 'The bench', at: at('bench')!, focus: ['quests'] },
+      ...Object.entries(meta.quests ?? {}).map(([key, pos]) => ({ id: `quest:${key}`, label: questCards[key]?.title ?? key, at: v3(pos), focus: ['board'] })),
     ];
     return list.filter((x): x is Spot => !!x);
   }

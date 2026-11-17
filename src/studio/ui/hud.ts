@@ -1,3 +1,4 @@
+import { loadingLines, type Achievement } from '../../../content/gags.ts';
 import { folios, type FolioId } from '../../../content/profile.ts';
 import './hud.css';
 
@@ -8,6 +9,9 @@ const ICON = {
   sound: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.2h2.6L8.5 3.3v9.4L5.1 9.8H2.5Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10.8 5.6a3.4 3.4 0 0 1 0 4.8M12.6 3.9a5.8 5.8 0 0 1 0 8.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
   page: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v9.2H4Z M9 1.8V5.2h3.5 M6 8.5h4.5 M6 11h4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>',
   list: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="2.6" cy="4" r="1" fill="currentColor"/><circle cx="2.6" cy="8" r="1" fill="currentColor"/><circle cx="2.6" cy="12" r="1" fill="currentColor"/></svg>',
+  play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.6 8Z" fill="currentColor"/></svg>',
+  run: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 11.5c2.2.2 3.6-.4 4.6-2.2l1.2-2.4 2.4 1.6 3.3.4M7.8 6.9l1-2.6 2.4.6M4.2 13.6l3-.2 1.6-2.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10.6" cy="2.6" r="1.2" fill="currentColor"/></svg>',
+  pin: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2s4.4-4 4.4-7.4A4.4 4.4 0 0 0 3.6 6.8c0 3.4 4.4 7.4 4.4 7.4Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="6.7" r="1.5" fill="currentColor"/></svg>',
 };
 
 export interface HudActions {
@@ -62,6 +66,10 @@ export class Hud {
   private readonly menu: HTMLDivElement;
   private readonly reader: HTMLDivElement;
   private readonly caption: HTMLDivElement;
+  private readonly adoption: HTMLDivElement;
+  private readonly toast: HTMLDivElement;
+  private toastTimer = 0;
+  private gagTimer = 0;
 
   constructor(host: HTMLElement, private readonly actions: HudActions) {
     const root = document.createElement('div');
@@ -71,6 +79,7 @@ export class Hud {
       <div class="hud__controls glass" role="toolbar" aria-label="Studio controls">
         <button type="button" class="hud__btn" data-act="lights" aria-pressed="false" title="Day or evening (L)">${ICON.moon}<span class="label">Evening</span></button>
         <button type="button" class="hud__btn" data-act="sound" aria-pressed="false" title="Music (M)">${ICON.sound}<span class="label">Music</span></button>
+        <button type="button" class="hud__btn hud__meter" data-act="adoption" aria-expanded="false" title="Studio adoption (yes, it is measured)"><span class="hud__gauge" aria-hidden="true"></span><span class="label">Adoption</span> <b>0%</b></button>
         <button type="button" class="hud__btn" data-act="menu" aria-expanded="false" title="Chapters">${ICON.list}<span class="label">Chapters</span></button>
         <button type="button" class="hud__btn" data-act="page" title="Read as a page">${ICON.page}<span class="label">Page</span></button>
       </div>
@@ -79,7 +88,17 @@ export class Hud {
         ${folios
           .map((f) => `<button type="button" role="menuitem" data-open="${f.id}"><span class="sw" style="background:${f.color}"></span>${f.n} · ${f.title}</button>`)
           .join('')}
+        <hr />
+        <button type="button" role="menuitem" data-act="x:legend"><span class="ic">${ICON.play}</span>The legend · 1 min film</button>
+        <button type="button" role="menuitem" data-act="x:runlog"><span class="ic">${ICON.run}</span>Training log · Sub-2:55</button>
+        <button type="button" role="menuitem" data-act="x:quests"><span class="ic">${ICON.pin}</span>Side quests</button>
       </div>
+      <div class="hud__adoption glass" role="region" aria-label="Studio adoption">
+        <h3>Studio adoption <b>0%</b></h3>
+        <p>Every programme needs a metric. This one counts what you have tried in the room. It stays in this browser.</p>
+        <ul></ul>
+      </div>
+      <div class="hud__toast glass" role="status" aria-live="polite"><span class="hud__toast-badge" aria-hidden="true">✓</span><div><strong></strong><span></span></div></div>
       <div class="hud__hint glass" aria-hidden="true"></div>
       <div class="hud__caption glass" role="region" aria-label="About this object">
         <button type="button" class="hud__caption-x" data-act="caption-close" aria-label="Close">×</button>
@@ -97,6 +116,7 @@ export class Hud {
         <svg class="hud__ring" viewBox="0 0 54 54"><circle class="bg" cx="27" cy="27" r="23"/><circle class="fg" cx="27" cy="27" r="23" stroke-dasharray="144.5" stroke-dashoffset="144.5" transform="rotate(-90 27 27)"/></svg>
         <h2>Preparing the studio</h2>
         <p>Loading 0%</p>
+        <p class="hud__loader-gag" aria-hidden="true"></p>
         <a data-act="page">Read the page instead</a>
       </div>
       <div class="sr-only" aria-live="polite"></div>
@@ -115,12 +135,28 @@ export class Hud {
     this.menu = root.querySelector('.hud__menu')!;
     this.reader = root.querySelector('.hud__reader')!;
     this.caption = root.querySelector('.hud__caption')!;
+    this.adoption = root.querySelector('.hud__adoption')!;
+    this.toast = root.querySelector('.hud__toast')!;
+    // something to read while the room arrives
+    const gag = root.querySelector<HTMLElement>('.hud__loader-gag')!;
+    let gi = Math.floor(Math.random() * loadingLines.length);
+    const nextGag = () => {
+      gag.textContent = loadingLines[gi++ % loadingLines.length];
+    };
+    nextGag();
+    this.gagTimer = window.setInterval(() => {
+      if (host.classList.contains('is-ready')) window.clearInterval(this.gagTimer);
+      else nextGag();
+    }, 1700);
     root.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-open]');
       if (!el) return;
       e.stopPropagation();
       const act = el.dataset.act ?? '';
-      if (act.startsWith('x:')) return this.actions.act(act.slice(2));
+      if (act.startsWith('x:')) {
+        this.toggleMenu(false);
+        return this.actions.act(act.slice(2));
+      }
       const open = el.dataset.open as FolioId | undefined;
       if (open) {
         this.toggleMenu(false);
@@ -136,7 +172,11 @@ export class Hud {
         case 'page':
           return this.actions.pageView();
         case 'menu':
+          this.toggleAdoption(false);
           return this.toggleMenu();
+        case 'adoption':
+          this.toggleMenu(false);
+          return this.toggleAdoption();
         case 'prev':
           return this.actions.prev();
         case 'next':
@@ -194,6 +234,39 @@ export class Hud {
     return this.caption.classList.contains('is-on');
   }
 
+  // ------------------------------------------------------------------ adoption meter
+
+  toggleAdoption(force?: boolean): void {
+    const open = force ?? !this.adoption.classList.contains('is-open');
+    this.adoption.classList.toggle('is-open', open);
+    this.root.querySelector('[data-act="adoption"]')!.setAttribute('aria-expanded', String(open));
+  }
+
+  get panelOpen(): boolean {
+    return this.adoption.classList.contains('is-open') || this.menu.classList.contains('is-open');
+  }
+
+  /** The meter in the toolbar and the list behind it. */
+  setAdoption(percent: number, list: { a: Achievement; done: boolean }[]): void {
+    const btn = this.root.querySelector<HTMLElement>('[data-act="adoption"]')!;
+    btn.querySelector('b')!.textContent = `${percent}%`;
+    btn.style.setProperty('--p', String(percent));
+    btn.setAttribute('aria-label', `Studio adoption ${percent} percent. Show the list`);
+    this.adoption.querySelector('h3 b')!.textContent = `${percent}%`;
+    this.adoption.querySelector('ul')!.innerHTML = list
+      .map(({ a, done }) => `<li class="${done ? 'is-done' : ''}"><span aria-hidden="true">${done ? '✓' : '○'}</span><div><strong>${esc(done ? a.title : '???')}</strong><small>${esc(done ? a.line : a.hint)}</small></div></li>`)
+      .join('');
+  }
+
+  /** A small banner for a first: an achievement, or a line worth a moment. */
+  showToast(title: string, text: string): void {
+    this.toast.querySelector('strong')!.textContent = title;
+    this.toast.querySelector('div span')!.textContent = text;
+    this.toast.classList.add('is-on');
+    window.clearTimeout(this.toastTimer);
+    this.toastTimer = window.setTimeout(() => this.toast.classList.remove('is-on'), 5200);
+  }
+
   toggleMenu(force?: boolean): void {
     const open = force ?? !this.menu.classList.contains('is-open');
     this.menu.classList.toggle('is-open', open);
@@ -246,6 +319,8 @@ export class Hud {
   }
 
   dispose(): void {
+    window.clearTimeout(this.toastTimer);
+    window.clearInterval(this.gagTimer);
     this.root.remove();
   }
 }

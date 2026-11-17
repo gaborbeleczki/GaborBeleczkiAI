@@ -23,6 +23,12 @@ Photos (credited on the page and in the README):
   evening  "Széchenyi Chain Bridge in Budapest at night", Wilfredor, CC0
   day      "View from Buda Castle", Yair-haklai, CC BY-SA 4.0. Cropped, a parked tram painted out;
            the edited plate is shared under the same licence.
+
+Looks (blender/assets/looks/, same file names): the same two photographs restyled by an image
+model (a misty evening after rain, a golden autumn afternoon) and registered back onto the
+originals (SIFT matches, a homography; ~2 px of residual drift). When a look exists it becomes the
+colour plate. Everything geometric (depth, the river, the foreground, the paths) still comes from
+the photograph itself, so nothing that moves has to know the weather changed.
 """
 
 from __future__ import annotations
@@ -35,6 +41,7 @@ from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 SRC = os.path.join(ROOT, 'blender', 'assets', 'photos')
+LOOKS = os.path.join(ROOT, 'blender', 'assets', 'looks')
 TEX = os.path.join(ROOT, 'public', 'textures')
 QA = os.path.join(ROOT, 'blender', 'out', 'window')
 DATA_W = 1536
@@ -282,7 +289,7 @@ def day_bridge_band(g: Grid):
     return g.polygon([(0.585, 0.76)] + left + right[::-1] + [(0.625, 0.76)])
 
 
-def day_maps(rgb, g: Grid):
+def day_maps(rgb, g: Grid, close_boats=False):
     c = DAY
     X, Y = g.X, g.Y
     r, gg, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
@@ -305,6 +312,9 @@ def day_maps(rgb, g: Grid):
     d_river = K / np.maximum(Y - yh, 1e-3)
     depth = depth * (1 - river) + d_river * river
     water = river * ((b > r + 0.03) | (lum < 0.35)).astype(np.float32)
+    if close_boats:
+        # the restyled plate has no boats: close the holes they left in the river
+        water = np.clip(minf(maxf(water, 11), 11), 0, 1) * river
 
     # near shore on the left: roofs on the slope below the castle
     shore = smoothstep(interp(c['shore'], X) - 0.002, interp(c['shore'], X) + 0.004, Y) * (X < 0.42)
@@ -475,6 +485,29 @@ def qa_views(name, plate, depth, water, lights, fore, sway, fill):
     fill.save(os.path.join(QA, f'{name}_fill.png'))
 
 
+def load_look(cfg, src_size):
+    """The restyled plate for this photo, cropped like the photo, or None."""
+    path = os.path.join(LOOKS, cfg['file'])
+    if not os.path.exists(path):
+        return None
+    im = Image.open(path).convert('RGB')
+    if im.size != src_size:
+        raise SystemExit(f'[window] look {path} is {im.size}, the photo is {src_size}')
+    W, H = src_size
+    x0, y0, x1, y1 = cfg['crop']
+    return im.crop((round(x0 * W), round(y0 * H), round(x1 * W), round(y1 * H)))
+
+
+def relight(state, look_rgb, water, fore):
+    """Point lights (evening) or sun glints (day) as they are in the restyled plate."""
+    lum = lum_of(look_rgb)
+    if state == 'evening':
+        local = lum - blur(lum, 3.0)
+        lights = np.clip(local * 5.0, 0, 1) * smoothstep(0.32, 0.6, lum) * (1 - water) * (1 - fore)
+        return np.maximum(lights, smoothstep(0.75, 0.95, lum) * (1 - water) * (1 - fore))
+    return water * np.clip((lum - blur(lum, 2.0)) * 6.0 + 0.25, 0, 1)
+
+
 def process(state, cfg, maps_fn, paths_fn, fix=None):
     plate, src_size = load_plate(cfg['file'], cfg['crop'])
     if fix:
@@ -483,7 +516,17 @@ def process(state, cfg, maps_fn, paths_fn, fix=None):
     dh = round(DATA_W * ph / pw)
     g = Grid(cfg['crop'], DATA_W, dh)
     rgb = np.asarray(plate.resize((DATA_W, dh), Image.LANCZOS), dtype=np.float32) / 255.0
-    depth, water, lights, fore, sway = maps_fn(rgb, g)
+    look = load_look(cfg, src_size)
+    if look is not None and state == 'day':
+        depth, water, lights, fore, sway = maps_fn(rgb, g, close_boats=True)
+    else:
+        depth, water, lights, fore, sway = maps_fn(rgb, g)
+    if look is not None:
+        # geometry from the photograph, colour (and where the lights are) from the look
+        plate = look
+        look_rgb = np.asarray(plate.resize((DATA_W, dh), Image.LANCZOS), dtype=np.float32) / 255.0
+        lights = relight(state, look_rgb, water, fore)
+        print(f'[window] {state}: using the look {cfg["file"]}')
     fill = fill_layer(plate, fore, (DATA_W, dh))
     os.makedirs(TEX, exist_ok=True)
     plate.save(os.path.join(TEX, f'window_{state}.webp'), 'WEBP', quality=84, method=6)
@@ -518,10 +561,11 @@ def main():
     out = {
         'credits': {
             'evening': {'title': 'Széchenyi Chain Bridge in Budapest at night', 'author': 'Wilfredor', 'license': 'CC0 1.0',
-                        'url': 'https://commons.wikimedia.org/wiki/File:Sz%C3%A9chenyi_Chain_Bridge_in_Budapest_at_night.jpg'},
+                        'url': 'https://commons.wikimedia.org/wiki/File:Sz%C3%A9chenyi_Chain_Bridge_in_Budapest_at_night.jpg',
+                        'changes': 'weather and light restyled with an image model (a misty evening after rain)'},
             'day': {'title': 'View from Buda Castle', 'author': 'Yair-haklai', 'license': 'CC BY-SA 4.0',
                     'url': 'https://commons.wikimedia.org/wiki/File:View_from_Buda_Castle.jpg',
-                    'changes': 'cropped, a parked tram painted out'},
+                    'changes': 'cropped, a parked tram painted out, season and light restyled with an image model (a golden autumn afternoon); shared under the same licence'},
         },
         'evening': process('evening', NIGHT, evening_maps, evening_paths),
         'day': process('day', DAY, day_maps, day_paths, fix_day),

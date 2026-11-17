@@ -649,8 +649,11 @@ def sideboard_things(coll, art_paths: dict) -> dict:
     wick = tube_along('sb_wick', [(cpos[0], cpos[1], z + 0.067), (cpos[0], cpos[1], z + 0.077)], 0.0012, coll, M.matte('#1A1A1A', 'wick', 0.9))
     parts += [glass, wax, wick]
     flame = (cpos[0], cpos[1], z + 0.09)
-    # two books lying flat between the ceramics and the candle
-    parts += book_stack('sb_books', (cx, 0.72, z), coll, n=2, rot=math.radians(4))
+    # two books lying flat between the ceramics and the candle; the little lamp stands on them
+    stack = book_stack('sb_books', (cx - 0.02, 0.66, z), coll, n=2, rot=math.radians(4))
+    parts += stack
+    bpy.context.view_layer.update()
+    stack_top = max((ob.matrix_world @ Vector(c)).z for ob in stack for c in ob.bound_box)
     # record sleeves leaning against the end of the sideboard
     for i, key in enumerate(('sleeve_a', 'sleeve_b', 'sleeve_c')):
         mat = M.image_diffuse(f'sleeve_{i}', art_paths[key], 0.7) if key in art_paths else M.paper(BOOK_COLORS[i], f'sleeve_{i}')
@@ -660,7 +663,7 @@ def sideboard_things(coll, art_paths: dict) -> dict:
         parts.append(sl)
     for p in parts:
         tag(p, bake='props')
-    return {'parts': parts, 'flame': flame}
+    return {'parts': parts, 'flame': flame, 'lamp_base': (cx - 0.02, 0.66, stack_top)}
 
 
 def leaning_print(coll, image_path, base, size=(0.4, 0.5)) -> list:

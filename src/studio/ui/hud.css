@@ -628,3 +628,221 @@
     transition: none;
   }
 }
+
+/* ---- the adoption meter, its list, and the banner for a first */
+
+.hud__menu hr {
+  width: calc(100% - 16px);
+  margin: 4px 8px;
+  border: 0;
+  border-top: 1px solid rgba(29, 29, 31, 0.12);
+}
+
+.hud__menu .ic {
+  width: 12px;
+  height: 12px;
+  display: grid;
+  place-items: center;
+  color: #6e6e73;
+}
+
+.hud__menu .ic svg {
+  width: 14px;
+  height: 14px;
+}
+
+.hud__meter b {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud__gauge {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: conic-gradient(#c8432b calc(var(--p, 0) * 1%), rgba(29, 29, 31, 0.14) 0);
+  -webkit-mask: radial-gradient(circle, transparent 42%, #000 46%);
+  mask: radial-gradient(circle, transparent 42%, #000 46%);
+}
+
+.hud__adoption {
+  position: absolute;
+  top: 66px;
+  right: 18px;
+  width: min(330px, calc(100vw - 36px));
+  max-height: min(70vh, 560px);
+  overflow: auto;
+  padding: 16px 16px 10px;
+  border-radius: 20px;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.hud__adoption.is-open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.hud__adoption h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  display: flex;
+  justify-content: space-between;
+}
+
+.hud__adoption h3 b {
+  color: #c8432b;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud__adoption p {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #6e6e73;
+}
+
+.hud__adoption ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hud__adoption li {
+  display: flex;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid rgba(29, 29, 31, 0.08);
+  font-size: 13px;
+  color: #9a9aa0;
+}
+
+.hud__adoption li > span {
+  width: 18px;
+  text-align: center;
+}
+
+.hud__adoption li strong {
+  display: block;
+  font-weight: 600;
+}
+
+.hud__adoption li small {
+  font-size: 12px;
+}
+
+.hud__adoption li.is-done {
+  color: #1d1d1f;
+}
+
+.hud__adoption li.is-done > span {
+  color: #3a7d52;
+  font-weight: 700;
+}
+
+.hud__adoption li.is-done small {
+  color: #6e6e73;
+}
+
+.hud__toast {
+  position: absolute;
+  left: 18px;
+  bottom: 22px;
+  max-width: min(360px, calc(100vw - 36px));
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 16px 11px 12px;
+  border-radius: 18px;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.35s, transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.hud__toast.is-on {
+  opacity: 1;
+  transform: none;
+}
+
+.hud__toast-badge {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #1d2d3d;
+  color: #f5f5f7;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hud__toast strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.hud__toast div span {
+  font-size: 12.5px;
+  color: #3d3d41;
+  line-height: 1.35;
+}
+
+.hud__loader .hud__loader-gag {
+  min-height: 1.4em;
+  margin: -6px 0 14px;
+  font-style: italic;
+  color: #3d3d41;
+}
+
+.studio.is-reading .hud__toast {
+  bottom: 84px;
+}
+
+@media (max-width: 640px) {
+  .hud__toast {
+    left: 12px;
+    bottom: 64px;
+  }
+  .hud__meter .label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud__toast,
+  .hud__adoption {
+    transition: none;
+  }
+}
+
+/* ---- a dot for something behind you: it sits on the edge of the view and points */
+
+.spot.is-edge .spot__dot {
+  width: 0;
+  height: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 12px solid rgba(255, 255, 255, 0.96);
+  filter: drop-shadow(0 2px 6px rgba(10, 20, 30, 0.45));
+}
+
+.spot.is-edge::before {
+  display: none;
+}
+
+.spot.is-edge .spot__label {
+  opacity: 1;
+  transform: translate(0, -50%);
+}

@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import bpy  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
-from lib import art, furniture as F, lighting as L, materials as M, props as P, room as R  # noqa: E402
+from lib import art, cards, cozy as C, furniture as F, lighting as L, materials as M, props as P, room as R  # noqa: E402
 from lib.util import apply_modifiers, blender_to_three, collection, empty, join, reset_scene, tag, write_sway  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -24,7 +24,9 @@ OUT = os.path.join(ROOT, 'blender', 'out')
 PUBLIC = os.path.join(ROOT, 'public')
 WINDOW_PLATE = os.path.join(ROOT, 'public', 'textures', 'window_evening.webp')
 
-BAKE_GROUPS = ['floor', 'walls', 'furniture', 'props']
+BAKE_GROUPS = ['floor', 'walls', 'furniture', 'props', 'quests']
+# materials of draped cloth: their own UVs (ArtUV) are a clean unwrap, kept as the bake islands
+SHEET_MATERIALS = {'knit_throw', 'throw_wool'}
 ATLAS_PRIORITY = {
     # scale UV islands of surfaces the camera rarely sees so the texels go where they show
     'ceiling': 0.45,
@@ -43,11 +45,14 @@ def build():
     for k in ('cv', 'portrait'):
         if not os.path.exists(arts[k]):
             del arts[k]
+    # paper for the side-quest board, and the photographs and textures made for this room
+    arts.update(cards.make_all(os.path.join(OUT, 'art')))
 
     c_floor = collection('BAKE_floor')
     c_walls = collection('BAKE_walls')
     c_furn = collection('BAKE_furniture')
     c_props = collection('BAKE_props')
+    c_quests = collection('BAKE_quests')
     c_dyn = collection('DYN')
     c_hit = collection('HIT')
     c_meta = collection('META')
@@ -56,10 +61,13 @@ def build():
     # ---- geometry
     R.build_shell(c_floor, c_walls)
     F.build_desk(c_furn)
-    F.build_desk_chair(c_furn)
+    chair = F.build_desk_chair(c_furn)
     F.build_sideboard(c_furn)
     F.build_shelves(c_furn)
-    F.build_rug(c_furn)
+    F.build_rug(c_furn, image=arts.get('rug'))
+    # a throw falls over the chair (cloth simulation against the shell and the seat cushion)
+    throw = C.build_throw(c_furn, [o for o in chair if o.name in ('chair_shell', 'chair_cushion')], arts.get('knit'))
+    pouf = C.build_pouf(c_furn, arts.get('knit'))
     pendant = F.build_pendant(c_furn, c_dyn)
     desk_lamp = F.build_desk_lamp(c_furn, c_dyn)
 
@@ -70,6 +78,18 @@ def build():
     P.big_plant(c_props)
     P.sill_things(c_props)
     side = P.sideboard_things(c_props, arts)
+
+    # ---- the warm layer and the side quests
+    fairy = C.build_fairy_lights(c_props, c_dyn)
+    lamp = C.build_mushroom_lamp(c_props, c_dyn, side['lamp_base'])
+    drawing = (R.X0 + 0.0005, 1.17, 0.955)
+    if 'crayon' in arts:
+        C.taped('crayon', c_props, arts['crayon'], drawing, '+x', (0.297, 0.224))
+    gear = C.build_running_gear(c_props, arts)
+    medal = C.build_medal(c_props, c_dyn, arts)
+    runlog_pos = (0.6, R.Y1 + 0.06, R.WIN_Z0)
+    C.build_runlog(c_dyn, runlog_pos, math.radians(80))
+    quests = C.build_quest_wall(c_quests, c_dyn, arts)
 
     # ---- city backdrop: the Budapest photo on an emissive plane behind the window (stills only)
     city_img = WINDOW_PLATE
@@ -117,6 +137,34 @@ def build():
     }
     for key, (size, loc, label) in desk_hits.items():
         P.hit_box(f'hit_{key}', size, loc, c_hit, key, label)
+    # the warm layer and the side quests
+    P.hit_box('hit_throw', (0.56, 0.14, 0.56), throw['hang'], c_hit, 'throw', 'Throw', rot_z=throw['yaw'])
+    P.hit_box('hit_pouf', (0.46, 0.46, 0.3), (pouf['top'][0], pouf['top'][1], 0.17), c_hit, 'pouf', 'Pouf')
+    P.hit_box('hit_fairy', (R.WIN_X1 - R.WIN_X0 - 0.1, 0.08, 0.14), (0, R.Y1 + 0.03, R.WIN_Z1 - 0.07), c_hit, 'lights', 'Fairy lights')
+    P.hit_box('hit_drawing', (0.03, 0.31, 0.24), (drawing[0] + 0.02, drawing[1], drawing[2]), c_hit, 'drawing', 'A drawing')
+    P.hit_box('hit_shoes', (0.36, 0.3, 0.14), (gear['shoes'][0], gear['shoes'][1], 0.07), c_hit, 'shoes', 'Running shoes')
+    if 'bib' in gear:
+        P.hit_box('hit_bib', (0.26, 0.03, 0.2), (gear['bib'][0], gear['bib'][1] - 0.012, gear['bib'][2]), c_hit, 'bib', 'Race number')
+    ma = medal['anchor']
+    P.hit_box('hit_medal', (0.1, 0.05, 0.36), (ma[0], ma[1] - 0.01, ma[2] + 0.1), c_hit, 'medal', 'Finisher medal')
+    P.hit_box('hit_runlog', (0.24, 0.18, 0.05), (runlog_pos[0], runlog_pos[1], runlog_pos[2] + 0.02), c_hit, 'runlog', 'Training log')
+    qb = quests['board']
+    P.hit_box('hit_board', (0.02, C.BOARD['w'] + 0.06, C.BOARD['h'] + 0.06), (qb[0], qb[1], qb[2]), c_hit, 'board', 'Side quests')
+    quest_labels = {
+        'banner': 'Side quests', 'dwarf': 'City break', 'maths': 'Kitchen-table maths', 'score': 'Card night', 'padel': 'Padel',
+        'oven': 'Home repairs', 'travel': 'Family travel desk', 'games': 'Learning games', 'snow': 'Snow trip', 'policy': 'Side-quest policy',
+    }
+    for key, card in quests['cards'].items():
+        cp, (cw, ch) = card['pos'], card['size']
+        P.hit_box(f'hit_q_{key}', (0.03, cw, ch), (cp[0] - 0.03, cp[1], cp[2]), c_hit, f'quest:{key}', quest_labels.get(key, key))
+    qp = quests['poster']
+    P.hit_box('hit_poster', (0.03, 0.7, 0.46), (qp[0] - 0.03, qp[1], qp[2]), c_hit, 'poster', 'Poster')
+    kb = quests['kettlebell']
+    P.hit_box('hit_kettlebell', (0.26, 0.26, 0.3), (kb[0], kb[1], 0.15), c_hit, 'kettlebell', 'Kettlebell')
+    qn = quests['bench']
+    P.hit_box('hit_bench', (0.36, 1.14, 0.2), (qn[0], qn[1], 0.42), c_hit, 'bench', 'Bench')
+    pr = quests['padel']
+    P.hit_box('hit_padel', (0.22, 0.4, 0.52), (pr[0] - 0.04, pr[1] - 0.04, 0.26), c_hit, 'padel', 'Padel racket')
 
     # ---- camera poses (empties in Blender, JSON for the runtime)
     disp_center = Vector((P.DISPLAY_POS[0], P.DISPLAY_POS[1], F.DESK['top'] + 0.33))
@@ -132,6 +180,11 @@ def build():
         'window': {'pos': (0.5, 0.95, 1.36), 'target': (0.08, 2.6, 1.6), 'fit': (2.4, 1.56)},
         # the desk top seen from the chair: phone, cards, CV, notebook, frame, sphere
         'objects': {'pos': (-0.08, 0.9, 1.42), 'target': (-0.06, 1.78, 0.76), 'fit': (1.62, 0.64)},
+        # turn around: the side-quest wall, then the cork board up close
+        'quests': {'pos': (-0.42, 0.28, 1.22), 'target': (R.X1, 0.56, 0.98), 'fit': (2.4, 2.2)},
+        # the runner's corner: shoes under the window, the race number, the medal, the log on the sill
+        'run': {'pos': (1.32, 0.86, 1.2), 'target': (0.72, R.Y1, 0.72), 'fit': (1.3, 1.62)},
+        'board': {'pos': (0.42, C.BOARD['y'], C.BOARD['z']), 'target': (R.X1, C.BOARD['y'], C.BOARD['z']), 'fit': (1.36, 0.94)},
     }
     for name, p in poses.items():
         empty(f'CAM_{name}', p['pos'], c_meta, target=list(p['target']))
@@ -142,7 +195,16 @@ def build():
         'desk_lamp': desk_lamp['light_pos'],
         'desk_lamp_aim': desk_lamp['aim'],
         'candle': side['flame'],
+        'mushroom': lamp['light_pos'],
+        'sconce': quests['light_pos'],
+        'sconce_aim': quests['aim'],
     }
+    for i, pos in enumerate(fairy['lights']):
+        anchors[f'fairy_{i}'] = pos
+    # the glowing parts of the new lamps let their own light through
+    for name in ('fairy_bulbs', 'ml_shade', 'ql_strip'):
+        if name in bpy.data.objects:
+            bpy.data.objects[name].visible_shadow = False
 
     # ---- per-vertex motion data (curtains breathe, leaves sway, the pendant swings)
     bpy.context.view_layer.update()
@@ -191,8 +253,17 @@ def build():
         'screen': {'size': [P.SCREEN_W, P.SCREEN_H], 'pixels': [1600, 1000]},
         'folios': [{'id': fid, 'object': f'folio_{i:02d}', 'color': col} for i, (fid, col) in enumerate(zip(P.FOLIO_IDS, P.FOLIO_COLORS))],
         'dossier': {k: v for k, v in P.DOSSIER.items()},
-        'objects': {k: blender_to_three(v) for k, v in desk['anchors'].items()},
-        'lights': {k: blender_to_three(v) for k, v in anchors.items() if k != 'desk_lamp_aim'},
+        'objects': {k: blender_to_three(v) for k, v in {
+            **desk['anchors'],
+            'runlog': (runlog_pos[0], runlog_pos[1], runlog_pos[2] + 0.03),
+            'shoes': gear['shoes'], 'medal': medal['anchor'], 'drawing': drawing,
+            'throw': throw['hang'], 'pouf': pouf['top'], 'lamp': lamp['top'],
+            'board': quests['board'], 'poster': quests['poster'], 'kettlebell': quests['kettlebell'], 'padel': quests['padel'], 'bench': quests['bench'],
+            **({'bib': gear['bib']} if 'bib' in gear else {}),
+        }.items()},
+        'quests': {k: blender_to_three(v['pos']) for k, v in quests['cards'].items()},
+        'runlog': {k: v for k, v in C.RUNLOG.items()},
+        'lights': {k: blender_to_three(v) for k, v in anchors.items() if not k.endswith('_aim')},
         'flame': blender_to_three(side['flame']),
         'pendantPivot': blender_to_three((pendant['light_pos'][0], pendant['light_pos'][1], R.H)),
         'room': {'min': blender_to_three((R.X0, R.Y1, 0)), 'max': blender_to_three((R.X1, R.Y0, R.H))},
@@ -226,6 +297,25 @@ def unwrap(ob, group):
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.uv.smart_project(angle_limit=math.radians(60), island_margin=0.0, area_weight=0.0, correct_aspect=True, scale_to_bounds=False)
+    # cloth keeps the unwrap it was woven with: one island per side instead of the dozens of
+    # scraps a projection would cut a draped sheet into (they showed as blotches in the light)
+    keep = {i for i, m in enumerate(me.materials) if m and m.name in SHEET_MATERIALS}
+    if keep and 'ArtUV' in me.uv_layers:
+        bpy.ops.object.mode_set(mode='OBJECT')
+        art = me.uv_layers['ArtUV'].data
+        bk = me.uv_layers['BakeUV'].data
+        for poly in me.polygons:
+            if poly.material_index not in keep:
+                continue
+            uvs = [art[li].uv.copy() for li in poly.loop_indices]
+            area = sum(uvs[i].x * uvs[(i + 1) % len(uvs)].y - uvs[(i + 1) % len(uvs)].x * uvs[i].y for i in range(len(uvs))) / 2
+            if abs(area) < 1e-9:
+                continue  # the hem between the two sides stays where the projection put it
+            shift = 20.0 if area > 0 else 40.0  # the upper side and the underside, well apart
+            for li, uv in zip(poly.loop_indices, uvs):
+                bk[li].uv = (uv.x + shift, uv.y + 20.0)
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.uv.average_islands_scale()
     bpy.ops.uv.pack_islands(rotate=True, margin=0.004 if group != 'floor' else 0.002)
     bpy.ops.object.mode_set(mode='OBJECT')

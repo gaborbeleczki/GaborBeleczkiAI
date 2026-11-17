@@ -137,6 +137,22 @@ def portal():
     return area('window_portal', (0, GLASS_Y + 0.02, (WIN_Z0 + WIN_Z1) / 2), (w, h), 0, (1, 1, 1), (math.radians(-90), 0, 0), portal=True)
 
 
+def cozy(anchors: dict, on: bool):
+    """Fairy lights, the little lamp on the sideboard and the picture light over the cork board:
+    on in the evening, off by day."""
+    if on:
+        for k, p in anchors.items():
+            if k.startswith('fairy_'):
+                point(k, p, 1.3, kelvin(2400), 0.02)
+        if 'mushroom' in anchors:
+            point('mushroom', anchors['mushroom'], 7.0, kelvin(2600), 0.05)
+        if 'sconce' in anchors:
+            spot('sconce', anchors['sconce'], anchors['sconce_aim'], 16.0, kelvin(2800), 125, 0.85, 0.04)
+    set_emission_strength('bulb_fairy', 3.0 if on else 0.0)
+    set_emission_strength('shade_glow', 2.0 if on else 0.0)
+    set_emission_strength('strip_glow', 2.5 if on else 0.0)
+
+
 def evening(anchors: dict):
     clear_lights()
     world_gradient([(0.0, '#2B3A55'), (0.38, '#52607E'), (0.5, '#B88A86'), (0.56, '#E7A777'), (0.66, '#7D86A6'), (1.0, '#1C2A44')], strength=1.6, name='sky_evening')
@@ -145,8 +161,9 @@ def evening(anchors: dict):
     spot('desk_lamp', anchors['desk_lamp'], anchors['desk_lamp_aim'], 22, kelvin(2900), 100, 0.75, 0.03)
     point('candle', anchors['candle'], 1.4, kelvin(1900), 0.012)
     # soft cool fill so shadow sides read as blue-hour rather than black
-    area('fill_window', (0, 2.0, 1.7), (2.3, 1.4), 18, (0.62, 0.72, 1.0), (math.radians(-90), 0, 0))
+    area('fill_window', (0, 2.0, 1.7), (2.3, 1.4), 15, (0.62, 0.72, 1.0), (math.radians(-90), 0, 0))
     portal()
+    cozy(anchors, True)
     set_emission_strength('screen_glow', 2.2)
     set_emission_strength('pendant_inner', 1.5)
     set_emission_strength('bulb_warm', 4.0)
@@ -160,6 +177,7 @@ def day(anchors: dict):
     sun('sun', (0.42, -0.82, -0.38), 4.2, kelvin(5200), 0.7)
     area('fill_window', (0, 2.0, 1.7), (2.3, 1.4), 30, (0.92, 0.96, 1.0), (math.radians(-90), 0, 0))
     portal()
+    cozy(anchors, False)
     set_emission_strength('screen_glow', 1.6)
     set_emission_strength('pendant_inner', 0.0)
     set_emission_strength('bulb_warm', 0.0)

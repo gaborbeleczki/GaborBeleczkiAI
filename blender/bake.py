@@ -1,6 +1,6 @@
 """Bake the studio into texture atlases with Cycles.
 
-For each bake group (floor, walls, furniture, props):
+For each bake group (floor, walls, furniture, props, quests):
   albedo  DIFFUSE colour only, 2048², a few samples for anti-aliasing (no noise to remove)
   light   DIFFUSE direct + indirect, 1024², per lighting state, denoised with OpenImageDenoise
 The browser multiplies them back together (albedo × light), so day and evening share one
@@ -30,12 +30,12 @@ OUT = os.path.join(ROOT, 'blender', 'out')
 BAKE_DIR = os.path.join(OUT, 'bake')
 TEX_DIR = os.path.join(ROOT, 'public', 'textures')
 
-GROUPS = os.environ.get('BAKE_GROUPS', 'floor,walls,furniture,props').split(',')
+GROUPS = os.environ.get('BAKE_GROUPS', 'floor,walls,furniture,props,quests').split(',')
 STATES = os.environ.get('BAKE_STATES', 'evening,day').split(',')
 LIGHT_SAMPLES = int(os.environ.get('BAKE_SAMPLES', '80'))
 # albedo carries the wood grain, fabric weave and print detail; light is smooth and denoised
-ALBEDO_RES = {'floor': 4096, 'walls': 2048, 'furniture': 4096, 'props': 4096}
-LIGHT_RES = {'floor': 2048, 'walls': 2048, 'furniture': 2048, 'props': 2048}
+ALBEDO_RES = {'floor': 4096, 'walls': 2048, 'furniture': 4096, 'props': 4096, 'quests': 2048}
+LIGHT_RES = {'floor': 2048, 'walls': 2048, 'furniture': 2048, 'props': 2048, 'quests': 1024}
 if os.environ.get('ALBEDO_RES'):
     ALBEDO_RES = {g: int(os.environ['ALBEDO_RES']) for g in ALBEDO_RES}
 if os.environ.get('LIGHT_RES'):
@@ -49,7 +49,7 @@ def load():
         return {k: tuple(v) for k, v in json.load(fh).items()}
 
 
-MOVABLE = {'phone', 'phone_part', 'notebook', 'notebook_part', 'card', 'cv'}
+MOVABLE = {'phone', 'phone_part', 'notebook', 'notebook_part', 'card', 'cv', 'runlog', 'runlog_part'}
 
 
 def scene_setup(samples: int):

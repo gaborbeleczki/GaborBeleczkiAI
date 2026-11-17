@@ -96,7 +96,81 @@ const fragment = /* glsl */ `
   uniform vec4 spr[NSPR];   // sprite box in the atlas (u, v, w, h)
   uniform vec4 lamps[NSPR]; // head lamp (x, y) and tail lamp (x, y), as fractions of the sprite
   uniform float atlasW;
+  uniform float rain;       // rain on the pane: 0 dry, 1 pouring
   varying vec2 vUv;
+
+  // set per pixel in main(), read by the photo functions
+  float gPix = 0.0;         // the angle one pixel covers, from the undisturbed view direction
+  float gBlur = 1.0;        // 1 = clear glass; more = misted (a blurrier look-up)
+
+  // ---------------------------------------------------------------- rain on the glass
+  // The wet pane is a height field, in metres across the glass. Two kinds of water sit on it:
+  // beads, one to a cell of a jittered grid, each slowly forming and merging away; and runners,
+  // one to a vertical lane, that creep, stop, let go, and leave a streak that thins into beads.
+  // Returns x: the height of the water (0..1), y: how far a streak has wiped the mist (0..1).
+  float h11(float n) { return fract(sin(n * 91.3458) * 47453.5453); }
+  vec2 h22(vec2 p) {
+    p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+    return fract(sin(p) * 43758.5453);
+  }
+
+  float beadField(vec2 p, float t, float cell) {
+    vec2 g = p / cell;
+    vec2 id = floor(g);
+    vec2 f = fract(g);
+    float h = 0.0;
+    for (int j = -1; j <= 1; j++) {
+      for (int i = -1; i <= 1; i++) {
+        vec2 o = vec2(float(i), float(j));
+        vec2 r = h22(id + o);
+        // each bead lives on its own clock: it forms, sits, and is gone
+        float life = fract(t * (0.015 + 0.03 * r.x) + r.y * 7.0);
+        float size = (0.16 + 0.3 * r.x * r.y) * smoothstep(0.0, 0.08, life) * (1.0 - smoothstep(0.86, 1.0, life));
+        vec2 c = o + 0.5 + (r - 0.5) * 0.62;
+        float d = length(f - c) / max(size, 1e-3);
+        float b = max(0.0, 1.0 - d * d);
+        h += b * b * step(0.55, r.x + r.y * 0.6);   // some cells stay dry
+      }
+    }
+    return h;
+  }
+
+  vec2 runField(vec2 p, float t, float lane, float seed) {
+    float x = p.x / lane;
+    float id = floor(x);
+    float fx = fract(x) - 0.5;
+    float r1 = h11(id * 17.31 + seed);
+    float r2 = h11(id * 5.71 + seed * 3.1 + 1.7);
+    float span = 10.0 + 8.0 * r2;                    // the lane repeats this many lane-widths down
+    float s = t * (0.3 + 0.55 * r1) + r2 * 50.0;
+    // stick and slip: time moves on in eased steps, so the drop hesitates and then runs
+    float q = fract(s);
+    float adv = floor(s) + q * q * q * (q * (q * 6.0 - 15.0) + 10.0);
+    float head = mod(adv * 2.6 + r1 * span, span);   // how far the drop has fallen
+    float y = mod(-p.y / lane + r2 * span, span);    // how far down the cycle this point is
+    float up = head - y;                             // distance above the drop (negative: below, still dry)
+    up += span * step(up, -span * 0.5);              // a streak carries on across the wrap
+    float cx = (r1 - 0.5) * 0.45 + 0.11 * sin(y * 1.7 + r2 * 6.2832);
+    float dx = fx - cx;
+    // the drop itself, a little longer than it is wide
+    float dh = length(vec2(dx, up * 0.72)) / 0.21;
+    float drop = max(0.0, 1.0 - dh * dh);
+    drop *= drop;
+    // the streak behind it narrows with distance and breaks up into beads
+    float behind = smoothstep(0.0, 0.25, up) * (1.0 - smoothstep(2.0, 6.0, up));
+    float w = 0.02 + 0.075 * (1.0 - smoothstep(0.0, 5.0, up));
+    float streak = (1.0 - smoothstep(w * 0.55, w, abs(dx))) * behind;
+    float pearl = smoothstep(0.55, 0.9, 0.5 + 0.5 * sin(y * 11.0 + r1 * 31.0));
+    float beads = streak * pearl * (1.0 - smoothstep(0.5, 4.0, up));
+    return vec2(drop + beads * 0.7, max(streak, drop));
+  }
+
+  vec2 wetPane(vec2 p, float t, float a0, float a1, float a2) {
+    float h = beadField(p, t, 0.012) * a0;
+    vec2 big = runField(p, t, 0.052, 1.0) * a1;
+    vec2 small = runField(p + vec2(0.021, 0.0), t * 1.25, 0.029, 7.0) * a2;
+    return vec2(clamp(h + big.x + small.x, 0.0, 1.0), max(big.y, small.y));
+  }
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p) {
@@ -256,6 +330,8 @@ const fragment = /* glsl */ `
     vec2 delta = (P.xy - n * P.z) * k;                                                                \\
     /* mip selection from the smooth view direction: parallax jumps at edges would blur them */       \\
     vec2 gx = dFdx(uvInf), gy = dFdy(uvInf);                                                          \\
+    /* through wet glass the direction jumps from drop to drop: size the look-up from the pixel */    \\
+    if (rain > 0.001) { gx = vec2(gPix * k.x * gBlur, 0.0); gy = vec2(0.0, gPix * k.y * gBlur); }    \\
     /* background: settle on the depth the ray meets */                                               \\
     vec2 uv = uvInf;                                                                                  \\
     vec3 dat;                                                                                         \\
@@ -316,6 +392,28 @@ const fragment = /* glsl */ `
   void main() {
     vec3 Pw = vec3((vUv - 0.5) * windowSize, 0.0);
     vec3 dw = normalize(Pw - viewer);
+    float mist = 0.0;
+    if (rain > 0.001) {
+      gPix = length(fwidth(dw.xy / max(dw.z, 1e-3)));
+      vec2 pm = Pw.xy;                                  // metres across the pane
+      // from across the room a bead is smaller than a pixel: each size of water fades out
+      // before it can turn into noise
+      float pxm = max(length(fwidth(pm)), 1e-6);
+      float t = time;
+      float a0 = smoothstep(0.1, 0.7, rain) * clamp(0.0035 / pxm / 2.5 - 1.0, 0.0, 1.0);
+      float a1 = smoothstep(0.0, 0.5, rain) * clamp(0.0105 / pxm / 2.5 - 1.0, 0.0, 1.0);
+      float a2 = smoothstep(0.2, 0.8, rain) * clamp(0.006 / pxm / 2.5 - 1.0, 0.0, 1.0);
+      vec2 c = wetPane(pm, t, a0, a1, a2);
+      float e = max(0.0006, pxm * 0.75);
+      vec2 slope = vec2(wetPane(pm + vec2(e, 0.0), t, a0, a1, a2).x - c.x, wetPane(pm + vec2(0.0, e), t, a0, a1, a2).x - c.x) / e;
+      // water wipes the mist: under a drop, and along the streak it left
+      float clear = clamp(smoothstep(0.03, 0.2, c.x) + c.y, 0.0, 1.0);
+      mist = (1.0 - clear) * rain;
+      // (inside a drop the look-up stays a little soft, or the lens would sparkle with aliasing)
+      gBlur = 1.5 + 1.7 * mist;
+      // each drop is a small lens: bend the view by the slope of its surface
+      dw = normalize(dw + vec3(clamp(slope * 0.0009, -0.22, 0.22), 0.0));
+    }
     vec3 col;
     if (mixT <= 0.001) col = photoA(Pw, dw) * gain.x;
     else if (mixT >= 0.999) col = photoB(Pw, dw) * gain.y;
@@ -323,6 +421,8 @@ const fragment = /* glsl */ `
     // a whisper of glass: faint room reflection towards grazing angles
     float fres = pow(1.0 - clamp(dw.z, 0.0, 1.0), 3.0);
     col = mix(col, glassTint, 0.05 + 0.12 * fres);
+    // misted glass scatters a little of the room's warmth back
+    col = mix(col, col * 0.93 + vec3(0.035, 0.026, 0.018), mist);
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
@@ -712,6 +812,7 @@ export class WindowView {
           }),
         },
         atlasW: { value: opts.vehicles.size[0] },
+        rain: { value: 0 },
       },
       vertexShader: vertex,
       fragmentShader: fragment,
@@ -749,6 +850,9 @@ export class WindowView {
     (this.material.uniforms.gain.value as THREE.Vector2).set(WINDOW_VIEW.evening.gain, WINDOW_VIEW.day.gain);
   }
 
+  /** How wet the evening is (0 dry .. 1 pouring). The day outside is dry. */
+  rain = 0.45;
+
   setState(t: number): void {
     this.material.uniforms.mixT.value = t;
     (this.material.uniforms.glassTint.value as THREE.Color).set(t > 0.5 ? '#c9d3dc' : '#8b6a4c');
@@ -758,6 +862,9 @@ export class WindowView {
     const u = this.material.uniforms;
     u.time.value = reduceMotion ? 0 : time;
     u.wind.value = reduceMotion ? 0 : 1;
+    // showers come and go over a few minutes; by day the pane is dry
+    const shower = this.rain * (0.8 + 0.2 * Math.sin(time * 0.045) + 0.12 * Math.sin(time * 0.013 + 1.7));
+    u.rain.value = THREE.MathUtils.clamp(shower, 0, 1) * (1 - THREE.MathUtils.smoothstep(u.mixT.value as number, 0, 0.6));
     const v = u.viewer.value as THREE.Vector3;
     const p = camera.position;
     // window space: x right, y up, z into the city (three.js -z)

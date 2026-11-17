@@ -19,6 +19,8 @@ const LOADERS: Record<FolioId, Loader> = {
 
 export interface ScreenHost {
   onOpen(id: FolioId): void;
+  /** the dock's film tile: play the intro again */
+  onLegend(): void;
   onCursor(cursor: string): void;
   link(url: string, newTab?: boolean): void;
   copy(text: string): void;
@@ -28,6 +30,18 @@ export interface ScreenHost {
 
 const MENU_H = 64;
 const DOCK_H = 104;
+/** The intro film: 16:9 on the 16:10 display, a bar above and below. */
+const V = `?v=${import.meta.env.VITE_ASSET_V ?? '0'}`;
+const FILM = { src: `/media/legend.mp4${V}`, poster: `/media/legend-poster.jpg${V}`, y: 50, h: 900 };
+
+interface Intro {
+  video: HTMLVideoElement;
+  poster: HTMLImageElement;
+  /** frames have started to arrive */
+  rolling: boolean;
+  muted: boolean;
+  done(how: 'ended' | 'skipped' | 'failed'): void;
+}
 export const CONTENT: Rect = { x: 80, y: MENU_H + 36, w: W - 160, h: H - MENU_H - DOCK_H - 56 };
 
 export class Screen {
@@ -50,6 +64,7 @@ export class Screen {
   private loading: FolioId | null = null;
   private night = true;
   private readonly cache = new Map<FolioId, ScreenModule>();
+  private intro: Intro | null = null;
   readonly ctx: ModuleContext;
 
   constructor(private readonly host: ScreenHost, private readonly reduceMotion: boolean) {
@@ -143,8 +158,133 @@ export class Screen {
     this.host.announce(`${mod.title}. ${mod.describe()}`);
   }
 
+  // ------------------------------------------------------------------ the intro film
+
+  get introPlaying(): boolean {
+    return !!this.intro;
+  }
+
+  /**
+   * Play the intro film on the display, with its sound. Call it from a click or a key press
+   * (browsers only start sound on a gesture); if sound is refused all the same, the film plays
+   * muted and the display offers a button to turn it on. Resolves when it ends or is skipped.
+   */
+  playIntro(): Promise<'ended' | 'skipped' | 'failed'> {
+    if (this.intro) return Promise.resolve('skipped');
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.src = FILM.src;
+      video.playsInline = true;
+      video.preload = 'auto';
+      video.volume = 0.9;
+      const poster = new Image();
+      poster.src = FILM.poster;
+      poster.onload = () => (this.dirty = true);
+      const intro: Intro = {
+        video,
+        poster,
+        rolling: false,
+        muted: false,
+        done: (how) => {
+          if (this.intro !== intro) return;
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
+          // dissolve from the last frame back to the chapter
+          const pg = this.prev.getContext('2d')!;
+          pg.clearRect(0, 0, W, H);
+          pg.drawImage(this.canvas, 0, 0);
+          this.intro = null;
+          this.fade = this.reduceMotion ? 1 : 0;
+          this.hoverId = null;
+          this.dirty = true;
+          this.host.onCursor('');
+          resolve(how);
+        },
+      };
+      this.intro = intro;
+      this.hoverId = null;
+      this.dirty = true;
+      video.addEventListener('playing', () => (intro.rolling = true));
+      video.addEventListener('ended', () => intro.done('ended'));
+      video.addEventListener('error', () => intro.done('failed'));
+      video.play().catch(() => {
+        // no sound without a gesture: start silent, offer the sound on screen
+        video.muted = true;
+        intro.muted = true;
+        video.play().catch(() => intro.done('failed'));
+      });
+      this.host.announce('A one-minute film is playing on the display: The Legend of the AI Program Manager. Press Escape to skip it.');
+    });
+  }
+
+  skipIntro(): void {
+    this.intro?.done('skipped');
+  }
+
+  /** The tab went to the background (or came back) while the film was on. */
+  holdIntro(hold: boolean): void {
+    const v = this.intro?.video;
+    if (!v) return;
+    if (hold) v.pause();
+    else void v.play().catch(() => this.intro?.done('failed'));
+  }
+
+  private drawIntro(g: CanvasRenderingContext2D, intro: Intro): void {
+    const v = intro.video;
+    g.fillStyle = '#050506';
+    g.fillRect(0, 0, W, H);
+    if (intro.rolling && v.readyState >= 2) g.drawImage(v, 0, FILM.y, W, FILM.h);
+    else if (intro.poster.complete && intro.poster.naturalWidth) {
+      g.globalAlpha = 0.55;
+      g.drawImage(intro.poster, 0, FILM.y, W, FILM.h);
+      g.globalAlpha = 1;
+    }
+    g.textBaseline = 'middle';
+    // progress along the foot of the picture
+    const p = v.duration ? Math.min(1, v.currentTime / v.duration) : 0;
+    g.fillStyle = 'rgba(255,255,255,0.14)';
+    g.fillRect(0, FILM.y + FILM.h - 4, W, 4);
+    g.fillStyle = '#E7B56A';
+    g.fillRect(0, FILM.y + FILM.h - 4, W * p, 4);
+    g.font = font(20, 500, MONO);
+    g.fillStyle = 'rgba(245,245,247,0.62)';
+    g.textAlign = 'left';
+    g.fillText('THE LEGEND OF THE AI PROGRAM MANAGER', 28, H - 25);
+    const left = v.duration ? Math.max(0, Math.ceil(v.duration - v.currentTime)) : 69;
+    g.fillText(`${left}s`, 28 + g.measureText('THE LEGEND OF THE AI PROGRAM MANAGER').width + 26, H - 25);
+    // skip (and the sound, if the browser held it back): in the foot bar, clear of the room's own controls
+    const pill = (id: string, label: string, x: number, w: number, onClick: () => void) => {
+      const hov = this.hoverId === id;
+      rr(g, x, H - 42, w, 34, 17);
+      g.fillStyle = hov ? 'rgba(245,245,247,0.94)' : 'rgba(245,245,247,0.18)';
+      g.fill();
+      g.font = font(19, 600);
+      g.textAlign = 'center';
+      g.fillStyle = hov ? '#1D1D1F' : '#F5F5F7';
+      g.fillText(label, x + w / 2, H - 24);
+      this.regions.add({ id, rect: { x: x - 6, y: H - 50, w: w + 12, h: 50 }, label, onClick });
+    };
+    pill('intro:skip', 'Skip  ›', W - 28 - 118, 118, () => this.skipIntro());
+    if (intro.muted) {
+      pill('intro:sound', 'Turn the sound on', W - 28 - 118 - 16 - 230, 230, () => {
+        v.muted = false;
+        intro.muted = false;
+        this.dirty = true;
+      });
+    }
+    if (!intro.rolling) {
+      g.textAlign = 'center';
+      g.font = font(26, 500);
+      g.fillStyle = 'rgba(245,245,247,0.8)';
+      g.fillText('Lighting the candle…', W / 2, FILM.y + FILM.h / 2);
+    }
+    g.textAlign = 'left';
+    g.textBaseline = 'top';
+  }
+
   pointer(x: number, y: number, type: 'move' | 'down' | 'up' | 'leave'): void {
-    if (this.module?.pointer?.(x, y, type)) this.dirty = true;
+    if (!this.intro && this.module?.pointer?.(x, y, type)) this.dirty = true;
     if (type === 'leave') {
       if (this.hoverId) {
         this.hoverId = null;
@@ -164,6 +304,7 @@ export class Screen {
   }
 
   key(e: KeyboardEvent): boolean {
+    if (this.intro) return false;
     if (this.module?.key?.(e)) {
       this.dirty = true;
       return true;
@@ -193,13 +334,14 @@ export class Screen {
       this.dirty = true;
     }
     // continuous animations (figures, the game) redraw at up to 30 fps; input redraws at once
-    if (this.module?.update(dt, this.time)) this.animDirty = true;
+    if (this.intro) this.animDirty = true;
+    else if (this.module?.update(dt, this.time)) this.animDirty = true;
     const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Budapest' });
     if (now !== this.clock) {
       this.clock = now;
       this.dirty = true;
     }
-    const rate = this.attended ? (this.module?.fps ?? 30) : 15;
+    const rate = this.intro ? 30 : this.attended ? (this.module?.fps ?? 30) : 15;
     if (this.dirty || (this.animDirty && this.time - this.drawnAt >= 1 / rate - 1e-4)) {
       this.draw();
       this.dirty = false;
@@ -226,6 +368,11 @@ export class Screen {
     g.fillStyle = grd;
     g.fillRect(0, 0, W, H);
     g.textBaseline = 'top';
+    if (this.intro) {
+      this.drawIntro(g, this.intro);
+      g.restore();
+      return;
+    }
     if (this.module) this.module.draw(g, CONTENT, this.ctx);
     this.drawMenu(g);
     this.drawDock(g);
@@ -270,10 +417,10 @@ export class Screen {
   }
 
   private drawDock(g: CanvasRenderingContext2D): void {
-    const n = folios.length;
+    const n = folios.length + 1; // the chapters, then the film
     const size = 56;
     const gap = 18;
-    const total = n * size + (n - 1) * gap + 48;
+    const total = n * size + (n - 1) * gap + 48 + 14;
     const x0 = (W - total) / 2;
     const y0 = H - DOCK_H + 8;
     g.save();
@@ -339,9 +486,55 @@ export class Screen {
       }
       this.regions.add({ id, rect: { x: x0 + 24 + i * (size + gap) - 4, y: y0 + 6, w: size + 8, h: size + 20 }, label: f.title, onClick: () => this.host.onOpen(f.id) });
     });
+    // the film tile, set a little apart
+    {
+      const id = 'dock:legend';
+      const hov = this.hoverId === id;
+      const x = x0 + 24 + folios.length * (size + gap) + 14;
+      const y = y0 + 14;
+      g.fillStyle = 'rgba(29,29,31,0.12)';
+      g.fillRect(x - 16, y + 6, 1.5, size - 12);
+      g.save();
+      g.shadowColor = 'rgba(0,0,0,0.16)';
+      g.shadowBlur = 8;
+      g.shadowOffsetY = 3;
+      rr(g, x, y, size, size, 14);
+      const grd = g.createLinearGradient(x, y, x, y + size);
+      grd.addColorStop(0, '#3B2A1E');
+      grd.addColorStop(1, '#15110D');
+      g.fillStyle = grd;
+      g.fill();
+      g.restore();
+      g.fillStyle = '#E7B56A';
+      g.beginPath();
+      g.moveTo(x + 22, y + 17);
+      g.lineTo(x + 40, y + 28);
+      g.lineTo(x + 22, y + 39);
+      g.closePath();
+      g.fill();
+      if (hov) {
+        rr(g, x - 4, y - 4, size + 8, size + 8, 17);
+        g.strokeStyle = 'rgba(42,93,143,0.55)';
+        g.lineWidth = 3;
+        g.stroke();
+        g.font = font(20, 500);
+        const label = 'The legend · 1 min film';
+        const lw = g.measureText(label).width + 28;
+        const lx = Math.min(x + size / 2 - lw / 2, W - lw - 24);
+        rr(g, lx, y - 48, lw, 36, 10);
+        g.fillStyle = 'rgba(29,29,31,0.86)';
+        g.fill();
+        g.fillStyle = '#F5F5F7';
+        g.textBaseline = 'middle';
+        g.fillText(label, lx + 14, y - 30);
+        g.textBaseline = 'top';
+      }
+      this.regions.add({ id, rect: { x: x - 4, y: y0 + 6, w: size + 8, h: size + 20 }, label: 'The legend, a one-minute film', onClick: () => this.host.onLegend() });
+    }
   }
 
   dispose(): void {
+    this.intro?.done('skipped');
     this.module?.unmount();
     this.texture.dispose();
   }

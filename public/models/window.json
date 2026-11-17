@@ -4,14 +4,15 @@
    "title": "Széchenyi Chain Bridge in Budapest at night",
    "author": "Wilfredor",
    "license": "CC0 1.0",
-   "url": "https://commons.wikimedia.org/wiki/File:Sz%C3%A9chenyi_Chain_Bridge_in_Budapest_at_night.jpg"
+   "url": "https://commons.wikimedia.org/wiki/File:Sz%C3%A9chenyi_Chain_Bridge_in_Budapest_at_night.jpg",
+   "changes": "weather and light restyled with an image model (a misty evening after rain)"
   },
   "day": {
    "title": "View from Buda Castle",
    "author": "Yair-haklai",
    "license": "CC BY-SA 4.0",
    "url": "https://commons.wikimedia.org/wiki/File:View_from_Buda_Castle.jpg",
-   "changes": "cropped, a parked tram painted out"
+   "changes": "cropped, a parked tram painted out, season and light restyled with an image model (a golden autumn afternoon); shared under the same licence"
   }
  },
  "evening": {

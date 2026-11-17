@@ -48,6 +48,15 @@ export function blocksToHtml(blocks: Block[]): string {
       case 'entry':
         out.push(`<h3>${esc(b.years)} · ${esc(b.title)}, ${esc(b.org)}</h3><p>${esc(b.text)}</p>${b.notes.map((n) => `<p>${esc(n.h)}. ${esc(n.t)}</p>`).join('')}`);
         break;
+      case 'sticky':
+        out.push(`<p>A note stuck to the page: ${esc(b.lines.join(' '))}</p>`);
+        break;
+      case 'table':
+        out.push(`<table><tr>${b.head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr>${b.rows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`);
+        break;
+      case 'chart':
+        out.push(`<p>${esc(b.caption)}. ${esc(b.alt)}</p>`);
+        break;
     }
   }
   return out.join('');
@@ -96,7 +105,16 @@ export type Block =
   | { t: 'qa'; q: string; a: string }
   | { t: 'entry'; years: string; title: string; org: string; text: string; notes: { h: string; t: string }[] }
   | { t: 'rule' }
-  | { t: 'space'; h: number };
+  | { t: 'space'; h: number }
+  /** a handwritten sticky note, stuck on at an angle */
+  | { t: 'sticky'; lines: string[]; color?: string; tilt?: number; align?: 'left' | 'right' }
+  /** a table: a header row and rows of cells */
+  | { t: 'table'; head: string[]; rows: string[][]; widths?: number[] }
+  /** anything drawn by hand: `draw` gets the box it may fill; `alt` is what it shows, in words */
+  | { t: 'chart'; ratio: number; caption: string; alt: string; draw(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, theme: Theme, k: number): void };
+
+/** The handwriting on sticky notes (loaded with the studio; falls back to a system cursive). */
+export const HAND = 'Caveat, "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive';
 
 interface Atom {
   h: number;
@@ -534,6 +552,115 @@ export function layout(blocks: Block[], theme: Theme, k = 1): Layout {
       case 'space':
         atoms.push({ h: s(b.h), gap: 0, draw: () => {} });
         break;
+      case 'sticky': {
+        const size = s(36);
+        const lh = size * 1.06;
+        g.font = `600 ${size}px ${HAND}`;
+        const textW = Math.max(...b.lines.map((l) => g.measureText(l).width));
+        const nw = Math.min(width * 0.86, Math.max(s(330), textW + s(64)));
+        const nh = Math.max(nw * 0.52, b.lines.length * lh + s(74));
+        const tilt = ((b.tilt ?? -2) * Math.PI) / 180;
+        const color = b.color ?? '#F9E27A';
+        atoms.push({
+          h: nh + s(18),
+          gap: s(30),
+          draw: (c, x, y) => {
+            const nx = b.align === 'left' ? x + s(10) : x + width - nw - s(10);
+            c.save();
+            c.translate(nx + nw / 2, y + s(8) + nh / 2);
+            c.rotate(tilt);
+            c.translate(-nw / 2, -nh / 2);
+            c.save();
+            c.shadowColor = 'rgba(29,29,31,0.22)';
+            c.shadowBlur = 22;
+            c.shadowOffsetY = 9;
+            c.fillStyle = color;
+            c.fillRect(0, 0, nw, nh);
+            c.restore();
+            // the gummed strip, and a little light across the sheet
+            c.fillStyle = 'rgba(0,0,0,0.045)';
+            c.fillRect(0, 0, nw, s(26));
+            const sheen = c.createLinearGradient(0, 0, nw, nh);
+            sheen.addColorStop(0, 'rgba(255,255,255,0.22)');
+            sheen.addColorStop(1, 'rgba(0,0,0,0.05)');
+            c.fillStyle = sheen;
+            c.fillRect(0, 0, nw, nh);
+            c.textBaseline = 'top';
+            c.fillStyle = '#26272B';
+            b.lines.forEach((l, i) => {
+              c.font = `${i === 0 ? 700 : 500} ${size}px ${HAND}`;
+              c.fillText(l, s(30), s(40) + i * lh);
+            });
+            c.restore();
+          },
+        });
+        break;
+      }
+      case 'table': {
+        const cols = b.head.length;
+        const ws = (b.widths ?? b.head.map(() => 1 / cols)).map((v) => v * width);
+        const xs = ws.map((_, i) => ws.slice(0, i).reduce((a, v) => a + v, 0));
+        const hs = s(21);
+        const cs = s(25);
+        atoms.push({
+          h: hs * 2.2,
+          gap: s(24),
+          keep: true,
+          draw: (c, x, y) => {
+            c.font = `600 ${hs}px ${MONO}`;
+            setTracking(c, hs * 0.06);
+            c.fillStyle = theme.muted;
+            c.textBaseline = 'top';
+            b.head.forEach((h, i) => c.fillText(h.toUpperCase(), x + xs[i], y));
+            setTracking(c, 0);
+            c.fillStyle = theme.ink;
+            c.fillRect(x, y + hs * 2.2 - 3, width, 3);
+          },
+        });
+        b.rows.forEach((row) => {
+          g.font = `400 ${cs}px ${F}`;
+          const cells = row.map((cell, i) => wrapLines(g, cell, ws[i] - s(14)));
+          const h = Math.max(...cells.map((l) => l.length)) * cs * 1.36 + s(22);
+          atoms.push({
+            h,
+            gap: 0,
+            draw: (c, x, y) => {
+              c.textBaseline = 'top';
+              cells.forEach((lines, i) => {
+                c.font = `${i === 0 ? 650 : 400} ${cs}px ${F}`;
+                c.fillStyle = i === 0 ? theme.ink : theme.ink2;
+                lines.forEach((l, li) => c.fillText(l, x + xs[i], y + s(11) + li * cs * 1.36));
+              });
+              c.fillStyle = theme.rule;
+              c.fillRect(x, y + h - 2, width, 2);
+            },
+          });
+        });
+        break;
+      }
+      case 'chart': {
+        const fh = Math.round(width * b.ratio);
+        const capSize = s(21);
+        atoms.push({
+          h: fh + s(26) + capSize * 1.4,
+          gap: s(28),
+          draw: (c, x, y) => {
+            c.save();
+            rr(c, x, y, width, fh, 18);
+            c.fillStyle = 'rgba(65,97,128,0.045)';
+            c.fill();
+            c.restore();
+            c.save();
+            b.draw(c, x, y, width, fh, theme, k);
+            c.restore();
+            c.font = `500 ${capSize}px ${F}`;
+            c.fillStyle = theme.muted;
+            c.textBaseline = 'top';
+            c.fillText(b.caption, x, y + fh + s(18));
+          },
+        });
+        break;
+      }
     }
   }
 

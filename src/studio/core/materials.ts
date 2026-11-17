@@ -121,6 +121,9 @@ export function emitterMaterial(base: THREE.Color, glow: THREE.Color, strength: 
     metalness: 0,
     emissive: glow,
     emissiveIntensity: strength,
+    // switched off, an opal shade should sit as bright as the baked wall behind it; one probe
+    // in the middle of the room under-lights the corners, so the environment counts double
+    envMapIntensity: 2.0,
   });
   m.userData.glowStrength = strength;
   return m;

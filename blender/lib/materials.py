@@ -405,3 +405,38 @@ def image_diffuse(name: str, image_path: str, rough: float = 0.85) -> bpy.types.
     _link(nt, tex.outputs['Color'], b.inputs['Base Color'])
     set_in(b, 'Roughness', rough)
     return m
+
+
+def image_tiled(name: str, image_path: str, rough: float = 0.95, tint: str | None = None, sheen: float = 0.4) -> bpy.types.Material:
+    """A repeating photo texture (wool, boucle) read through the ArtUV layer; the UVs carry the
+    tiling, so the same image can run at any scale. `tint` multiplies it towards another yarn."""
+    m, nt, b = _new(name)
+    img = bpy.data.images.load(image_path, check_existing=True)
+    tex = nt.nodes.new('ShaderNodeTexImage')
+    tex.image = img
+    tex.extension = 'REPEAT'
+    _art_uv(nt, tex)
+    col = tex.outputs['Color']
+    if tint:
+        col = _mix(nt, col, hex_rgb(tint), 1.0, 'MULTIPLY')
+    _link(nt, col, b.inputs['Base Color'])
+    set_in(b, 'Roughness', rough)
+    set_in(b, ('Sheen Weight', 'Sheen'), sheen)
+    return m
+
+
+@cached
+def cork(name: str = 'cork') -> bpy.types.Material:
+    """Pressed cork: pale granules with darker flecks between them."""
+    m, nt, b = _new(name)
+    co = _coord(nt)
+    cells = nt.nodes.new('ShaderNodeTexVoronoi')
+    cells.inputs['Scale'].default_value = 260.0
+    _link(nt, co, cells.inputs['Vector'])
+    flecks = _noise(nt, co, scale=70.0, detail=5.0, rough=0.7)
+    col = _ramp(nt, cells.outputs['Distance'], [(0.0, '#8E6846'), (0.3, '#B98F63'), (1.0, '#CFA878')])
+    col = _mix(nt, col, hex_rgb('#6F4E33'), flecks.outputs['Fac'], 'SOFT_LIGHT')
+    _link(nt, col, b.inputs['Base Color'])
+    set_in(b, 'Roughness', 0.95)
+    _link(nt, _bump(nt, cells.outputs['Distance'], 0.2, 0.002), b.inputs['Normal'])
+    return m

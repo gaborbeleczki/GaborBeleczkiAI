@@ -189,20 +189,22 @@ def build_shelves(coll) -> list:
     return parts
 
 
-def build_rug(coll, center=(-0.05, 1.18), size=(2.1, 1.5)) -> list:
+def build_rug(coll, center=(-0.05, 1.18), size=(2.1, 1.5), image=None) -> list:
+    """The rug under the desk and chair. With `image` it is a photographed wool rug (a cream
+    Beni Ourain weave with a charcoal lattice); without, the procedural ribbed one."""
     bm = bmesh.new()
     bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.5)
     for v in bm.verts:
         v.co.x *= size[0]
         v.co.y *= size[1]
-    uv = bm.loops.layers.uv.new('UVMap')
+    uv = bm.loops.layers.uv.new('ArtUV' if image else 'UVMap')
     for f in bm.faces:
         for lp in f.loops:
             lp[uv].uv = (lp.vert.co.x / size[0] + 0.5, lp.vert.co.y / size[1] + 0.5)
-    ob = mesh_object('rug', bm, coll, M.rug())
+    ob = mesh_object('rug', bm, coll, M.image_diffuse('rug_photo', image, 0.97) if image else M.rug())
     ob.location = (center[0], center[1], 0.0)
     sol = ob.modifiers.new('Solid', 'SOLIDIFY')
-    sol.thickness = 0.012
+    sol.thickness = 0.017 if image else 0.012
     sol.offset = 1.0
     add_bevel(ob, 0.004, 2)
     return [tag(ob, bake='furniture')]

@@ -4,7 +4,10 @@ import { browser, serve, waitForStudio, watch, writeJson } from './lib.mjs';
 
 export async function adversarial(base) {
   const checks = [];
+  // QA_ONLY=legend node scripts/qa/adversarial.mjs runs just the checks whose name contains it
+  const only = process.env.QA_ONLY;
   const run = async (name, fn) => {
+    if (only && !name.includes(only)) return;
     const errors = [];
     try {
       const detail = await fn(errors);
@@ -295,10 +298,122 @@ export async function adversarial(base) {
     return { title };
   });
 
+  // The side quests: the wall behind the visitor, the cork board, a card; Escape steps back
+  // one view at a time; the runner's corner and the training log.
+  await run('side quests: wall, board, a card, the training log', async (errors) => {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/?studio&capture`, { waitUntil: 'load' });
+    await waitForStudio(page);
+    const step = (n) => page.evaluate((n) => window.__studio.step(1 / 30, n), n);
+    await step(110); // the arrival dolly has to settle before the dots show
+    const home = await page.evaluate(() => window.__studio.spots());
+    await page.evaluate(() => window.__studio.use('quests'));
+    await step(110);
+    const wall = await page.evaluate(() => window.__studio.spots());
+    await page.evaluate(() => window.__studio.use('quest:oven')); // from the wall: steps up to the board
+    await step(110);
+    const board = await page.evaluate(() => ({ focus: window.__studio.info().focus, spots: window.__studio.spots() }));
+    await page.evaluate(() => window.__studio.use('quest:oven'));
+    await step(5);
+    const card = await page.locator('.hud__caption.is-on h3').textContent().catch(() => null);
+    await page.keyboard.press('Escape'); // the caption
+    await page.keyboard.press('Escape'); // board -> wall
+    await step(30);
+    const backOne = await page.evaluate(() => window.__studio.info().focus);
+    await page.keyboard.press('Escape'); // wall -> room
+    await step(60);
+    const backTwo = await page.evaluate(() => window.__studio.info().focus);
+    await page.evaluate(() => window.__studio.use('bib'));
+    await step(110);
+    const run = await page.evaluate(() => ({ focus: window.__studio.info().focus, spots: window.__studio.spots() }));
+    await page.evaluate(() => window.__studio.use('runlog'));
+    await step(140);
+    const log = await page.evaluate(() => window.__studio.hand());
+    const text = await page.locator('.hud__text').textContent();
+    await page.keyboard.press('ArrowRight');
+    await step(60);
+    const turned = await page.evaluate(() => window.__studio.hand());
+    await page.keyboard.press('Escape');
+    await step(90);
+    const down = await page.evaluate(() => window.__studio.hand());
+    await ctx.close();
+    if (!home.some((x) => /Side quests/.test(x)) || !home.some((x) => /Training log/.test(x))) throw new Error(`home dots: ${home.join(', ')}`);
+    if (wall.length < 4) throw new Error(`wall dots: ${wall.join(', ')}`);
+    if (board.focus !== 'board' || board.spots.length < 9) throw new Error(`board: ${JSON.stringify(board)}`);
+    if (card !== 'Home repairs') throw new Error(`card caption: ${card}`);
+    if (backOne !== 'quests' || backTwo !== 'home') throw new Error(`Escape: ${backOne}, ${backTwo}`);
+    if (run.focus !== 'run' || run.spots.length < 3) throw new Error(`runner's corner: ${JSON.stringify(run)}`);
+    if (!log || log.id !== 'runlog' || log.open < 0.95 || log.total < 6) throw new Error(`log: ${JSON.stringify(log)}`);
+    if (!/Milan didn’t fail at km 26/.test(text) || !/RAID log/.test(text)) throw new Error('the log has no words for screen readers');
+    if (turned.left !== 2 || turned.right !== 3) throw new Error(`after one turn: ${JSON.stringify(turned)}`);
+    if (down) throw new Error(`still in hand: ${JSON.stringify(down)}`);
+    return { wall: wall.length, board: board.spots.length, card, log: log.total };
+  });
+
+  // The film on the display: it starts from the menu, plays, and Escape ends it without leaving
+  // the desk. (It never starts by itself here: captures and reduced motion are spared.)
+  await run('legend: plays on the display, Escape skips it', async (errors) => {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/?studio&capture`, { waitUntil: 'load' });
+    await waitForStudio(page);
+    const step = (n) => page.evaluate((n) => window.__studio.step(1 / 30, n), n);
+    await page.evaluate(() => window.__studio.focus('desk'));
+    await step(80);
+    const auto = await page.evaluate(() => window.__studio.intro());
+    await page.locator('[data-act="menu"]').click();
+    await page.locator('[data-act="x:legend"]').click();
+    await step(10);
+    await page.waitForTimeout(2500);
+    await step(3);
+    const playing = await page.evaluate(() => ({ intro: window.__studio.intro(), focus: window.__studio.info().focus }));
+    const hint = await page.locator('.hud__hint').textContent();
+    await page.keyboard.press('Escape');
+    await step(20);
+    const after = await page.evaluate(() => ({ intro: window.__studio.intro(), focus: window.__studio.info().focus }));
+    const head = await fetch(`${base}/media/legend.mp4`, { method: 'HEAD' });
+    await ctx.close();
+    if (auto) throw new Error('the film started by itself in a capture');
+    if (!playing.intro || playing.focus !== 'desk') throw new Error(`while playing: ${JSON.stringify(playing)}`);
+    if (!/Legend/.test(hint)) throw new Error(`hint: ${hint}`);
+    if (after.intro || after.focus !== 'desk') throw new Error(`after Escape: ${JSON.stringify(after)}`);
+    if (head.status !== 200) throw new Error(`legend.mp4 → ${head.status}`);
+    return { playing, after, bytes: Number(head.headers.get('content-length') || 0) };
+  });
+
+  // The adoption meter: firsts are counted once and remembered across a reload.
+  await run('adoption: counted once, remembered', async (errors) => {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    watch(page, errors);
+    await page.goto(`${base}/?studio&capture`, { waitUntil: 'load' });
+    await waitForStudio(page);
+    const step = (n) => page.evaluate((n) => window.__studio.step(1 / 30, n), n);
+    const zero = await page.evaluate(() => window.__studio.adoption());
+    await page.evaluate(() => (window.__studio.focus('window'), window.__studio.focus('home'), window.__studio.focus('window')));
+    await page.keyboard.press('l');
+    await page.evaluate(() => window.__studio.use('globe'));
+    await step(20);
+    const some = await page.evaluate(() => window.__studio.adoption());
+    const label = await page.locator('[data-act="adoption"] b').textContent();
+    await page.reload({ waitUntil: 'load' });
+    await waitForStudio(page);
+    const kept = await page.evaluate(() => window.__studio.adoption());
+    await ctx.close();
+    if (zero.percent !== 0) throw new Error(`fresh: ${JSON.stringify(zero)}`);
+    if (some.done.sort().join() !== 'lights,sphere,window') throw new Error(`after three firsts: ${JSON.stringify(some)}`);
+    if (label !== '25%') throw new Error(`meter: ${label}`);
+    if (kept.percent !== some.percent) throw new Error(`after reload: ${JSON.stringify(kept)}`);
+    return some;
+  });
+
   // Every generated page and feed responds.
   await run('routes: pages, original, CVs, feeds, assets', async () => {
     const out = {};
-    for (const p of ['/', '/cv/', '/notes/', '/notes/building-the-studio/', '/rss.xml', '/sitemap.xml', '/robots.txt', '/models/studio.json', '/page/', '/page/original/', '/page/cv/', '/page/cv-long/', '/models/vehicles.json', '/textures/vehicles_day.webp', '/textures/cv_page.webp']) {
+    for (const p of ['/', '/cv/', '/notes/', '/notes/building-the-studio/', '/notes/side-quests-and-a-legend/', '/rss.xml', '/sitemap.xml', '/robots.txt', '/models/studio.json', '/page/', '/page/original/', '/page/cv/', '/page/cv-long/', '/models/vehicles.json', '/textures/vehicles_day.webp', '/textures/cv_page.webp', '/textures/quests_albedo.webp', '/media/legend.mp4', '/media/legend-poster.jpg', '/media/legend.vtt']) {
       const r = await fetch(base + p);
       out[p] = r.status;
       if (r.status !== 200) throw new Error(`${p} → ${r.status}`);

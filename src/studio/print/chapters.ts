@@ -1,9 +1,12 @@
 // The portfolio, typeset for paper: one dossier per chapter, plus the notebook's notes.
 
 import { approach, cases, duties, faqs, folios, kpis, positions, profile, programmes, toolGroups, tools, type FolioId } from '../../../content/profile.ts';
+import { stickies } from '../../../content/gags.ts';
+import { run, raid } from '../../../content/running.ts';
 import { caseFigure, LIGHT } from '../../shared/figures.ts';
 import { SANS } from '../screen/kit.ts';
 import type { Block, Theme } from './print.ts';
+import { drawRunWeeks } from './runchart.ts';
 import noteSource from '../../../content/notes/building-the-studio.md?raw';
 
 const ACCENT: Record<FolioId, string> = {
@@ -47,7 +50,55 @@ export const NOTEBOOK_THEME: Theme = {
 
 const SITE = 'gabor-beleczki-studio.vercel.app';
 
+/** The n-th handwritten note of a dossier, as a block (nothing if there is none). */
+function note(id: FolioId | 'notebook', n = 0, align: 'left' | 'right' = 'right'): Block[] {
+  const st = stickies[id]?.[n];
+  return st ? [{ t: 'sticky', lines: st.lines, color: st.color, tilt: st.tilt, align }] : [];
+}
+
 export function chapterBlocks(id: FolioId, photo: HTMLImageElement | null): Block[] {
+  return withNotes(id, plainBlocks(id, photo));
+}
+
+/** Slip the dossier's sticky notes in where they read best. */
+function withNotes(id: FolioId, blocks: Block[]): Block[] {
+  const out = [...blocks];
+  const after = (pred: (b: Block) => boolean, n: number, align: 'left' | 'right' = 'right') => {
+    const i = out.findIndex(pred);
+    if (i >= 0) out.splice(i + 1, 0, ...note(id, n, align));
+  };
+  switch (id) {
+    case 'hello':
+      after((b) => b.t === 'lead', 0);
+      break;
+    case 'approach':
+      after((b) => b.t === 'lead', 0);
+      after((b) => b.t === 'figure', 1, 'left');
+      break;
+    case 'role':
+      after((b) => b.t === 'lead', 0);
+      break;
+    case 'work':
+      after((b) => b.t === 'steps', 1, 'left');
+      after((b) => b.t === 'figure', 0);
+      break;
+    case 'career':
+      after((b) => b.t === 'lead', 0);
+      break;
+    case 'toolkit':
+      after((b) => b.t === 'lead', 0);
+      break;
+    case 'faq':
+      after((b) => b.t === 'title', 0);
+      break;
+    case 'contact':
+      after((b) => b.t === 'links', 0);
+      break;
+  }
+  return out;
+}
+
+function plainBlocks(id: FolioId, photo: HTMLImageElement | null): Block[] {
   const f = folios.find((x) => x.id === id)!;
   const eyebrow = (text: string): Block => ({ t: 'eyebrow', text });
   switch (id) {
@@ -177,6 +228,65 @@ export function notebookBlocks(): Block[] {
     else if (/^[-*] /m.test(c) && c.split('\n').every((l) => /^[-*] /.test(l))) blocks.push({ t: 'bullets', items: c.split('\n').map((l) => l.slice(2)) });
     else blocks.push({ t: 'p', text: c.replace(/\n/g, ' ').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/`([^`]+)`/g, '$1') });
   }
+  blocks.splice(3, 0, ...note('notebook'));
   blocks.push({ t: 'links', items: [{ label: 'On the web', value: 'Read the note', href: `/notes/${(meta.title ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}/` }] });
   return blocks;
+}
+
+// ------------------------------------------------------------------ the training log
+
+export const RUNLOG_THEME: Theme = {
+  paper: '#FBF8F1',
+  ink: '#1D1D1F',
+  ink2: '#3D3D41',
+  muted: '#6E6E73',
+  rule: 'rgba(29,29,31,0.13)',
+  accent: '#D2502A',
+  head: ['Training log', 'Sub-2:55'],
+  font: SANS,
+};
+
+/** The marathon plan, written up the way a programme manager would: baseline, forecast,
+ *  stage gates, a RAID log, and the numbers from Strava. */
+export function runlogBlocks(): Block[] {
+  return [
+    { t: 'eyebrow', text: 'Side quest no. 1 · Training log' },
+    { t: 'title', text: run.title, size: 76, toc: 'Project Sub-2:55' },
+    { t: 'lead', text: run.lead },
+    { t: 'kpis', items: run.kpis },
+    { t: 'sticky', lines: ['Scope: 42.195 km.', 'Budget: three runs a week.', 'Sponsor: also me.'], tilt: -2 },
+    { t: 'h2', text: 'Lessons learned', toc: 'Lessons learned', breakBefore: true },
+    { t: 'lead', text: run.lesson },
+    ...run.lessonText.map((text): Block => ({ t: 'p', text })),
+    { t: 'h2', text: 'The honest forecast', toc: 'The honest forecast' },
+    { t: 'lead', text: run.forecast },
+    ...run.forecastText.map((text): Block => ({ t: 'p', text })),
+    { t: 'sticky', lines: ['Status: amber.', 'Mood: green.', 'Legs: see ticket.'], color: '#F6BEC4', tilt: 2, align: 'left' },
+    { t: 'h2', text: 'The plan', toc: 'The plan', breakBefore: true },
+    { t: 'p', text: run.plan },
+    { t: 'steps', items: run.week },
+    { t: 'h2', text: 'Four phases' },
+    { t: 'steps', items: run.phases },
+    { t: 'h2', text: 'Governance', toc: 'Governance', breakBefore: true },
+    { t: 'p', text: run.governance },
+    { t: 'table', head: ['Tier', 'Half marathon', 'Marathon goal', 'Pace per km'], rows: run.tiers, widths: [0.12, 0.3, 0.32, 0.26] },
+    { t: 'bullets', items: run.gates },
+    { t: 'sticky', lines: ['No gate, no goal pace.', 'I wrote the rule.', 'I still argue with it.'], tilt: -2.5 },
+    { t: 'h2', text: 'Status report', toc: 'Status report', breakBefore: true },
+    { t: 'lead', text: run.status },
+    {
+      t: 'chart',
+      ratio: 0.62,
+      caption: `Weekly running distance, ${run.weeks[0].label} to ${run.weeks[run.weeks.length - 1].label} · from Strava`,
+      alt: run.chartAlt,
+      draw: (g, x, y, w, h, theme, k) => drawRunWeeks(g, x, y, w, h, theme, k),
+    },
+    { t: 'kpis', items: run.totals },
+    { t: 'h2', text: 'RAID log', toc: 'RAID log', breakBefore: true },
+    { t: 'table', head: ['', 'Item', 'Mitigation'], rows: raid, widths: [0.2, 0.4, 0.4] },
+    { t: 'h2', text: 'What running teaches about programmes', toc: 'What it teaches' },
+    { t: 'bullets', items: run.teaches },
+    { t: 'sticky', lines: ['Next review:', 'the 10K test.', 'Bring snacks.'], color: '#CFE3C6', tilt: 2 },
+    { t: 'links', items: [{ label: 'Run with me', value: 'Budapest, most evenings', href: `mailto:${profile.email}?subject=A%20run%20in%20Budapest` }] },
+  ];
 }

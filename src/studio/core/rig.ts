@@ -28,6 +28,10 @@ export const LOOKS: Record<string, Look> = {
   read: { eye: [0, 0], target: [0, 0], drift: 0 },
   // at the window you lean: the eye travels, the gaze barely turns, the city shifts in depth
   window: { eye: [0.32, 0.14], target: [0.08, 0.04], drift: 0.02 },
+  // the side-quest wall, the cork board up close, the runner's corner
+  quests: { eye: [0.06, 0.03], target: [0.14, 0.07], drift: 0.004 },
+  board: { eye: [0.02, 0.012], target: [0.04, 0.02], drift: 0 },
+  run: { eye: [0.05, 0.03], target: [0.1, 0.05], drift: 0.004 },
 };
 
 /**

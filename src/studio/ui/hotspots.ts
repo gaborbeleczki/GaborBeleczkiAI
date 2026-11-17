@@ -9,6 +9,8 @@ export interface Spot {
   at: THREE.Vector3;
   /** camera focuses in which the dot shows */
   focus: string[];
+  /** for something behind the visitor: when out of view, the dot waits on this edge and points */
+  edge?: 'left' | 'right';
 }
 
 export class Hotspots {
@@ -50,13 +52,20 @@ export class Hotspots {
       let show = enabled && it.spot.focus.includes(focus);
       if (show) {
         this.v.copy(it.spot.at).project(cam);
-        show = this.v.z < 1 && Math.abs(this.v.x) < 0.96 && Math.abs(this.v.y) < 0.92;
-        if (show) {
+        const inView = this.v.z < 1 && Math.abs(this.v.x) < 0.96 && Math.abs(this.v.y) < 0.92;
+        const edge = !inView && it.spot.edge;
+        show = inView || !!edge;
+        if (inView) {
           const x = (this.v.x * 0.5 + 0.5) * w;
           const y = (-this.v.y * 0.5 + 0.5) * h;
           it.el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
           it.el.classList.toggle('is-left', x > w * 0.72);
+        } else if (edge) {
+          const x = edge === 'right' ? w - 30 : 30;
+          it.el.style.transform = `translate3d(${x}px, ${(h * 0.58).toFixed(1)}px, 0)${edge === 'left' ? ' scaleX(-1)' : ''}`;
+          it.el.classList.toggle('is-left', edge === 'right');
         }
+        it.el.classList.toggle('is-edge', !!edge);
       }
       if (show !== it.shown) {
         it.shown = show;

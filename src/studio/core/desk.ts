@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import { cardBackLine, phoneNotes } from '../../../content/gags.ts';
 import { profile } from '../../../content/profile.ts';
-import { NOTEBOOK_THEME, notebookBlocks } from '../print/chapters.ts';
+import { NOTEBOOK_THEME, notebookBlocks, RUNLOG_THEME, runlogBlocks } from '../print/chapters.ts';
+import type { Block, Theme } from '../print/print.ts';
 import { Book, paperMaterial, type BookGeom } from './book.ts';
 import { carrier, Flight, readPose, type ReadFit } from './held.ts';
 import { Spring } from './physics.ts';
@@ -212,6 +214,9 @@ function cardBack(): HTMLCanvasElement {
   g.font = `500 30px ${SANS}`;
   g.fillStyle = 'rgba(243,239,230,0.7)';
   g.fillText(profile.tagline, W / 2, H / 2 + 110);
+  g.font = `italic 400 26px Georgia, 'Times New Roman', serif`;
+  g.fillStyle = 'rgba(243,239,230,0.5)';
+  g.fillText(cardBackLine, W / 2, H - 46);
   return c;
 }
 
@@ -225,6 +230,8 @@ export class PhoneScreen {
   regions: Region[] = [];
   private photo: HTMLImageElement | null = null;
   private drawnMinute = '';
+  /** which pair of notifications shows (it moves on every few seconds while the phone is up) */
+  notes = 0;
   wake = new Spring(0, 2.2, 1);
 
   constructor() {
@@ -247,7 +254,7 @@ export class PhoneScreen {
     const now = new Date();
     const minute = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Budapest' });
     const b = THREE.MathUtils.clamp(this.wake.value, 0, 1);
-    const key = `${minute}|${b.toFixed(2)}`;
+    const key = `${minute}|${b.toFixed(2)}|${this.notes}`;
     if (!force && key === this.drawnMinute) return;
     this.drawnMinute = key;
     const [W, H] = PHONE_PX;
@@ -325,6 +332,29 @@ export class PhoneScreen {
     };
     btn('View LinkedIn profile ↗', y + 400, '#1D2D3D', '#F5F5F7', profile.linkedin);
     btn('Write an email', y + 504 - 2, 'rgba(29,45,61,0.1)', '#1D2D3D', `mailto:${profile.email}`);
+    // two notifications, like any lock screen
+    g.textAlign = 'left';
+    for (let i = 0; i < 2; i++) {
+      const n = phoneNotes[(this.notes + i) % phoneNotes.length];
+      const ny = y + h + 26 + i * 132;
+      g.fillStyle = 'rgba(245,245,247,0.78)';
+      g.beginPath();
+      g.roundRect(x, ny, w, 114, 30);
+      g.fill();
+      g.fillStyle = '#1D2D3D';
+      g.beginPath();
+      g.roundRect(x + 24, ny + 24, 34, 34, 9);
+      g.fill();
+      g.fillStyle = '#6E6E73';
+      g.font = `600 22px ${SANS}`;
+      g.fillText(n.app.toUpperCase(), x + 72, ny + 49);
+      g.textAlign = 'right';
+      g.fillText('now', x + w - 26, ny + 49);
+      g.textAlign = 'left';
+      g.fillStyle = '#1D1D1F';
+      g.font = `500 27px ${SANS}`;
+      g.fillText(n.text, x + 24, ny + 92, w - 48);
+    }
     g.textAlign = 'left';
     g.globalAlpha = 1;
     this.texture.needsUpdate = true;
@@ -337,8 +367,45 @@ export interface DeskDims {
   notebook: { w: number; h: number; cover_t: number; pages_t: number; page_w: number; page_h: number; page_x: number };
 }
 
+/** The label pasted on the training log's cover. */
+function runlogLabel(): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = 640;
+  c.height = 404;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#FBF8F1';
+  g.fillRect(0, 0, 640, 404);
+  g.strokeStyle = 'rgba(29,29,31,0.2)';
+  g.lineWidth = 4;
+  g.strokeRect(10, 10, 620, 384);
+  g.fillStyle = '#6E6E73';
+  g.font = `600 34px ${MONO}`;
+  g.fillText('TRAINING LOG', 44, 92);
+  g.fillStyle = '#1D1D1F';
+  g.font = `800 132px ${SANS}`;
+  g.fillText('Sub-2:55', 36, 236);
+  g.fillStyle = 'rgba(29,29,31,0.14)';
+  g.fillRect(44, 276, 552, 4);
+  g.fillStyle = '#6E6E73';
+  g.font = `500 34px ${SANS}`;
+  g.fillText('Rotterdam · spring 2027', 44, 342);
+  return c;
+}
+
+interface LogDims {
+  w: number;
+  h: number;
+  cover_t: number;
+  pages_t: number;
+  page_w: number;
+  page_h: number;
+  page_x: number;
+}
+
 export class Desk {
   readonly notebook: Book | null = null;
+  /** the training log on the window sill */
+  readonly runlog: Book | null = null;
   readonly card: Held | null = null;
   readonly cv: Held | null = null;
   readonly phone: Held | null = null;
@@ -350,42 +417,26 @@ export class Desk {
   private steamAge = 99;
   private readonly steamBase = new THREE.Vector3();
 
-  constructor(root: THREE.Object3D, coffee: THREE.Vector3 | null, private readonly reduceMotion: boolean) {
+  constructor(root: THREE.Object3D, coffee: THREE.Vector3 | null, private readonly reduceMotion: boolean, dims?: { runlog?: LogDims }) {
     // ---- notebook: a Book with the build notes
     const nbNode = root.getObjectByName('notebook');
-    const nbCover = nbNode?.getObjectByName('notebook_cover');
-    if (nbNode) {
-      // the linen weave is procedural in Blender and does not travel through glTF: give the
-      // notebook its colours back
-      const linen = new THREE.MeshStandardMaterial({ color: '#2D4257', roughness: 0.92, metalness: 0 });
-      const cream = new THREE.MeshStandardMaterial({ color: '#F2ECDF', roughness: 0.95, metalness: 0 });
-      nbNode.traverse((o) => {
-        const m = o as THREE.Mesh;
-        if (!m.isMesh) return;
-        if (/notebook_(back|cover|spine)/.test(m.name)) m.material = linen;
-        else if (m.name === 'notebook_block') m.material = cream;
-      });
-    }
-    if (nbNode && nbCover) {
-      const n = { w: 0.15, h: 0.21, cover_t: 0.0022, pages_t: 0.0116, page_w: 0.142, page_h: 0.202, page_x: 0.004 };
-      const frame = new THREE.Object3D();
-      frame.position.set(-n.w / 2, n.cover_t + n.pages_t, n.h / 2);
-      frame.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
-      nbNode.add(frame);
-      const geom: BookGeom = {
-        boardW: n.w,
-        boardH: n.h,
-        boardT: n.cover_t,
-        gap: 0,
-        pageW: n.page_w,
-        pageH: n.page_h,
-        pageU: n.page_x,
-        pageV: (n.h - n.page_h) / 2,
-      };
-      const book = new Book('notebook', nbNode, nbCover, frame, geom, () => ({ blocks: notebookBlocks(), theme: NOTEBOOK_THEME, endpaper: { color: '#2D4257', dark: true, n: '', kicker: 'Notebook', title: 'Notes' } }), UP, 0.07, reduceMotion);
-      const band = nbNode.getObjectByName('notebook_band');
-      if (band) book.attachBand(band);
-      (this as { notebook: Book | null }).notebook = book;
+    (this as { notebook: Book | null }).notebook = this.makeBook(root, 'notebook', { w: 0.15, h: 0.21, cover_t: 0.0022, pages_t: 0.0116, page_w: 0.142, page_h: 0.202, page_x: 0.004 }, '#2D4257', () => ({
+      blocks: notebookBlocks(),
+      theme: NOTEBOOK_THEME,
+      endpaper: { color: '#2D4257', dark: true, n: '', kicker: 'Notebook', title: 'Notes' },
+    }));
+    // ---- the training log on the window sill: another Book
+    const rlNode = root.getObjectByName('runlog');
+    const rl = dims?.runlog ?? { w: 0.15, h: 0.21, cover_t: 0.0022, pages_t: 0.0096, page_w: 0.142, page_h: 0.202, page_x: 0.004 };
+    (this as { runlog: Book | null }).runlog = this.makeBook(root, 'runlog', rl, '#D2502A', () => ({
+      blocks: runlogBlocks(),
+      theme: RUNLOG_THEME,
+      endpaper: { color: '#D2502A', dark: true, n: '', kicker: 'Training log', title: 'Sub-2:55' },
+    }));
+    if (this.runlog) {
+      const label = new THREE.Mesh(new THREE.PlaneGeometry(0.098, 0.062), new THREE.MeshStandardMaterial({ map: canvasTexture(runlogLabel()), roughness: 0.8, metalness: 0 }));
+      label.raycast = () => {};
+      this.runlog.attachToCover(label, new THREE.Vector3(rl.w * 0.47, rl.h * 0.63, rl.cover_t + 0.0004), false);
     }
     // ---- business card: the top card of the stack
     const cardNode = root.getObjectByName('card_top') as THREE.Mesh | undefined;
@@ -430,6 +481,7 @@ export class Desk {
     }
     // soft shadows under the things you can lift (the bake leaves the desk clean under them)
     if (nbNode && this.notebook) this.contactShadow(nbNode, 0.15, 0.21, 0.5, () => this.notebook!.flight.value);
+    if (rlNode && this.runlog) this.contactShadow(rlNode, 0.15, 0.21, 0.42, () => this.runlog!.flight.value);
     if (phoneNode && this.phone) this.contactShadow(phoneNode, 0.0716, 0.1466, 0.55, () => this.phone!.flight.value);
     // ---- armillary sphere: the rings turn together about the vertical axis
     root.traverse((o) => {
@@ -473,6 +525,44 @@ export class Desk {
     }
   }
 
+  /**
+   * A hardback lying flat (an empty with back, spine, block, cover and band under it) becomes a
+   * Book the visitor can lift and open. Its cloth is procedural in Blender and does not travel
+   * through glTF, so the colours are given back here.
+   */
+  private makeBook(root: THREE.Object3D, name: string, n: LogDims, cloth: string, content: () => { blocks: Block[]; theme: Theme; endpaper: { color: string; dark: boolean; n: string; kicker?: string; title: string } }): Book | null {
+    const node = root.getObjectByName(name);
+    const cover = node?.getObjectByName(`${name}_cover`);
+    if (!node) return null;
+    const cloths = new THREE.MeshStandardMaterial({ color: cloth, roughness: 0.92, metalness: 0 });
+    const cream = new THREE.MeshStandardMaterial({ color: '#F2ECDF', roughness: 0.95, metalness: 0 });
+    node.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      if (new RegExp(`${name}_(back|cover|spine)`).test(m.name)) m.material = cloths;
+      else if (m.name === `${name}_block`) m.material = cream;
+    });
+    if (!cover) return null;
+    const frame = new THREE.Object3D();
+    frame.position.set(-n.w / 2, n.cover_t + n.pages_t, n.h / 2);
+    frame.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+    node.add(frame);
+    const geom: BookGeom = {
+      boardW: n.w,
+      boardH: n.h,
+      boardT: n.cover_t,
+      gap: 0,
+      pageW: n.page_w,
+      pageH: n.page_h,
+      pageU: n.page_x,
+      pageV: (n.h - n.page_h) / 2,
+    };
+    const book = new Book(name, node, cover, frame, geom, content, UP, 0.07, this.reduceMotion);
+    const band = node.getObjectByName(`${name}_band`);
+    if (band) book.attachBand(band);
+    return book;
+  }
+
   /** A soft live shadow under an object resting on the desk; it fades as the object lifts. */
   private contactShadow(node: THREE.Object3D, w: number, d: number, strength: number, away: () => number): void {
     const c = document.createElement('canvas');
@@ -502,6 +592,7 @@ export class Desk {
   }
 
   private readonly shadows: { mat: THREE.MeshBasicMaterial; base: number; away: () => number }[] = [];
+  private noteClock = 0;
 
   get helds(): Held[] {
     return [this.card, this.cv, this.phone].filter((h): h is Held => !!h);
@@ -519,7 +610,12 @@ export class Desk {
   }
 
   get busy(): boolean {
-    return Math.abs(this.spin.rate) > 0.01 || this.steamAge < 6 || this.helds.some((h) => h.busy) || !!this.notebook?.busy;
+    return Math.abs(this.spin.rate) > 0.01 || this.steamAge < 6 || this.helds.some((h) => h.busy) || !!this.notebook?.busy || !!this.runlog?.busy;
+  }
+
+  /** The books that live outside the shelf: the notebook and the training log. */
+  get books(): Book[] {
+    return [this.notebook, this.runlog].filter((b): b is Book => !!b);
   }
 
   step(h: number): void {
@@ -531,8 +627,16 @@ export class Desk {
     const ph = this.phoneScreen.wake;
     ph.target = this.phone?.isOpen && (this.phone.flight.travel.goal > 0) ? 1 : 0;
     ph.step(h);
-    this.notebook?.step(h);
+    for (const b of this.books) b.step(h);
     this.steamAge += h;
+    // the lock screen moves on to the next notifications every few seconds
+    if (this.phone?.isOpen) {
+      this.noteClock += h;
+      if (this.noteClock > 7) {
+        this.noteClock = 0;
+        this.phoneScreen.notes = (this.phoneScreen.notes + 1) % phoneNotes.length;
+      }
+    }
   }
 
   update(cam: THREE.PerspectiveCamera, portrait: boolean, time: number): void {
@@ -540,9 +644,9 @@ export class Desk {
     const q = new THREE.Quaternion().setFromAxisAngle(UP, this.spin.angle);
     for (const r of this.rings) r.node.quaternion.copy(q).multiply(r.rest);
     for (const hd of this.helds) hd.update(cam);
-    if (this.notebook) {
-      this.notebook.portrait = portrait;
-      this.notebook.update(cam);
+    for (const b of this.books) {
+      b.portrait = portrait;
+      b.update(cam);
     }
     if (this.phone && (this.phone.isOpen || this.phoneScreen.wake.value > 0.002)) this.phoneScreen.draw();
     if (this.steam) {
@@ -567,6 +671,6 @@ export class Desk {
 
   setTint(c: THREE.Color): void {
     for (const hd of this.helds) if (hd !== this.phone) hd.setTint(c);
-    this.notebook?.setTint(c);
+    for (const b of this.books) b.setTint(c);
   }
 }

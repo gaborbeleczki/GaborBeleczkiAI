@@ -212,6 +212,16 @@ export class Lounge {
     window.setTimeout(() => c?.stop(), 1600);
   }
 
+  /** Step back while someone else is talking (the intro film), then come forward again. */
+  hush(on: boolean): void {
+    if (!this.ctx || !this.on) return;
+    const now = this.ctx.currentTime;
+    const g = this.out!.gain;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.linearRampToValueAtTime(on ? 0.1 : 0.66, now + (on ? 0.6 : 1.8));
+  }
+
   dispose(): void {
     this.stop();
     const ctx = this.ctx as AudioContext | null;

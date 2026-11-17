@@ -12,6 +12,7 @@ __pycache__/
 
 # QA scratch output (the report and small previews are kept)
 renders/frames/
+renders/legend/
 renders/qa/*.png
 renders/*.png
 
