@@ -24,7 +24,7 @@ OUT = os.path.join(ROOT, 'blender', 'out')
 PUBLIC = os.path.join(ROOT, 'public')
 WINDOW_PLATE = os.path.join(ROOT, 'public', 'textures', 'window_evening.webp')
 
-BAKE_GROUPS = ['floor', 'walls', 'furniture', 'props', 'quests']
+BAKE_GROUPS = ['floor', 'walls', 'furniture', 'props', 'quests', 'shoes']
 # materials of draped cloth: their own UVs (ArtUV) are a clean unwrap, kept as the bake islands
 SHEET_MATERIALS = {'knit_throw', 'throw_wool'}
 ATLAS_PRIORITY = {
@@ -41,7 +41,7 @@ def build():
     arts = art.make_all(os.path.join(OUT, 'art'))
     # the printed CV on the desk is the original one-pager (scripts/cv-texture.mjs renders it)
     arts['cv'] = os.path.join(OUT, 'art', 'cv_page.png')
-    arts['portrait'] = os.path.join(PUBLIC, 'img', 'gabor.jpg')
+    arts['portrait'] = os.path.join(PUBLIC, 'img', 'intro-portrait.jpg')  # the legend's hero, not a photo
     for k in ('cv', 'portrait'):
         if not os.path.exists(arts[k]):
             del arts[k]
@@ -53,6 +53,7 @@ def build():
     c_furn = collection('BAKE_furniture')
     c_props = collection('BAKE_props')
     c_quests = collection('BAKE_quests')
+    c_shoes = collection('BAKE_shoes')
     c_dyn = collection('DYN')
     c_hit = collection('HIT')
     c_meta = collection('META')
@@ -85,7 +86,7 @@ def build():
     drawing = (R.X0 + 0.0005, 1.17, 0.955)
     if 'crayon' in arts:
         C.taped('crayon', c_props, arts['crayon'], drawing, '+x', (0.297, 0.224))
-    gear = C.build_running_gear(c_props, arts)
+    gear = C.build_running_gear(c_props, arts, c_shoes)
     medal = C.build_medal(c_props, c_dyn, arts)
     runlog_pos = (0.6, R.Y1 + 0.06, R.WIN_Z0)
     C.build_runlog(c_dyn, runlog_pos, math.radians(80))

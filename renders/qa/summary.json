@@ -1,6 +1,6 @@
 {
-  "generated": "2026-11-17T15:53:53.430Z",
-  "seconds": 993,
+  "generated": "2026-11-17T19:09:56.444Z",
+  "seconds": 781,
   "screenshots": {
     "shots": [
       "page-original-desktop",
@@ -56,24 +56,24 @@
   "perf": {
     "errors": [],
     "page": {
-      "loadMs": 556,
-      "lcpMs": 236,
-      "transferKB": 2255
+      "loadMs": 630,
+      "lcpMs": 200,
+      "transferKB": 2187
     },
     "studio": {
-      "domLoadMs": 263,
-      "readyMs": 31528,
-      "transferKB": 15663,
+      "domLoadMs": 230,
+      "readyMs": 16615,
+      "transferKB": 16490,
       "frames": 2,
       "frameMs": {
-        "median": 3699.7,
-        "p95": 3699.7
+        "median": 7233.1,
+        "p95": 7233.1
       },
       "renderer": {
         "focus": "home",
         "module": "hello",
         "screenReady": true,
-        "night": false,
+        "night": true,
         "dpr": 1,
         "size": [
           1280,
@@ -83,25 +83,25 @@
       "note": "software WebGL (SwiftShader) in headless Chromium"
     },
     "dist": {
-      "totalKB": 35265,
-      "modelsKB": 1270,
-      "texturesKB": 12240,
-      "jsKB": 922
+      "totalKB": 35912,
+      "modelsKB": 1372,
+      "texturesKB": 12743,
+      "jsKB": 929
     }
   },
   "pixeldiff": {
     "results": {
       "evening": {
-        "mismatchPct": 18.65,
-        "meanAbsLuma": 16.11,
-        "meanLumaWebGL": 102.6,
-        "meanLumaCycles": 103.7
+        "mismatchPct": 18.81,
+        "meanAbsLuma": 16.37,
+        "meanLumaWebGL": 102.2,
+        "meanLumaCycles": 103.6
       },
       "day": {
-        "mismatchPct": 18.47,
-        "meanAbsLuma": 15.09,
-        "meanLumaWebGL": 125.4,
-        "meanLumaCycles": 133.3
+        "mismatchPct": 18.67,
+        "meanAbsLuma": 15.37,
+        "meanLumaWebGL": 125,
+        "meanLumaCycles": 133.2
       }
     },
     "errors": []
@@ -272,7 +272,7 @@
         "name": "music: 16 s offline render, no clipping, not silent",
         "pass": true,
         "detail": {
-          "peak": 0.542,
+          "peak": 0.56,
           "rms": 0.104
         },
         "errors": []
@@ -305,10 +305,11 @@
         "name": "side quests: wall, board, a card, the training log",
         "pass": true,
         "detail": {
-          "wall": 5,
-          "board": 10,
+          "wall": 6,
+          "board": 11,
           "card": "Home repairs",
-          "log": 7
+          "parts": 5,
+          "log": 4
         },
         "errors": []
       },

@@ -9,12 +9,11 @@ import { cases, folios, profile, type FolioId } from '../../content/profile.ts';
 import { Lounge } from './audio/lounge.ts';
 import type { Book } from './core/book.ts';
 import { Desk, CARD_PX, PHONE_PX, type Held } from './core/desk.ts';
-import { Dust } from './core/dust.ts';
 import { Shelf, type DossierDims } from './core/shelf.ts';
 import { bakedMaterial, configureTexture, emitterMaterial, motionUniforms, type MotionUniforms } from './core/materials.ts';
 import { Pendant } from './core/pendant.ts';
 import { GLOW_LAYER, Post } from './core/post.ts';
-import { FixedStep, Wander } from './core/physics.ts';
+import { FixedStep } from './core/physics.ts';
 import { CameraRig, LOOKS, type Pose } from './core/rig.ts';
 import { Turntable } from './core/turntable.ts';
 import { WindowView, type VehicleMeta, type WindowMeta, type WindowTextures } from './core/window.ts';
@@ -65,8 +64,8 @@ const HINTS: Record<Focus, string> = {
   objects: 'Pick something up: the cards, the CV, the phone, the notebook · <kbd>Esc</kbd> to step back',
   window: 'Budapest across the Danube · move to look around · watch for tram 2<br><small>Photos: Wilfredor (CC0) · Yair-haklai (CC BY-SA 4.0), Wikimedia Commons; weather restyled with an image model</small>',
   record: 'Budapest sessions: lounge deep house, generated live · click again to stop',
-  quests: 'The side-quest wall: none of it was on the roadmap · <kbd>Esc</kbd> to step back',
-  board: 'Ten things that shipped anyway · pick a card · <kbd>Esc</kbd> to step back',
+  quests: 'The side-quest wall: none of it was on the roadmap · pick a card · <kbd>Q</kbd> back to the desk',
+  board: 'Ten things that shipped anyway · pick a card for what it does and what it is made of · <kbd>Q</kbd> back to the desk',
   run: 'The runner’s corner · the training log is on the sill · <kbd>Esc</kbd> to step back',
 };
 
@@ -124,11 +123,6 @@ export class Studio {
   private readonly stepper = new FixedStep();
   private motion!: MotionUniforms;
   private pendant?: Pendant;
-  private dust?: Dust;
-  private lampPositions: THREE.Vector3[] = [];
-  private readonly breeze = new Wander(0.08);
-  private readonly air = new THREE.Vector3();
-  private readonly lastEye = new THREE.Vector3();
   private readonly capture = /[?&]capture\b/.test(location.search);
   private drift = 0;
   private readonly adoption: Adoption;
@@ -368,7 +362,7 @@ export class Studio {
     const photo = new Image();
     photo.decoding = 'async';
     photo.onload = () => (this.photo = photo);
-    photo.src = '/img/gabor.jpg';
+    photo.src = '/img/intro-portrait.jpg'; // the legend's hero introduces him on the desk, not a photo
     this.shelf = new Shelf(root, meta.dossier, () => this.photo, this.reduceMotion);
     this.desk = new Desk(root, meta.objects?.coffee ? v3(meta.objects.coffee) : null, this.reduceMotion, { runlog: meta.runlog });
     // every book is read lying open on the desk (not held up and tilted): how far each reaches
@@ -408,20 +402,13 @@ export class Studio {
 
     // the pendant swings on its cord; the glowing diffuser and the live light go with it
     this.pendant = new Pendant(this.motion.pivot.value, this.motion, [root.getObjectByName('pendant_diffuser'), root.getObjectByName('hit_pendant')], this.warmLight);
-    this.pendant.calm = this.reduceMotion;
-    this.lampPositions = ['pendant', 'desk_lamp', 'candle'].map((k) => v3(meta.lights[k] ?? [0, 2, -1.6]));
-    if (!this.reduceMotion) {
-      this.dust = new Dust(new THREE.Box3(new THREE.Vector3(-1.75, 0.75, -2.1), new THREE.Vector3(1.55, 2.5, 0.9)), this.lampPositions, {
-        center: v3(meta.window.center),
-        size: meta.window.size,
-      });
-      this.scene.add(this.dust.points);
-    }
+    // the room holds still: no swinging lamp, no drifting dust, no breeze in the curtains (anything
+    // that moves on its own in a still room read as flicker)
+    this.pendant.calm = true;
     this.applyState(this.dayT);
 
     this.rig = new CameraRig(this.poses.home);
     this.rig.calm = this.reduceMotion || this.capture;
-    this.lastEye.copy(this.rig.camera.position);
     const start = this.poses.home;
     // arrive with a short dolly
     const from: Pose = { pos: start.pos.clone().add(new THREE.Vector3(0.5, 0.18, 0.9)), target: start.target.clone(), fit: start.fit };
@@ -465,7 +452,7 @@ export class Studio {
     const coarse = matchMedia('(pointer: coarse)').matches;
     const full = mem >= 8 && !coarse && this.renderer.capabilities.maxTextureSize >= 4096;
     // (the walls' albedo is 2K already, and the side-quest wall is small: neither has a smaller sibling)
-    const sharp = (g: string, kind: string) => (full || g === 'quests' || (g === 'walls' && kind === 'albedo') ? `/textures/${g}_${kind}.webp` : `/textures/${g}_${kind}_md.webp`);
+    const sharp = (g: string, kind: string) => (full || g === 'quests' || g === 'shoes' || (g === 'walls' && kind === 'albedo') ? `/textures/${g}_${kind}.webp` : `/textures/${g}_${kind}_md.webp`);
     const states: ('evening' | 'day')[] = this.night ? ['evening', 'day'] : ['day', 'evening'];
     try {
       for (const m of this.baked) {
@@ -719,7 +706,7 @@ export class Studio {
       const a = (this.time / 12) * Math.PI * 2;
       this.rig.setPointer(Math.sin(a) * 0.55, Math.sin(a * 2) * 0.18);
     }
-    // physics at a fixed 120 Hz: camera, folios, record player, pendant, dust
+    // physics at a fixed 120 Hz: camera, folios, record player
     this.stepper.advance(dt, (h) => this.physics(h));
     this.rig.apply();
     const portrait = this.rig.camera.aspect < 0.95;
@@ -728,9 +715,6 @@ export class Studio {
     this.syncReader();
     this.turntable?.update();
     this.pendant?.apply();
-    this.dust?.update(this.dayT, this.dpr);
-    if (this.dust) this.dust.points.visible = !this.inHand;
-    this.motion.time.value = this.reduceMotion ? 0 : this.time;
     // day/evening cross-fade
     if (this.dayT !== this.dayGoal) {
       const step = this.reduceMotion ? 1 : dt / 1.6;
@@ -748,8 +732,7 @@ export class Studio {
       this.hotspots.nameAll(this.time < this.namedUntil && !this.inHand);
     }
     if (this.flame) {
-      const f = this.reduceMotion ? 1 : 0.85 + 0.15 * Math.sin(this.time * 13.1) * Math.sin(this.time * 7.3 + 1.3);
-      this.flame.scale.set(0.02 * f, 0.048 * (0.9 + 0.2 * f), 1);
+      // a steady flame: a flicker at 13 Hz, bloomed, pulsed the whole corner
       (this.flame.material as THREE.SpriteMaterial).opacity = (1 - this.dayT) * 0.95;
     }
     if (!draw) return;
@@ -763,21 +746,6 @@ export class Studio {
     this.shelf?.step(h);
     this.desk?.step(h);
     this.turntable?.step(h);
-    // air the camera pushes along, felt by the pendant when it passes close
-    const eye = this.rig.camera.position;
-    const lamp = this.lampPositions[0];
-    if (lamp) {
-      this.air.subVectors(eye, this.lastEye).divideScalar(h).clampLength(0, 3);
-      const near = Math.max(0, 1 - eye.distanceTo(lamp) / 1.6);
-      this.air.multiplyScalar(near * near * 0.6);
-      this.air.y = 0;
-    }
-    this.lastEye.copy(eye);
-    this.pendant?.step(h, this.air);
-    // a breeze from the window: curtains and leaves
-    const b = this.reduceMotion ? 0 : 0.5 + 0.5 * this.breeze.step(h);
-    this.motion.wind.value = b * b;
-    this.dust?.step(h, this.lampPositions, 1 - this.dayT);
   }
 
   /** Lower the pixel ratio when frames run long; raise it back carefully. */
@@ -786,7 +754,9 @@ export class Studio {
     if (this.frameTimes.length < 90) return;
     const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
     this.frameTimes.length = 0;
-    const max = Math.min(window.devicePixelRatio || 1, 2);
+    // on a standard-density screen a fast GPU may draw at up to 1.5x and let the browser scale it
+    // down: thin edges (the display's bezel, the sideboard's ribs) no longer crawl as the view moves
+    const max = Math.min(Math.max(window.devicePixelRatio || 1, 1.5), 2);
     if (avg > 1 / 34 && this.post?.enabled && this.dpr <= 1) this.post.enabled = false; // the glow goes first
     if (avg > 1 / 40 && this.dpr > 0.75) this.dpr = Math.max(0.75, this.dpr - 0.25);
     else if (avg < 1 / 58 && this.dpr < max) this.dpr = Math.min(max, this.dpr + 0.25);
@@ -850,6 +820,7 @@ export class Studio {
     if (!this.inHand) this.rig.setLook(LOOKS[f] ?? LOOKS.home);
     this.screen.attention(f === 'desk');
     this.hud.setFocused(f !== 'home');
+    this.hud.atWall(f === 'quests' || f === 'board');
     this.hud.setHint(HINTS[f]);
     this.hud.showCaption(null);
     if (f === 'home' || f === 'objects' || f === 'quests' || f === 'board' || f === 'run') this.namedUntil = this.time + 1.6 + 3.5;
@@ -955,11 +926,12 @@ export class Studio {
     const g = book.geom;
     const r = this.renderer.domElement;
     const portrait = (r.clientWidth || window.innerWidth) / (r.clientHeight || window.innerHeight) < 0.95;
-    const w = portrait ? g.boardW + 0.03 : 2 * g.boardW + 0.07;
-    const h = g.boardH + 0.13;
+    // close in: the pages fill most of the height (the toolbar steps aside while reading, the
+    // reading bar along the bottom stays, so the book sits a touch above the middle)
+    const w = portrait ? g.boardW + 0.016 : 2 * g.boardW + 0.03;
+    const h = g.boardH + 0.085;
     const s = this.readingSpot;
-    // (the toolbar runs along the top, the reading bar along the bottom: leave room for both)
-    const target = new THREE.Vector3(s.x, s.y + 0.03, s.z + h * 0.035);
+    const target = new THREE.Vector3(s.x, s.y + 0.03, s.z + h * 0.06);
     const H = 0.9;
     return { pos: target.clone().add(new THREE.Vector3(0, H, H * Math.tan(THREE.MathUtils.degToRad(4)))), target, fit: [w, h] };
   }
@@ -1054,7 +1026,7 @@ export class Studio {
       const c = questCards[key];
       if (!c) return;
       this.adoption.card(key);
-      return this.hud.showCaption(c);
+      return this.hud.showCaption({ ...c, snap: key });
     }
     switch (id) {
       case 'shelf':
@@ -1110,6 +1082,8 @@ export class Studio {
       // ---- the side-quest wall
       case 'quests':
         return this.setFocus('quests');
+      case 'turn-back':
+        return this.setFocus('home');
       case 'board':
         return this.setFocus(this.focus === 'board' ? 'quests' : 'board');
       case 'poster':
@@ -1169,7 +1143,8 @@ export class Studio {
     }
     if (id === 'quests') {
       this.putDown(true);
-      return this.setFocus('quests');
+      // at the wall, the same button turns you back to the desk
+      return this.setFocus(this.focus === 'quests' || this.focus === 'board' ? 'home' : 'quests');
     }
     if (id === 'home') {
       this.putDown(true);
@@ -1435,7 +1410,8 @@ export class Studio {
       at('runlog', 0.03) && { id: 'runlog', label: 'Training log · Sub-2:55', at: at('runlog', 0.03)!, focus: ['home', 'run'] },
       at('bib') && { id: 'run', label: 'The runner’s corner', at: at('bib')!, focus: ['home'] },
       at('board') && { id: 'quests', label: 'Turn around · Side quests', at: at('board')!, focus: ['home', 'objects', 'run'], edge: 'right' as const },
-      at('shoes', 0.06) && { id: 'shoes', label: 'Racing shoes', at: at('shoes', 0.06)!, focus: ['run'] },
+      { id: 'turn-back', label: 'Turn around · Back to the desk', at: v3([0.32, 0.86, -1.72]), focus: ['quests', 'board'], edge: 'left' as const },
+      at('shoes', 0.06) && { id: 'shoes', label: 'Megablasts · Ekiden green', at: at('shoes', 0.06)!, focus: ['run'] },
       at('bib') && { id: 'bib', label: '255', at: at('bib')!, focus: ['run'] },
       at('medal') && { id: 'medal', label: 'Finisher medal', at: at('medal')!, focus: ['run'] },
       at('board', 0.52) && { id: 'board', label: 'The cork board · step closer', at: at('board', 0.3)!, focus: ['quests'] },

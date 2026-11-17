@@ -89,7 +89,6 @@ export function drawRunWeeks(g: CanvasRenderingContext2D, x: number, y: number, 
     g.textAlign = 'left';
   };
   note(5, 'the week the dashboard\ndoes not mention', -6, -92, 'center');
-  note(12, 'relay: 22.7 km\nat 4:24/km', -78, -70, 'center');
   note(17, '30 km. At night.\nOn purpose.', -150, -34, 'center');
   // the target, as a line nobody has reached yet
   g.setLineDash([s(8), s(7)]);

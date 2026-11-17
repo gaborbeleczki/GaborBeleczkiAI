@@ -71,8 +71,8 @@ export const captions = {
     text: '“Robot helps the runner finish.” Crayon on paper, taped at the artist’s eye level. The artist was paid in pancakes and keeps all rights.',
   },
   shoes: {
-    title: 'Racing shoes, parked',
-    text: 'They have opinions about the plan. The plan is sub-2:55 in Rotterdam in spring 2027, three running days a week, with a governance gate at every test race.',
+    title: 'Megablasts, parked',
+    text: 'ASICS Megablast, in the green of the Ekiden colourway: the tallest stack in the shoe cupboard. They have opinions about the plan: sub-2:55 in Rotterdam in spring 2027, three runs a week.',
   },
   bib: {
     title: '255',
@@ -92,36 +92,84 @@ export const captions = {
   bench: { title: 'The bench', text: 'Card night lives here. So does anyone who came with a quick question and stayed for the roadmap.' },
 } satisfies Record<string, Caption>;
 
+/** A card on the cork board: the joke, and (for a closer look) what the thing does, what is in
+ *  it, and how it was made. Written from the projects themselves, without names, ages or dates. */
+export interface QuestCard extends Caption {
+  what?: string;
+  parts?: string[];
+  built?: string;
+}
+
 /** The cards on the cork board. */
-export const questCards: Record<string, Caption> = {
-  banner: { title: 'Side quests', text: 'None of these were on the roadmap. All of them shipped. Most were built with Claude on a weekend, for an audience of one family.' },
+export const questCards: Record<string, QuestCard> = {
+  banner: {
+    title: 'Side quests',
+    text: 'None of these were on the roadmap. All of them shipped. Most were built with Claude on a weekend, for an audience of one family.',
+    what: 'Pick a card: each one says what the thing does, what is in it, and how it was made.',
+  },
   dwarf: {
     title: 'City break, with a KPI',
-    text: 'Wrocław hides hundreds of bronze dwarfs. The junior team set the target (find more than last time) and audited the count. The itinerary was planned with an AI; the dwarfs were found on foot.',
+    text: 'Wrocław hides hundreds of bronze dwarfs. The junior team set the target (find more than last time) and audited the count.',
+    what: 'A planner for a long family weekend in Wrocław: every day on a map, the weather, what things cost in forints, and a hunt for the bronze dwarfs, with a short story for each one.',
+    parts: ['A map of the day’s stops, and the dwarfs nearby', 'A day-by-day plan you can reshuffle', 'The dwarf hunt: a checklist and a story per dwarf', 'Menus and prices in forints, a running budget', 'Getting around, flights and the hotel, in one place'],
+    built: 'One web page with a live map, built with Claude. The plan saves itself; the dwarfs were found on foot.',
   },
   maths: {
     title: 'Kitchen-table maths olympiad',
-    text: 'Nine sticks, how many triangles? I turn competition puzzles into small interactive explainers, then get corrected by someone much shorter than me.',
+    text: 'Nine sticks, how many triangles? Competition puzzles, turned into small interactive explainers, then corrected by someone much shorter than me.',
+    what: 'Photograph a competition puzzle, and get back a small page that explains it: the answer checked by counting every case, and a way through it that a young solver can poke at.',
+    parts: ['The puzzle redrawn, with pieces you can move', 'Hints that open one at a time', 'An answer checked by brute force, not by confidence', 'A second way to see it, for when the first one does not land'],
+    built: 'A reusable Claude skill: photo in, verified explainer out. A dozen puzzles so far, in Hungarian.',
   },
   score: {
     title: 'Card night',
-    text: 'A home-built scorekeeper, so nobody argues about the adding up. Requirements changed mid-sprint: “add a button for when I win”. Shipped the same evening.',
+    text: 'A home-built scorekeeper, so nobody argues about the adding up. Requirements changed mid-sprint: “add a button for when I win”.',
+    what: 'A scorekeeper for Flip 7: tap the cards each player kept and the modifiers, and it does the adding up, the doubling, the busts and the bonus for seven cards.',
+    parts: ['A grid of number cards and modifiers for each player', 'Bust and the seven-card bonus built in', 'Running totals with a bar to the finish line', 'Round history, undo, and a new game', 'It remembers the game if the phone locks'],
+    built: 'One page, no install, built with Claude in an evening. The “I win” button is still under review.',
   },
-  padel: { title: 'Padel', text: 'Like a stakeholder meeting, except the walls are in play and everybody leaves happy. Thursdays, usually.' },
+  padel: {
+    title: 'Padel',
+    text: 'Like a stakeholder meeting, except the walls are in play and everybody leaves happy. Thursdays, usually.',
+    what: 'Not software. An hour a week where the walls are in play and nobody brings a status update.',
+    parts: ['Doubles: shared ownership, by design', 'A racket that has seen things', 'Thursdays, usually'],
+    built: 'Built with legs. No AI involved, apart from finding a court.',
+  },
   oven: {
     title: 'Home repairs',
     text: 'The oven door glass: replaced, following a step-by-step guide written for exactly one reader. Two screws remain unallocated. No incidents since go-live.',
+    what: 'An interactive service guide for replacing a cracked oven-door glass, with a straight answer to the real question first: do it yourself, or call the service?',
+    parts: ['An exploded diagram of the door that lights up the parts for each step', 'Eleven steps with tick-boxes the browser remembers', 'Do it yourself against the fixed-price repair, compared', 'Every step marked: from the manual, or worked out from the diagram', 'Safety notes where the glass can bite'],
+    built: 'Built with Claude from the manual of a sister model and the parts diagram, in Hungarian.',
   },
   travel: {
     title: 'Family travel desk',
     text: 'Flights, seats and connections, compared and stress-tested so that everyone sits together. Acceptance criterion: nobody cries before take-off. Including me.',
+    what: 'A flight planner for a family that travels together: routes priced for the whole group, seats together and bags included, ranked by what matters with children on board.',
+    parts: ['A map of destinations, with a price for everyone', 'Return, one-way and multi-city trips', 'Best for a family, cheapest, fastest, kindest departure times', 'Sitting together and the bags, in the price', 'A shortlist from a fare model, then a link to the live search'],
+    built: 'One web page with its own world map and fare model, built with Claude. The booking happens elsewhere.',
   },
   games: {
     title: 'Home-made learning games',
     text: 'Letters, numbers and traffic rules, as small games. The toughest user panel I know: feedback is instant, honest, and arrives without slides.',
+    what: 'Small games for letters and traffic rules, and a floodlit football match for after the homework.',
+    parts: ['Letter champion: letters and first words, as a game', 'City traffic rules: signs and right of way, as a game', 'Floodlight Cup: eleven-a-side football in 3D, with a crowd that cheers', 'Big buttons, no accounts, no ads'],
+    built: 'HTML and JavaScript (three.js for the stadium), built with Claude, tested by the most honest panel in the house.',
   },
-  snow: { title: 'Snow trip', text: 'Lifts, lessons and the hot-chocolate budget on one board. Packing list v7 is final. So was v6.' },
-  policy: { title: 'The side-quest policy', text: '1. It must ship. 2. See rule 1. The same policy applies at work, with more approvals and better documentation.' },
+  snow: {
+    title: 'Snow trip',
+    text: 'Lifts, lessons and the hot-chocolate budget on one board. Packing list v7 is final. So was v6.',
+    what: 'A planner for a family ski trip: who skis when, which lessons, which lifts, what to pack and what it all costs.',
+    parts: ['A day plan: lessons, lifts and breaks', 'A packing list, on its seventh version', 'A budget, with a line for hot chocolate', 'Snow and weather, checked once too often'],
+    built: 'One page, built with Claude. Version eight of the packing list is in review.',
+  },
+  policy: {
+    title: 'The side-quest policy',
+    text: '1. It must ship. 2. See rule 1. The same policy applies at work, with more approvals and better documentation.',
+    what: 'The only governance on this wall.',
+    parts: ['1. It must ship.', '2. See rule 1.'],
+    built: 'Applied at work too, with more approvals and better documentation.',
+  },
 };
 
 /** Notifications on the phone's lock screen; two show at a time. */

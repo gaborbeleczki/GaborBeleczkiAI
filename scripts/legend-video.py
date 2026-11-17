@@ -10,9 +10,9 @@ is one and a still when there is not:
 - media/legend/NN_name.mp4: a clip made with an image-to-video model from the still of the same
   name (prompts and settings in media/legend/clips.json). Played as filmed, slowed a little if
   it is shorter than its place in the cut.
-- media/legend/NN_name.jpg: a still made with an image model. It gets a camera move, a punch-in
-  for a closer shot, flickering candle- and firelight, and drifting dust or drizzle, so the few
-  shots still waiting for their clip sit among the others.
+- media/legend/NN_name.jpg: a still made with an image model. It gets a slow camera move and a
+  punch-in for a closer shot. Nothing in a frame flickers: no candlelight, dust or rain is
+  painted on (they read as flicker on the display).
 - The last shot is the studio itself: the page's own recording of the room
   (public/media/studio-loop.mp4), else its evening poster.
 
@@ -66,16 +66,6 @@ SHOTS = [
     ('08_runner', 49.0, (1.30, 1.37, 0.12, 0.0, 0.95, -0.2), 'cut'),             # at night
     ('09_studio', 52.6, (1.08, 1.0, -0.2, 0.0)),
 ]
-
-# what moves on the stills besides the camera
-LIFE = {
-    '01_tome': ('dust',),
-    '02_scriptorium': ('dust',),
-    '04_council': ('dust',),
-    '06_hall': ('dust',),
-    '07_dragon': ('dust',),
-    '08_runner': ('drizzle',),
-}
 
 # captions, in order; each takes as many words of the narration as it has
 CAPTIONS = [
@@ -222,91 +212,6 @@ def frame_of(im: Image.Image, move, u: float) -> Image.Image:
     return im.transform((W, H), Image.AFFINE, (sx, 0, cx - vw / 2, 0, sy, cy - vh / 2), resample=Image.BICUBIC)
 
 
-def warm_mask(im: Image.Image) -> Image.Image:
-    """Where the candles, torches and fires are: bright and warm, softened into a glow."""
-    a = np.asarray(im, dtype=np.float32)
-    y = a @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
-    m = np.clip((y - 165) / 70, 0, 1) * np.clip((a[..., 0] - a[..., 2] - 25) / 70, 0, 1)
-    g = Image.fromarray((m * 255).astype(np.uint8), 'L').filter(ImageFilter.GaussianBlur(14))
-    g = np.asarray(g, dtype=np.float32)
-    return Image.fromarray(np.clip(g / max(1.0, np.percentile(g, 99.7)) * 255, 0, 255).astype(np.uint8), 'L')
-
-
-_PHASE = None
-
-
-def flicker(t: float) -> np.ndarray:
-    """Candlelight: a few incommensurate wobbles, out of step from one flame to the next."""
-    global _PHASE
-    if _PHASE is None:
-        rng = np.random.default_rng(3)
-        small = rng.uniform(0, 2 * math.pi, (9, 16)).astype(np.float32)
-        _PHASE = np.asarray(Image.fromarray(small).resize((W, H), Image.BICUBIC), dtype=np.float32)
-    p = _PHASE
-    return (0.045 * np.sin(2 * math.pi * 4.7 * t + p) + 0.03 * np.sin(2 * math.pi * 8.3 * t + 2.1 * p)
-            + 0.025 * np.sin(2 * math.pi * 1.9 * t + 3.3 * p))
-
-
-class Motes:
-    """Dust in the light: soft specks drifting slowly, seen only where the picture is lit."""
-
-    def __init__(self, seed: int, n: int = 70):
-        rng = np.random.default_rng(seed)
-        self.p = rng.uniform((0, 0), (W, H), (n, 2))
-        self.v = np.stack([rng.uniform(-9, 9, n), rng.uniform(-14, -3, n)], 1)
-        self.r = rng.uniform(1.2, 3.6, n)
-        self.a = rng.uniform(0.25, 0.75, n)
-        self.ph = rng.uniform(0, 2 * math.pi, n)
-        self.sprites = {}
-
-    def sprite(self, r: float) -> np.ndarray:
-        k = round(r * 2) / 2
-        if k not in self.sprites:
-            n = int(math.ceil(k * 3))
-            yy, xx = np.mgrid[-n:n + 1, -n:n + 1]
-            self.sprites[k] = np.exp(-(xx * xx + yy * yy) / (2 * k * k)).astype(np.float32)
-        return self.sprites[k]
-
-    def draw(self, arr: np.ndarray, t: float) -> None:
-        lum = arr.mean(axis=2)
-        for i in range(len(self.p)):
-            x = (self.p[i, 0] + self.v[i, 0] * t + 7 * math.sin(0.31 * t + self.ph[i])) % W
-            y = (self.p[i, 1] + self.v[i, 1] * t + 4 * math.sin(0.23 * t + 2 * self.ph[i])) % H
-            sp = self.sprite(self.r[i])
-            n = sp.shape[0] // 2
-            x0, y0 = int(x) - n, int(y) - n
-            if x0 < 0 or y0 < 0 or x0 + sp.shape[1] > W or y0 + sp.shape[0] > H:
-                continue
-            light = min(1.0, (lum[int(y), int(x)] / 200.0) ** 1.4)
-            a = self.a[i] * light * (0.65 + 0.35 * math.sin(1.3 * t + self.ph[i]))
-            if a < 0.02:
-                continue
-            arr[y0:y0 + sp.shape[0], x0:x0 + sp.shape[1]] += sp[..., None] * np.array((255, 236, 205), np.float32) * a * 0.5
-
-
-class Drizzle:
-    """Fine rain caught in the street lights: thin streaks falling fast at a slight slant."""
-
-    def __init__(self, seed: int, n: int = 170):
-        rng = np.random.default_rng(seed)
-        self.x = rng.uniform(-100, W + 100, n)
-        self.y = rng.uniform(0, H, n)
-        self.s = rng.uniform(900, 1400, n)
-        self.l = rng.uniform(12, 26, n)
-        self.a = rng.uniform(0.05, 0.13, n)
-
-    def draw(self, arr: np.ndarray, t: float) -> None:
-        layer = Image.new('L', (W, H), 0)
-        d = ImageDraw.Draw(layer)
-        for i in range(len(self.x)):
-            y = (self.y[i] + self.s[i] * t) % (H + 60) - 30
-            x = self.x[i] + 0.18 * (y - self.y[i])
-            x = (x + 100) % (W + 200) - 100
-            d.line((x, y, x - 0.18 * self.l[i], y - self.l[i]), fill=int(255 * self.a[i]), width=1)
-        a = np.asarray(layer, dtype=np.float32)[..., None] / 255
-        arr += a * (np.array((205, 215, 235), np.float32) - arr) * 0.9
-
-
 def probe(path: str) -> float:
     out = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', path],
                          capture_output=True, text=True, check=True).stdout
@@ -371,11 +276,6 @@ class Snippet:
     def __init__(self, name: str, t0: float, move, mode: str, sources: dict):
         self.name, self.t0, self.move, self.mode = name, t0, move, mode
         self.src = sources[name]
-        self.life = []
-        if not isinstance(self.src, Clip):
-            seed = sum(map(ord, name)) + int(t0 * 10)
-            for kind in LIFE.get(name, ()):
-                self.life.append(Motes(seed) if kind == 'dust' else Drizzle(seed))
 
     # set for clips once the cut is known: where the clip starts, how fast it plays, the punch-in
     clip_a = 0.0
@@ -392,16 +292,8 @@ class Snippet:
                 cx, cy = W / 2 + ox * (W - vw) / 2, H / 2 + oy * (H - vh) / 2
                 img = img.transform((W, H), Image.AFFINE, (vw / W, 0, cx - vw / 2, 0, vh / H, cy - vh / 2), resample=Image.BICUBIC)
             return img
-        im, glow = self.src
         u = min(1.0, max(0.0, (t - a) / max(b - a, 1e-3)))
-        img = frame_of(im, self.move, u)
-        arr = np.asarray(img, dtype=np.float32).copy()
-        if glow is not None:
-            g = np.asarray(frame_of(glow, self.move, u), dtype=np.float32)[..., None] / 255
-            arr *= 1 + flicker(t)[..., None] * g
-        for life in self.life:
-            life.draw(arr, t - a)
-        return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+        return frame_of(self.src, self.move, u)
 
 
 def vignette() -> Image.Image:
@@ -460,7 +352,7 @@ def main() -> int:
     total = LEAD + end_voice + TAIL
     nframes = int(round(total * FPS))
 
-    # each source once: a clip if there is one, else the still (with its candlelight)
+    # each source once: a clip if there is one, else the still
     sources = {}
     for name, *_ in SHOTS:
         if name in sources:
@@ -475,8 +367,7 @@ def main() -> int:
         still = os.path.join(SRC, name + '.jpg')
         if name == '09_studio' and not os.path.exists(still):
             still = os.path.join(ROOT, 'public', 'img', 'studio-evening.jpg')
-        im = cover(Image.open(still).convert('RGB'))
-        sources[name] = (im, warm_mask(im) if name != '09_studio' else None)
+        sources[name] = cover(Image.open(still).convert('RGB'))
         print(f'[legend] {name}: still', flush=True)
     snippets = []
     for shot in SHOTS:

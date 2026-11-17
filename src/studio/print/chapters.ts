@@ -2,7 +2,7 @@
 
 import { approach, cases, duties, faqs, folios, kpis, positions, profile, programmes, toolGroups, tools, type FolioId } from '../../../content/profile.ts';
 import { stickies } from '../../../content/gags.ts';
-import { run, raid } from '../../../content/running.ts';
+import { run } from '../../../content/running.ts';
 import { caseFigure, LIGHT } from '../../shared/figures.ts';
 import { SANS } from '../screen/kit.ts';
 import type { Block, Theme } from './print.ts';
@@ -246,8 +246,8 @@ export const RUNLOG_THEME: Theme = {
   font: SANS,
 };
 
-/** The marathon plan, written up the way a programme manager would: baseline, forecast,
- *  stage gates, a RAID log, and the numbers from Strava. */
+/** The marathon plan, written up the way a programme manager would, and kept short: the goal,
+ *  the plan in four lines, how it is going, and what it teaches. */
 export function runlogBlocks(): Block[] {
   return [
     { t: 'eyebrow', text: 'Side quest no. 1 · Training log' },
@@ -255,23 +255,12 @@ export function runlogBlocks(): Block[] {
     { t: 'lead', text: run.lead },
     { t: 'kpis', items: run.kpis },
     { t: 'sticky', lines: ['Scope: 42.195 km.', 'Budget: three runs a week.', 'Sponsor: also me.'], tilt: -2 },
-    { t: 'h2', text: 'Lessons learned', toc: 'Lessons learned', breakBefore: true },
-    { t: 'lead', text: run.lesson },
-    ...run.lessonText.map((text): Block => ({ t: 'p', text })),
-    { t: 'h2', text: 'The honest forecast', toc: 'The honest forecast' },
-    { t: 'lead', text: run.forecast },
-    ...run.forecastText.map((text): Block => ({ t: 'p', text })),
-    { t: 'sticky', lines: ['Status: amber.', 'Mood: green.', 'Legs: see ticket.'], color: '#F6BEC4', tilt: 2, align: 'left' },
     { t: 'h2', text: 'The plan', toc: 'The plan', breakBefore: true },
     { t: 'p', text: run.plan },
-    { t: 'steps', items: run.week },
-    { t: 'h2', text: 'Four phases' },
     { t: 'steps', items: run.phases },
-    { t: 'h2', text: 'Governance', toc: 'Governance', breakBefore: true },
-    { t: 'p', text: run.governance },
-    { t: 'table', head: ['Tier', 'Half marathon', 'Marathon goal', 'Pace per km'], rows: run.tiers, widths: [0.12, 0.3, 0.32, 0.26] },
-    { t: 'bullets', items: run.gates },
-    { t: 'sticky', lines: ['No gate, no goal pace.', 'I wrote the rule.', 'I still argue with it.'], tilt: -2.5 },
+    { t: 'h2', text: 'Lessons learned', toc: 'Lessons learned' },
+    { t: 'lead', text: run.lesson },
+    { t: 'p', text: run.lessonText },
     { t: 'h2', text: 'Status report', toc: 'Status report', breakBefore: true },
     { t: 'lead', text: run.status },
     {
@@ -281,12 +270,9 @@ export function runlogBlocks(): Block[] {
       alt: run.chartAlt,
       draw: (g, x, y, w, h, theme, k) => drawRunWeeks(g, x, y, w, h, theme, k),
     },
-    { t: 'kpis', items: run.totals },
-    { t: 'h2', text: 'RAID log', toc: 'RAID log', breakBefore: true },
-    { t: 'table', head: ['', 'Item', 'Mitigation'], rows: raid, widths: [0.2, 0.4, 0.4] },
-    { t: 'h2', text: 'What running teaches about programmes', toc: 'What it teaches' },
+    { t: 'h2', text: 'What running teaches about programmes', toc: 'What it teaches', breakBefore: true },
     { t: 'bullets', items: run.teaches },
-    { t: 'sticky', lines: ['Next review:', 'the 10K test.', 'Bring snacks.'], color: '#CFE3C6', tilt: 2 },
+    { t: 'sticky', lines: ['Next review:', 'the next test race.', 'Bring snacks.'], color: '#CFE3C6', tilt: 2 },
     { t: 'links', items: [{ label: 'Run with me', value: 'Budapest, most evenings', href: `mailto:${profile.email}?subject=A%20run%20in%20Budapest` }] },
   ];
 }

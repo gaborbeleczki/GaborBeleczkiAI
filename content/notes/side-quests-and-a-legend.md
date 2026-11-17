@@ -26,13 +26,13 @@ In the evening it rains on the pane. The drops are procedural: they run down the
 
 ## Side quests
 
-Turn around (press Q, or use *Side quests* in the toolbar) and there is a cork board. None of it was on the roadmap; all of it shipped: a city break with a KPI (dwarfs found), kitchen-table maths puzzles, a scorekeeper for card night, an oven door repaired with a home-written guide, a family travel desk, home-made learning games. Most were built with an AI on a weekend, for an audience of one family. The policy is pinned to the board: it must ship; see rule one.
+Turn around (press Q, or use *Side quests* in the toolbar) and there is a cork board. None of it was on the roadmap; all of it shipped: a city break with a KPI (dwarfs found), kitchen-table maths puzzles, a scorekeeper for card night, an oven door repaired with a home-written guide, a family travel desk, home-made learning games. Most were built with an AI on a weekend, for an audience of one family. Pick a card and it opens with a sketch of the project's screen, what it does and what it is made of. The policy is pinned to the board: it must ship; see rule one.
 
 ![The side-quest wall: a cork board, a poster, a bench](/img/studio-quests.jpg)
 
 ## Project Sub-2:55
 
-The marathon gets its own corner: racing shoes under the window, a race number that is really a target, a medal on the window handle, and a training log on the sill. The log opens like the dossiers do, and it is written the way I would write up any programme: a baseline (Milan, 3:10, lost at the start line), an honest forecast (possible, not probable), stage gates that decide the race pace, a RAID log, and a status report with eighteen weeks of distance from Strava.
+The marathon gets its own corner: racing shoes under the window, a race number that is really a target, a medal on the window handle, and a training log on the sill. The log opens like the dossiers do, and it is written the way I would write up any programme, kept short: a baseline (Milan, 3:10, lost at the start line), the plan in four phases, and a status report with eighteen weeks of distance from Strava.
 
 ![The training log, open at the status report](/img/studio-runlog.jpg)
 
@@ -51,7 +51,7 @@ The script is mine. The voice is a preset text-to-speech voice; the eight pictur
 
 Worth being exact about, on a site about applied AI:
 
-- **Image model** (GPT Image, through Higgsfield): the film's eight stills, the poster on the wall, the crayon drawing, two photo prints on the cork board, three fabric and rug textures, and the restyled weather in the two window photos.
+- **Image model** (GPT Image, through Higgsfield): the film's eight stills (one of them, cropped, is the picture on the desk instead of a photo), the poster on the wall, the crayon drawing, two photo prints on the cork board, three fabric and rug textures, and the restyled weather in the two window photos.
 - **Video model** (Seedance 2.0 Mini, through Higgsfield): the dragon's scene in the film, from its still.
 - **Text-to-speech** (a preset voice, through Higgsfield): the film's narration.
 - **Code**: everything else. The room, the cloth, the light, the rain, the pages, the score, and the jokes.

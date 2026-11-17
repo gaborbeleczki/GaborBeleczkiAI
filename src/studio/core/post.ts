@@ -31,14 +31,16 @@ export class Post {
 
   /** `halfFloat`: the device can draw into half-float targets (else lights simply clip at white). */
   constructor(halfFloat: boolean) {
-    const rt = (depth: boolean) => {
-      const t = new THREE.WebGLRenderTarget(4, 4, { depthBuffer: depth, type: halfFloat ? THREE.HalfFloatType : THREE.UnsignedByteType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+    const rt = (depth: boolean, samples = 0) => {
+      const t = new THREE.WebGLRenderTarget(4, 4, { depthBuffer: depth, samples, type: halfFloat ? THREE.HalfFloatType : THREE.UnsignedByteType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
       t.texture.generateMipmaps = false;
       this.targets.push(t);
       return t;
     };
-    // 0: the glow as drawn (a third of the view), 1-2: its blur, 3-4: a wider blur at a sixth
-    rt(true);
+    // 0: the glow as drawn (a third of the view), 1-2: its blur, 3-4: a wider blur at a sixth.
+    // The first is multisampled: a fairy bulb is less than a pixel at this size, and without it
+    // the bulb (and its halo) blinked on and off as the view moved by a fraction of a pixel.
+    rt(true, 4);
     for (let i = 0; i < 4; i++) rt(false);
     this.bright = new THREE.ShaderMaterial({
       uniforms: { map: { value: null }, threshold: { value: 0.62 } },

@@ -30,12 +30,12 @@ OUT = os.path.join(ROOT, 'blender', 'out')
 BAKE_DIR = os.path.join(OUT, 'bake')
 TEX_DIR = os.path.join(ROOT, 'public', 'textures')
 
-GROUPS = os.environ.get('BAKE_GROUPS', 'floor,walls,furniture,props,quests').split(',')
+GROUPS = os.environ.get('BAKE_GROUPS', 'floor,walls,furniture,props,quests,shoes').split(',')
 STATES = os.environ.get('BAKE_STATES', 'evening,day').split(',')
 LIGHT_SAMPLES = int(os.environ.get('BAKE_SAMPLES', '80'))
 # albedo carries the wood grain, fabric weave and print detail; light is smooth and denoised
-ALBEDO_RES = {'floor': 4096, 'walls': 2048, 'furniture': 4096, 'props': 4096, 'quests': 2048}
-LIGHT_RES = {'floor': 2048, 'walls': 2048, 'furniture': 2048, 'props': 2048, 'quests': 1024}
+ALBEDO_RES = {'floor': 4096, 'walls': 2048, 'furniture': 4096, 'props': 4096, 'quests': 2048, 'shoes': 2048}
+LIGHT_RES = {'floor': 2048, 'walls': 2048, 'furniture': 2048, 'props': 2048, 'quests': 1024, 'shoes': 1024}
 if os.environ.get('ALBEDO_RES'):
     ALBEDO_RES = {g: int(os.environ['ALBEDO_RES']) for g in ALBEDO_RES}
 if os.environ.get('LIGHT_RES'):

@@ -62,8 +62,9 @@ export class Hotspots {
           it.el.classList.toggle('is-left', x > w * 0.72);
         } else if (edge) {
           const x = edge === 'right' ? w - 30 : 30;
-          it.el.style.transform = `translate3d(${x}px, ${(h * 0.58).toFixed(1)}px, 0)${edge === 'left' ? ' scaleX(-1)' : ''}`;
+          it.el.style.transform = `translate3d(${x}px, ${(h * 0.58).toFixed(1)}px, 0)`;
           it.el.classList.toggle('is-left', edge === 'right');
+          it.el.classList.toggle('is-edge-left', edge === 'left');
         }
         it.el.classList.toggle('is-edge', !!edge);
       }

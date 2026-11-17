@@ -6,38 +6,9 @@ import { BaseModule } from './base.ts';
 export class Hello extends BaseModule {
   readonly id = 'hello' as const;
   readonly title = 'Hello';
-  private word = 0;
-  private typed = 0;
-  private hold = 0;
-  private deleting = false;
-
-  protected onMount(): void {
-    this.word = 0;
-    this.typed = profile.workingWith[0].length;
-    this.hold = 1.6;
-  }
-
-  protected tick(dt: number): boolean {
-    if (this.ctx.reduceMotion) return false;
-    const target = profile.workingWith[this.word];
-    if (this.hold > 0) {
-      this.hold -= dt;
-      return this.age < 2.5 || Math.floor(this.age * 2) !== Math.floor((this.age - dt) * 2);
-    }
-    if (!this.deleting) {
-      this.typed = Math.min(target.length, this.typed + dt * 14);
-      if (this.typed >= target.length) {
-        this.deleting = true;
-        this.hold = 2.2;
-      }
-    } else {
-      this.typed = Math.max(0, this.typed - dt * 24);
-      if (this.typed <= 0) {
-        this.deleting = false;
-        this.word = (this.word + 1) % profile.workingWith.length;
-      }
-    }
-    return true;
+  // the terminal line holds still: it used to type, delete and blink, which read as flicker
+  protected tick(): boolean {
+    return this.age < 2.5; // the entrance, then nothing to redraw
   }
 
   draw(g: CanvasRenderingContext2D, a: Rect, ctx: ModuleContext): void {
@@ -63,14 +34,15 @@ export class Hello extends BaseModule {
     const prompt = '~$ working-with ';
     g.fillText(prompt, a.x, y);
     const pw = g.measureText(prompt).width;
-    const word = profile.workingWith[this.word].slice(0, Math.round(this.typed));
-    g.fillStyle = C.ink;
-    g.fillText(word, a.x + pw, y);
-    const ww = g.measureText(word).width;
-    if (ctx.reduceMotion || Math.floor(this.age * 1.9) % 2 === 0) {
-      g.fillStyle = C.sky;
-      g.fillRect(a.x + pw + ww + 4, y - 2, 15, 32);
+    // as many of the tools as fit on the line, still
+    let words = '';
+    for (const w of profile.workingWith) {
+      const next = words ? `${words} · ${w}` : w;
+      if (g.measureText(next).width > leftW - pw) break;
+      words = next;
     }
+    g.fillStyle = C.ink;
+    g.fillText(words, a.x + pw, y);
     y += 76;
     const r1 = button(g, 'See the work  →', a.x, y, ctx.hover === 'work');
     ctx.regions.add({ id: 'work', rect: r1, onClick: () => ctx.open('work') });
@@ -100,7 +72,7 @@ export class Hello extends BaseModule {
     g.restore();
     g.font = font(22, 500);
     g.fillStyle = C.muted;
-    g.fillText('Budapest, by the Danube', px + 8, py + 432);
+    g.fillText('The AI Program Manager, as the legend tells it', px + 8, py + 432);
     // hint
     g.font = font(23, 400);
     g.fillStyle = C.faint;

@@ -332,6 +332,11 @@ export async function adversarial(base) {
     await page.evaluate(() => window.__studio.use('quest:oven'));
     await step(5);
     const card = await page.locator('.hud__caption.is-on h3').textContent().catch(() => null);
+    // a card says what the thing does and what is in it, with a sketch of it
+    const detail = await page.evaluate(() => ({
+      parts: document.querySelectorAll('.hud__caption.is-on .hud__caption-parts li').length,
+      snap: !document.querySelector('.hud__caption.is-on .hud__caption-snap')?.hidden,
+    }));
     await page.keyboard.press('Escape'); // the caption
     await page.keyboard.press('Escape'); // board -> wall
     await step(30);
@@ -356,15 +361,17 @@ export async function adversarial(base) {
     if (!home.some((x) => /Side quests/.test(x)) || !home.some((x) => /Training log/.test(x))) throw new Error(`home dots: ${home.join(', ')}`);
     if (!button || byButton !== 'quests' || qBack !== 'home' || qThere !== 'quests') throw new Error(`finding the wall: button ${button} -> ${byButton}, Q -> ${qBack}, Q -> ${qThere}`);
     if (wall.length < 4) throw new Error(`wall dots: ${wall.join(', ')}`);
+    if (!wall.some((x) => /Back to the desk/.test(x))) throw new Error(`no way back from the wall: ${wall.join(', ')}`);
+    if (detail.parts < 3 || !detail.snap) throw new Error(`card detail: ${JSON.stringify(detail)}`);
     if (board.focus !== 'board' || board.spots.length < 9) throw new Error(`board: ${JSON.stringify(board)}`);
     if (card !== 'Home repairs') throw new Error(`card caption: ${card}`);
     if (backOne !== 'quests' || backTwo !== 'home') throw new Error(`Escape: ${backOne}, ${backTwo}`);
     if (run.focus !== 'run' || run.spots.length < 3) throw new Error(`runner's corner: ${JSON.stringify(run)}`);
-    if (!log || log.id !== 'runlog' || log.open < 0.95 || log.total < 6) throw new Error(`log: ${JSON.stringify(log)}`);
-    if (!/Milan didn’t fail at km 26/.test(text) || !/RAID log/.test(text)) throw new Error('the log has no words for screen readers');
+    if (!log || log.id !== 'runlog' || log.open < 0.95 || log.total < 4) throw new Error(`log: ${JSON.stringify(log)}`);
+    if (!/Milan didn’t fail at km 26/.test(text) || !/Status report/.test(text)) throw new Error('the log has no words for screen readers');
     if (turned.left !== 2 || turned.right !== 3) throw new Error(`after one turn: ${JSON.stringify(turned)}`);
     if (down) throw new Error(`still in hand: ${JSON.stringify(down)}`);
-    return { wall: wall.length, board: board.spots.length, card, log: log.total };
+    return { wall: wall.length, board: board.spots.length, card, parts: detail.parts, log: log.total };
   });
 
   // The film on the display: it starts from the menu, plays, and Escape ends it without leaving

@@ -25,6 +25,7 @@
 .hud {
   position: absolute;
   inset: 0;
+  z-index: 2; /* an open card covers the dots behind it */
   pointer-events: none;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', Inter, 'Segoe UI', Roboto, sans-serif;
   color: #1d1d1f;
@@ -344,6 +345,7 @@
 .spots {
   position: absolute;
   inset: 0;
+  z-index: 1;
   pointer-events: none;
   overflow: hidden;
 }
@@ -386,7 +388,7 @@
   inset: 9px;
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.85);
-  animation: spot-pulse 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+  animation: spot-pulse 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) 3;
   pointer-events: none;
 }
 
@@ -584,6 +586,59 @@
   gap: 6px;
 }
 
+/* a side quest's card: a snapshot, what it does, what is in it, how it was made */
+.hud__caption.is-wide {
+  width: min(500px, calc(100vw - 24px));
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.hud__caption-snap {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 840 / 330;
+  margin: 0 0 14px;
+  border-radius: 14px;
+  box-shadow: 0 1px 0 rgba(29, 29, 31, 0.06), 0 6px 18px rgba(29, 29, 31, 0.12);
+}
+
+.hud__caption-what {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #1d1d1f;
+}
+
+.hud__caption-more h4 {
+  margin: 10px 0 4px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6e6e73;
+}
+
+.hud__caption-parts {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #3d3d41;
+}
+
+.hud__caption-parts li + li {
+  margin-top: 2px;
+}
+
+.hud__caption-built {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #6e6e73;
+}
+
 .hud__caption-x {
   position: absolute;
   top: 10px;
@@ -599,8 +654,18 @@
   cursor: pointer;
 }
 
+/* while reading, the toolbar steps aside so the pages can fill the screen */
+.hud__brand,
+.hud__controls {
+  transition: opacity 0.3s;
+}
+
 .studio.is-reading .hud__hint,
-.studio.is-reading .hud__caption {
+.studio.is-reading .hud__caption,
+.studio.is-reading .hud__brand,
+.studio.is-reading .hud__controls,
+.studio.is-reading .hud__back,
+.studio.is-reading .hud__menu {
   opacity: 0;
   pointer-events: none;
 }
@@ -853,6 +918,10 @@
   color: #c8432b;
 }
 
+.hud__quests.is-back svg {
+  color: inherit;
+}
+
 /* the turn-around button at the screen's edge */
 .spot.is-edge {
   width: 44px;
@@ -875,7 +944,31 @@
 }
 
 .spot.is-edge:not(.is-hidden) {
-  animation: edge-nudge 2.8s ease-in-out infinite;
+  animation: edge-nudge 2.8s ease-in-out 3;
+}
+
+/* on the left edge the arrow points left; the label reads normally to its right */
+.spot.is-edge.is-edge-left .spot__dot {
+  border-left: 0;
+  border-right: 16px solid rgba(255, 255, 255, 0.96);
+}
+
+.spot.is-edge.is-edge-left:not(.is-hidden) {
+  animation-name: edge-nudge-left;
+}
+
+@keyframes edge-nudge-left {
+  0%,
+  70%,
+  100% {
+    translate: 0 0;
+  }
+  80% {
+    translate: -6px 0;
+  }
+  90% {
+    translate: 0 0;
+  }
 }
 
 @keyframes edge-nudge {

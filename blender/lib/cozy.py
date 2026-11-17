@@ -434,17 +434,22 @@ def running_shoe(name, coll, upper='#E0552F', accent='#1D2D3D', mirror=False) ->
     return parts
 
 
-def build_running_gear(coll, arts) -> dict:
-    """Shoes parked under the window to the right of the desk, the race number taped above."""
+SHOE_SPOTS = (((0.648, 2.045), math.radians(7), False), ((0.63, 1.915), math.radians(-6), True))
+
+
+def build_running_gear(coll, arts, shoe_coll=None) -> dict:
+    """Shoes parked under the window to the right of the desk, the race number taped above.
+    The shoes (after the ASICS Megablast, Ekiden colourway: lib/shoes.py) bake on their own."""
+    from .shoes import megablast
+    shoe_coll = shoe_coll or coll
     parts = []
-    spots = (((0.648, 2.045), math.radians(7), False), ((0.63, 1.915), math.radians(-6), True))
-    for i, (pos, rot, mirror) in enumerate(spots):
-        grp = group_parent(f'shoe_grp_{i}', (pos[0], pos[1], 0.0), rot, coll)
-        ps = running_shoe(f'shoe_{i}', coll, mirror=mirror)
+    for i, (pos, rot, mirror) in enumerate(SHOE_SPOTS):
+        grp = group_parent(f'shoe_grp_{i}', (pos[0], pos[1], 0.0), rot, shoe_coll)
+        ps = megablast(f'shoe_{i}', shoe_coll, mirror=mirror)
         parent_all(ps, grp)
         parts += ps
     for p in parts:
-        tag(p, bake='props')
+        tag(p, bake='shoes' if shoe_coll is not coll else 'props')
     out = {'parts': parts, 'shoes': (0.79, 1.98, 0.1)}
     if 'bib' in arts:
         taped('race_bib', coll, arts['bib'], (0.8, Y1 - 0.0005, 0.52), '-y', (0.24, 0.18), roll_deg=-3, tapes=('#D9C9AE', '#D9C9AE'), curl=0.004)

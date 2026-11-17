@@ -1,3 +1,4 @@
+import { drawSnapshot } from './snapshots.ts';
 import { loadingLines, type Achievement } from '../../../content/gags.ts';
 import { folios, type FolioId } from '../../../content/profile.ts';
 import './hud.css';
@@ -103,7 +104,15 @@ export class Hud {
       <div class="hud__hint glass" aria-hidden="true"></div>
       <div class="hud__caption glass" role="region" aria-label="About this object">
         <button type="button" class="hud__caption-x" data-act="caption-close" aria-label="Close">×</button>
-        <h3></h3><p></p><div class="hud__caption-actions"></div>
+        <canvas class="hud__caption-snap" width="840" height="330" hidden aria-hidden="true"></canvas>
+        <h3></h3><p class="hud__caption-text"></p>
+        <div class="hud__caption-more" hidden>
+          <p class="hud__caption-what"></p>
+          <h4>What is in it</h4>
+          <ul class="hud__caption-parts"></ul>
+          <p class="hud__caption-built"></p>
+        </div>
+        <div class="hud__caption-actions"></div>
       </div>
       <div class="hud__reader glass" role="toolbar" aria-label="Reading">
         <button type="button" class="hud__btn" data-act="prev" aria-label="Previous page">${ICON.back}</button>
@@ -222,14 +231,26 @@ export class Hud {
     el.innerHTML = html ?? '';
   }
 
-  /** A small card about the thing just touched, with a way onwards. */
-  showCaption(c: { title: string; text: string; actions?: HudAction[] } | null): void {
+  /** A small card about the thing just touched, with a way onwards. A side quest's card is wider:
+   *  a snapshot of the thing, what it does, what is in it, and how it was made. */
+  showCaption(c: { title: string; text: string; actions?: HudAction[]; snap?: string; what?: string; parts?: string[]; built?: string } | null): void {
     this.caption.classList.toggle('is-on', !!c);
     if (!c) return;
+    const snap = this.caption.querySelector<HTMLCanvasElement>('.hud__caption-snap')!;
+    snap.hidden = !(c.snap && drawSnapshot(c.snap, snap));
     this.caption.querySelector('h3')!.textContent = c.title;
-    this.caption.querySelector('p')!.textContent = c.text;
+    this.caption.querySelector('.hud__caption-text')!.textContent = c.text;
+    const more = this.caption.querySelector<HTMLElement>('.hud__caption-more')!;
+    const parts = c.parts ?? [];
+    more.hidden = !c.what && !parts.length && !c.built;
+    more.querySelector('.hud__caption-what')!.textContent = c.what ?? '';
+    more.querySelector('h4')!.hidden = !parts.length;
+    more.querySelector('.hud__caption-parts')!.innerHTML = parts.map((p) => `<li>${esc(p)}</li>`).join('');
+    more.querySelector('.hud__caption-built')!.textContent = c.built ?? '';
+    this.caption.classList.toggle('is-wide', !snap.hidden || !more.hidden);
     this.caption.querySelector('.hud__caption-actions')!.innerHTML = (c.actions ?? []).map(actionHtml).join('');
-    this.announce(`${c.title}. ${c.text}`);
+    this.caption.scrollTop = 0;
+    this.announce([`${c.title}. ${c.text}`, c.what, parts.length ? `What is in it: ${parts.join('; ')}.` : '', c.built].filter(Boolean).join(' '));
   }
 
   get captionOpen(): boolean {
@@ -258,6 +279,15 @@ export class Hud {
     this.adoption.querySelector('ul')!.innerHTML = list
       .map(({ a, done }) => `<li class="${done ? 'is-done' : ''}"><span aria-hidden="true">${done ? '✓' : '○'}</span><div><strong>${esc(done ? a.title : '???')}</strong><small>${esc(done ? a.line : a.hint)}</small></div></li>`)
       .join('');
+  }
+
+  /** At the side-quest wall the toolbar's side-quest button becomes the way back to the desk. */
+  atWall(on: boolean): void {
+    const b = this.root.querySelector<HTMLButtonElement>('.hud__quests');
+    if (!b || b.classList.contains('is-back') === on) return;
+    b.classList.toggle('is-back', on);
+    b.innerHTML = on ? `${ICON.back}<span class="label">Back to the desk</span>` : `${ICON.pin}<span class="label">Side quests</span>`;
+    b.title = on ? 'Back to the desk (Q)' : 'Side quests, on the wall behind you (Q)';
   }
 
   /** A small banner for a first: an achievement, or a line worth a moment. */

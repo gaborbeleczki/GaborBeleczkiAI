@@ -525,7 +525,8 @@
     "walls",
     "furniture",
     "props",
-    "quests"
+    "quests",
+    "shoes"
   ],
   "states": [
     "evening",
@@ -561,7 +562,7 @@
         "lmax": 6.0
       },
       "day": {
-        "lmax": 2.3546
+        "lmax": 2.3792
       }
     },
     "quests": {
@@ -570,6 +571,14 @@
       },
       "day": {
         "lmax": 1.6319
+      }
+    },
+    "shoes": {
+      "evening": {
+        "lmax": 1.0
+      },
+      "day": {
+        "lmax": 1.0
       }
     }
   },
