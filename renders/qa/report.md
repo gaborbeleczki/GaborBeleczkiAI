@@ -1,6 +1,6 @@
 # QA report
 
-Generated 2026-11-17T19:09:56.444Z in 781s. Headless Chromium with software WebGL (SwiftShader).
+Generated 2026-11-17T20:49:29.107Z in 794s. Headless Chromium with software WebGL (SwiftShader).
 
 ## Screenshots
 
@@ -12,14 +12,14 @@ Console errors: 2
 
 ## Performance
 
-- Page: 2187 KB transferred, load 630 ms, LCP 200 ms
-- Studio: 16490 KB transferred, ready in 16615 ms, frame time median 7233.1 ms / p95 7233.1 ms (software WebGL (SwiftShader) in headless Chromium)
-- dist: 35912 KB total (models 1372 KB, textures 12743 KB, JS 929 KB)
+- Page: 2170 KB transferred, load 553 ms, LCP 180 ms
+- Studio: 16210 KB transferred, ready in 33360 ms, frame time median 1826.8 ms / p95 4549.9 ms (software WebGL (SwiftShader) in headless Chromium)
+- dist: 35879 KB total (models 1366 KB, textures 12707 KB, JS 928 KB)
 
 ## Pixel difference (WebGL vs Cycles reference, home camera)
 
-- evening: 18.81% pixels differ beyond threshold, mean |Δluma| 16.37 (WebGL 102.2 vs Cycles 103.6)
-- day: 18.67% pixels differ beyond threshold, mean |Δluma| 15.37 (WebGL 125 vs Cycles 133.2)
+- evening: 18.45% pixels differ beyond threshold, mean |Δluma| 15.87 (WebGL 102.5 vs Cycles 103.8)
+- day: 18.48% pixels differ beyond threshold, mean |Δluma| 15.07 (WebGL 125.5 vs Cycles 133.4)
 
 ## Adversarial checks
 

@@ -219,7 +219,7 @@ export async function adversarial(base) {
       await page.keyboard.press('Escape');
       await page.evaluate(() => window.__studio.step(1 / 30, 80));
     }
-    for (const id of ['globe', 'coffee', 'about']) await page.evaluate((id) => (window.__studio.use(id), window.__studio.step(1 / 30, 10)), id);
+    for (const id of ['globe', 'coffee']) await page.evaluate((id) => (window.__studio.use(id), window.__studio.step(1 / 30, 10)), id);
     const caption = await page.locator('.hud__caption.is-on h3').textContent().catch(() => null);
     await ctx.close();
     for (const id of Object.keys(held)) if (!held[id] || held[id].id !== id || held[id].travel < 0.95) throw new Error(`${id}: ${JSON.stringify(held[id])}`);

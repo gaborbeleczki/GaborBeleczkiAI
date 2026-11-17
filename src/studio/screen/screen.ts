@@ -103,7 +103,7 @@ export class Screen {
       this.photo = img;
       this.dirty = true;
     };
-    img.src = '/img/intro.jpg'; // the legend's hero, generated like the film
+    img.src = '/img/gabor.jpg'; // the photo from the CV
   }
 
   get current(): FolioId {

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-11-17T19:09:56.444Z",
-  "seconds": 781,
+  "generated": "2026-11-17T20:49:29.107Z",
+  "seconds": 794,
   "screenshots": {
     "shots": [
       "page-original-desktop",
@@ -56,18 +56,18 @@
   "perf": {
     "errors": [],
     "page": {
-      "loadMs": 630,
-      "lcpMs": 200,
-      "transferKB": 2187
+      "loadMs": 553,
+      "lcpMs": 180,
+      "transferKB": 2170
     },
     "studio": {
-      "domLoadMs": 230,
-      "readyMs": 16615,
-      "transferKB": 16490,
-      "frames": 2,
+      "domLoadMs": 238,
+      "readyMs": 33360,
+      "transferKB": 16210,
+      "frames": 4,
       "frameMs": {
-        "median": 7233.1,
-        "p95": 7233.1
+        "median": 1826.8,
+        "p95": 4549.9
       },
       "renderer": {
         "focus": "home",
@@ -83,25 +83,25 @@
       "note": "software WebGL (SwiftShader) in headless Chromium"
     },
     "dist": {
-      "totalKB": 35912,
-      "modelsKB": 1372,
-      "texturesKB": 12743,
-      "jsKB": 929
+      "totalKB": 35879,
+      "modelsKB": 1366,
+      "texturesKB": 12707,
+      "jsKB": 928
     }
   },
   "pixeldiff": {
     "results": {
       "evening": {
-        "mismatchPct": 18.81,
-        "meanAbsLuma": 16.37,
-        "meanLumaWebGL": 102.2,
-        "meanLumaCycles": 103.6
+        "mismatchPct": 18.45,
+        "meanAbsLuma": 15.87,
+        "meanLumaWebGL": 102.5,
+        "meanLumaCycles": 103.8
       },
       "day": {
-        "mismatchPct": 18.67,
-        "meanAbsLuma": 15.37,
-        "meanLumaWebGL": 125,
-        "meanLumaCycles": 133.2
+        "mismatchPct": 18.48,
+        "meanAbsLuma": 15.07,
+        "meanLumaWebGL": 125.5,
+        "meanLumaCycles": 133.4
       }
     },
     "errors": []
@@ -243,13 +243,12 @@
             "Phone",
             "CV",
             "Notebook · build notes",
-            "About me",
             "Global network",
             "Coffee?",
             "Music",
             "Turn around · Side quests"
           ],
-          "caption": "Gábor Béleczki"
+          "caption": "Coffee in Budapest?"
         },
         "errors": []
       },
@@ -272,7 +271,7 @@
         "name": "music: 16 s offline render, no clipping, not silent",
         "pass": true,
         "detail": {
-          "peak": 0.56,
+          "peak": 0.544,
           "rms": 0.104
         },
         "errors": []

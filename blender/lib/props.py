@@ -144,10 +144,7 @@ def build_desk_things(coll, coll_dyn, art_paths: dict) -> dict:
     parent_all(clip_parts, clip_parent)
     parts += clip_parts
     anchors['cv'] = (cv_pos[0], cv_pos[1], top + 0.01)
-    # ---- small oak frame with the portrait, standing at the back right
-    if 'portrait' in art_paths:
-        parts += photo_frame(coll, art_paths['portrait'], (0.21, 2.02, top), math.radians(-18))
-    anchors['about'] = (0.21, 2.0, top + 0.1)
+    # (the framed portrait that stood at the back right is gone: the desk keeps no photo)
     # ---- brass armillary sphere on an oak foot (the rings turn in the browser)
     arm_pos = (0.5, 2.0)
     parts.append(cylinder('arm_foot', 0.05, 0.022, (arm_pos[0], arm_pos[1], top + 0.011), coll, oak, segs=48, bevel=0.004))

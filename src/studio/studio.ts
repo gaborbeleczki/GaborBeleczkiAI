@@ -1094,12 +1094,6 @@ export class Studio {
       case 'bench':
         if (this.focus !== 'quests' && this.focus !== 'board') this.setFocus('quests');
         return this.hud.showCaption(captions[id]);
-      case 'about':
-        return this.hud.showCaption({
-          title: profile.name,
-          text: `${profile.role}, ${profile.org} ${profile.orgUnit}, ${profile.location}. ${profile.intro}`,
-          actions: [{ label: 'Read “Hello”', act: 'open:hello' }, { label: 'Contact', act: 'open:contact', quiet: true }],
-        });
       case 'music':
         void this.toggleMusic().then(() => this.hud.showCaption({ ...(this.music.playing ? captions.musicOn : captions.musicOff), actions: [{ label: this.music.playing ? 'Stop' : 'Play', act: 'music' }] }));
         return;
@@ -1402,7 +1396,6 @@ export class Studio {
       at('phone', 0.02) && { id: 'phone', label: 'Phone', at: at('phone', 0.02)!, focus: ['objects'] },
       at('cv', 0.02) && { id: 'cv', label: 'CV', at: at('cv', 0.02)!, focus: ['objects'] },
       at('notebook', 0.02) && { id: 'notebook', label: 'Notebook · build notes', at: at('notebook', 0.02)!, focus: ['objects'] },
-      at('about', 0.06) && { id: 'about', label: 'About me', at: at('about', 0.06)!, focus: ['objects'] },
       at('globe', 0.1) && { id: 'globe', label: 'Global network', at: at('globe', 0.1)!, focus: ['objects'] },
       at('coffee', 0.03) && { id: 'coffee', label: 'Coffee?', at: at('coffee', 0.03)!, focus: ['objects'] },
       at('music', 0.04) && { id: 'music', label: 'Music', at: at('music', 0.04)!, focus: ['objects'] },

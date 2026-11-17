@@ -51,7 +51,7 @@ The script is mine. The voice is a preset text-to-speech voice; the eight pictur
 
 Worth being exact about, on a site about applied AI:
 
-- **Image model** (GPT Image, through Higgsfield): the film's eight stills (one of them, cropped, is the picture on the desk instead of a photo), the poster on the wall, the crayon drawing, two photo prints on the cork board, three fabric and rug textures, and the restyled weather in the two window photos.
+- **Image model** (GPT Image, through Higgsfield): the film's eight stills (one of them, cropped, is the portrait in the Hello dossier), the poster on the wall, the crayon drawing, two photo prints on the cork board, three fabric and rug textures, and the restyled weather in the two window photos.
 - **Video model** (Seedance 2.0 Mini, through Higgsfield): the dragon's scene in the film, from its still.
 - **Text-to-speech** (a preset voice, through Higgsfield): the film's narration.
 - **Code**: everything else. The room, the cloth, the light, the rain, the pages, the score, and the jokes.

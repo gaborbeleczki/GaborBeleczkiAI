@@ -72,7 +72,7 @@ export class Hello extends BaseModule {
     g.restore();
     g.font = font(22, 500);
     g.fillStyle = C.muted;
-    g.fillText('The AI Program Manager, as the legend tells it', px + 8, py + 432);
+    g.fillText('Budapest, by the Danube', px + 8, py + 432);
     // hint
     g.font = font(23, 400);
     g.fillStyle = C.faint;
