@@ -12,7 +12,8 @@ export async function screenshots(base) {
     const file = path.join(OUT, `${name}.png`);
     // let the HUD's fades finish (frames are stepped by hand, CSS runs in real time)
     await page.waitForTimeout(450);
-    await page.screenshot({ path: file, ...opts });
+    // software WebGL can take a while over a frame with the glow pass and the film playing
+    await page.screenshot({ path: file, timeout: 120000, ...opts });
     shots.push(name);
   };
 
@@ -122,7 +123,12 @@ export async function screenshots(base) {
       await shot(page, 'studio-adoption');
       await page.locator('[data-act="adoption"]').click();
       // the film on the display
-      await page.evaluate(() => (window.__studio.focus('desk'), window.__studio.step(1 / 30, 80), window.__studio.legend()));
+      // (start it without returning its promise: evaluate would wait for the whole film)
+      await page.evaluate(() => {
+        window.__studio.focus('desk');
+        window.__studio.step(1 / 30, 80);
+        void window.__studio.legend();
+      });
       await page.waitForTimeout(9000);
       await page.evaluate(() => window.__studio.step(1 / 30, 4));
       await shot(page, 'studio-legend');

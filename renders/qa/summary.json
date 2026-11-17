@@ -1,53 +1,79 @@
 {
-  "generated": "2026-11-06T23:36:55.783Z",
-  "seconds": 441,
+  "generated": "2026-11-17T11:17:33.948Z",
+  "seconds": 1150,
   "screenshots": {
     "shots": [
+      "page-original-desktop",
       "page-desktop-top",
       "page-desktop-full",
       "cv-desktop",
       "note-desktop",
+      "note-side-quests",
+      "page-phone-original",
       "page-phone-top",
       "page-phone-full",
       "page-dark-top",
       "studio-evening-home",
-      "studio-folio-hello",
-      "studio-folio-approach",
-      "studio-folio-role",
-      "studio-folio-work",
-      "studio-folio-career",
-      "studio-folio-toolkit",
-      "studio-folio-faq",
-      "studio-folio-contact",
+      "studio-display-hello",
+      "studio-display-approach",
+      "studio-display-role",
+      "studio-display-work",
+      "studio-display-career",
+      "studio-display-toolkit",
+      "studio-display-faq",
+      "studio-display-contact",
+      "studio-dossier-hello",
+      "studio-dossier-role",
+      "studio-dossier-work",
+      "studio-dossier-work-p2",
+      "studio-dossier-career",
+      "studio-dossier-contact",
+      "studio-objects",
+      "studio-hold-cards",
+      "studio-hold-phone",
+      "studio-hold-cv",
+      "studio-hold-notebook",
+      "studio-globe",
+      "studio-quests",
+      "studio-board-card",
+      "studio-run",
+      "studio-runlog",
+      "studio-runlog-chart",
+      "studio-dossier-approach",
+      "studio-adoption",
+      "studio-legend",
       "studio-shelf",
       "studio-record",
       "studio-evening-window",
       "studio-day-home",
       "studio-day-window"
     ],
-    "errors": []
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
   },
   "perf": {
     "errors": [],
     "page": {
-      "loadMs": 620,
-      "lcpMs": 156,
-      "transferKB": 2040
+      "loadMs": 580,
+      "lcpMs": 212,
+      "transferKB": 2575
     },
     "studio": {
-      "domLoadMs": 174,
-      "readyMs": 23613,
-      "transferKB": 12423,
-      "frames": 17,
+      "domLoadMs": 291,
+      "readyMs": 11711,
+      "transferKB": 15985,
+      "frames": 2,
       "frameMs": {
-        "median": 16.7,
-        "p95": 2466.5
+        "median": 11999.6,
+        "p95": 11999.6
       },
       "renderer": {
         "focus": "home",
         "module": "hello",
         "screenReady": true,
-        "night": true,
+        "night": false,
         "dpr": 1,
         "size": [
           1280,
@@ -57,92 +83,99 @@
       "note": "software WebGL (SwiftShader) in headless Chromium"
     },
     "dist": {
-      "totalKB": 14936,
-      "modelsKB": 571,
-      "texturesKB": 10334,
-      "jsKB": 813
+      "totalKB": 34914,
+      "modelsKB": 1270,
+      "texturesKB": 12252,
+      "jsKB": 921
     }
   },
   "pixeldiff": {
     "results": {
       "evening": {
-        "mismatchPct": 9.57,
-        "meanAbsLuma": 10.57,
-        "meanLumaWebGL": 96.4,
-        "meanLumaCycles": 95
+        "mismatchPct": 18.97,
+        "meanAbsLuma": 15.67,
+        "meanLumaWebGL": 104.9,
+        "meanLumaCycles": 103.5
       },
       "day": {
-        "mismatchPct": 11.56,
-        "meanAbsLuma": 10.65,
-        "meanLumaWebGL": 116.4,
-        "meanLumaCycles": 120.1
+        "mismatchPct": 20.07,
+        "meanAbsLuma": 15.32,
+        "meanLumaWebGL": 128.5,
+        "meanLumaCycles": 133.4
       }
     },
     "errors": []
   },
   "adversarial": {
-    "passed": 12,
-    "total": 12,
+    "passed": 19,
+    "total": 19,
     "checks": [
       {
-        "name": "no WebGL → page by default",
+        "name": "no WebGL → the original page",
         "pass": true,
         "detail": {
-          "mode": "page",
-          "why": "webgl2"
+          "at": "/page/?reason=unsupported"
         },
         "errors": []
       },
       {
-        "name": "no WebGL + ?studio → falls back to page with a notice",
+        "name": "no WebGL + ?studio → the original page with a note",
         "pass": true,
         "detail": {
-          "toast": "The 3D studio could not start on this device. Showing the page instead."
+          "at": "/page/?reason=studio-error",
+          "note": "The 3D studio could not start on this device, so here is the page."
         },
         "errors": []
       },
       {
-        "name": "prefers-reduced-motion → page by default",
+        "name": "prefers-reduced-motion → the original page",
         "pass": true,
         "detail": {
-          "mode": "page"
+          "at": "/page/?reason=unsupported"
         },
         "errors": []
       },
       {
-        "name": "studio.glb missing → page with notice",
+        "name": "software WebGL → the original page",
         "pass": true,
         "detail": {
-          "toast": "The 3D studio could not start on this device. Showing the page instead."
+          "at": "/page/?reason=unsupported"
         },
         "errors": []
       },
       {
-        "name": "rapid input: keys 0-7, clicks, resizes",
+        "name": "studio.glb missing → the original page",
         "pass": true,
         "detail": {
-          "focus": "home",
-          "module": "career",
-          "screenReady": true,
-          "night": true,
-          "dpr": 1,
-          "size": [
-            1280,
-            720
-          ]
+          "at": "/page/?reason=studio-error"
         },
         "errors": []
       },
       {
-        "name": "WebGL context lost → page",
+        "name": "rapid input: keys 0-7, Escape, resizes",
         "pass": true,
         "detail": {
-          "mode": "page"
+          "held": {
+            "id": "career",
+            "open": 0.9998600426616401,
+            "travel": 0.9998459808057721,
+            "left": 0,
+            "right": 1,
+            "total": 4
+          }
         },
         "errors": []
       },
       {
-        "name": "keyboard: skip link + focus order on the page",
+        "name": "WebGL context lost → the original page",
+        "pass": true,
+        "detail": {
+          "at": "/page/?reason=studio-error"
+        },
+        "errors": []
+      },
+      {
+        "name": "keyboard: skip link + focus order on the static page",
         "pass": true,
         "detail": {
           "tabStops": [
@@ -157,18 +190,65 @@
         "errors": []
       },
       {
-        "name": "keyboard: studio chapters menu",
+        "name": "keyboard: chapters menu opens a dossier",
         "pass": true,
         "detail": {
-          "focus": "desk",
-          "module": "career",
-          "screenReady": true,
-          "night": true,
-          "dpr": 1,
-          "size": [
-            1280,
-            720
-          ]
+          "id": "career",
+          "open": 0.9999978846443521,
+          "travel": 0.9999905002604134,
+          "left": 0,
+          "right": 1,
+          "total": 4
+        },
+        "errors": []
+      },
+      {
+        "name": "dossier: opens, turns pages, goes back",
+        "pass": true,
+        "detail": {
+          "opened": {
+            "id": "work",
+            "open": 0.9999978846443521,
+            "travel": 0.9999905002604134,
+            "left": 0,
+            "right": 1,
+            "total": 12
+          },
+          "turned": {
+            "id": "work",
+            "open": 1,
+            "travel": 0.9999999999999872,
+            "left": 4,
+            "right": 5,
+            "total": 12
+          }
+        },
+        "errors": []
+      },
+      {
+        "name": "desk: cards, phone, CV, notebook; hotspots",
+        "pass": true,
+        "detail": {
+          "homeSpots": [
+            "Dossiers · one per chapter",
+            "Record player",
+            "Sit at the desk",
+            "On the desk",
+            "Training log · Sub-2:55",
+            "The runner’s corner",
+            "Side quests · behind you"
+          ],
+          "deskSpots": [
+            "Business cards",
+            "Phone",
+            "CV",
+            "Notebook · build notes",
+            "About me",
+            "Global network",
+            "Coffee?",
+            "Music"
+          ],
+          "caption": "Gábor Béleczki"
         },
         "errors": []
       },
@@ -191,8 +271,8 @@
         "name": "music: 16 s offline render, no clipping, not silent",
         "pass": true,
         "detail": {
-          "peak": 0.553,
-          "rms": 0.104
+          "peak": 0.548,
+          "rms": 0.103
         },
         "errors": []
       },
@@ -213,17 +293,77 @@
         "errors": []
       },
       {
-        "name": "routes: /, /cv/, /notes/, note, rss, sitemap, robots",
+        "name": "page view: the original portfolio in a frame, a way back to the studio",
+        "pass": true,
+        "detail": {
+          "title": "Gábor Béleczki · Applied AI in Finance"
+        },
+        "errors": []
+      },
+      {
+        "name": "side quests: wall, board, a card, the training log",
+        "pass": true,
+        "detail": {
+          "wall": 5,
+          "board": 10,
+          "card": "Home repairs",
+          "log": 7
+        },
+        "errors": []
+      },
+      {
+        "name": "legend: plays on the display, Escape skips it",
+        "pass": true,
+        "detail": {
+          "playing": {
+            "intro": true,
+            "focus": "desk"
+          },
+          "after": {
+            "intro": false,
+            "focus": "desk"
+          },
+          "bytes": 0
+        },
+        "errors": []
+      },
+      {
+        "name": "adoption: counted once, remembered",
+        "pass": true,
+        "detail": {
+          "percent": 25,
+          "done": [
+            "lights",
+            "sphere",
+            "window"
+          ]
+        },
+        "errors": []
+      },
+      {
+        "name": "routes: pages, original, CVs, feeds, assets",
         "pass": true,
         "detail": {
           "/": 200,
           "/cv/": 200,
           "/notes/": 200,
           "/notes/building-the-studio/": 200,
+          "/notes/side-quests-and-a-legend/": 200,
           "/rss.xml": 200,
           "/sitemap.xml": 200,
           "/robots.txt": 200,
-          "/models/studio.json": 200
+          "/models/studio.json": 200,
+          "/page/": 200,
+          "/page/original/": 200,
+          "/page/cv/": 200,
+          "/page/cv-long/": 200,
+          "/models/vehicles.json": 200,
+          "/textures/vehicles_day.webp": 200,
+          "/textures/cv_page.webp": 200,
+          "/textures/quests_albedo.webp": 200,
+          "/media/legend.mp4": 200,
+          "/media/legend-poster.jpg": 200,
+          "/media/legend.vtt": 200
         },
         "errors": []
       }
