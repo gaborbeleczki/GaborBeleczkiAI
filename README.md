@@ -74,7 +74,7 @@ Light that spills: lamps, fairy lights, the candle and the brightest city lights
 python3 scripts/legend-video.py     # -> public/media/legend.mp4, legend-poster.jpg, legend.vtt
 ```
 
-Needs `numpy`, `Pillow` and `ffmpeg`. The film is cut from snippets, the way footage is edited: a quick dissolve between scenes, hard cuts to a closer framing within one. A shot is a video clip when `media/legend/` has one (`NN_name.mp4`, made with an image-to-video model from the still of the same name; the prompts and settings are in `media/legend/clips.json`), and otherwise its still, with a slow camera move and punch-in cuts. Nothing is painted on that changes from frame to frame (no candle flicker, dust or rain: on the display it read as flicker). The last shot is the studio's own recording (`public/media/studio-loop.mp4`), so run `node scripts/qa/video.mjs` first when the room has changed. The script sets the captions from the narration's word timings (`words.json`, from a forced alignment), synthesises a small score, and pipes the frames into FFmpeg.
+Needs `numpy`, `Pillow` and `ffmpeg`. The film is cut from snippets, the way footage is edited: a quick dissolve between scenes, hard cuts to a closer framing within one. Every scene is a live-action video clip (`media/legend/NN_name.mp4`, made with an image-to-video model from the still of the same name; the prompts and settings are in `media/legend/clips.json`); a closer shot within a scene is a gentle punch-in on the same take. Without a clip a scene falls back to its still, with a slow camera move and punch-in cuts. Nothing is painted on that changes from frame to frame (no candle flicker, dust or rain: on the display it read as flicker). The last shot is the studio's own recording (`public/media/studio-loop.mp4`), so run `node scripts/qa/video.mjs` first when the room has changed. The script sets the captions from the narration's word timings (`words.json`, from a forced alignment), synthesises a small score, and pipes the frames into FFmpeg.
 
 ## Content
 
@@ -101,7 +101,7 @@ The room's geometry, its procedural materials, the print, the record sleeves, th
 
 Made with generative models (through Higgsfield), and labelled as such on the site:
 - **Image model (GPT Image):** the film's eight stills (`media/legend/`; one of them, cropped, is the portrait in the Hello dossier), the poster of the dragon, the crayon drawing, the two photo prints on the cork board, the knit, boucle and rug textures (`blender/assets/gen/`), and the restyled weather in the two window photos (`blender/assets/looks/`).
-- **Video model (Seedance 2.0 Mini, image-to-video):** the film's dragon shot (`media/legend/07_dragon.mp4`), from its still. The other shots' prompts are in `media/legend/clips.json`.
+- **Video model (Seedance 2.5, image-to-video):** all eight scenes of the film, as hyper-realistic live action (`media/legend/NN_name.mp4`, 720p), each from its still; prompts and settings in `media/legend/clips.json`.
 - **Text-to-speech (a preset voice):** the film's narration (`media/legend/narration.mp3`). The script is the author's.
 
 Window photos, via Wikimedia Commons:

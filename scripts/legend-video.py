@@ -7,9 +7,10 @@ The film is cut together from snippets, the way footage is edited: a quick disso
 scenes, hard cuts to a closer framing within one. A snippet's source is a video clip when there
 is one and a still when there is not:
 
-- media/legend/NN_name.mp4: a clip made with an image-to-video model from the still of the same
-  name (prompts and settings in media/legend/clips.json). Played as filmed, slowed a little if
-  it is shorter than its place in the cut.
+- media/legend/NN_name.mp4: a live-action clip made with an image-to-video model (Seedance 2.5)
+  from the still of the same name (prompts and settings in media/legend/clips.json). Played as
+  filmed, slowed a little if it is shorter than its place in the cut; a closer shot within the
+  scene is a gentle punch-in on the same take (at most CLIP_PUNCH, so 720p footage stays sharp).
 - media/legend/NN_name.jpg: a still made with an image model. It gets a slow camera move and a
   punch-in for a closer shot. Nothing in a frame flickers: no candlelight, dust or rain is
   painted on (they read as flicker on the display).
@@ -45,6 +46,7 @@ W, H, FPS = 1600, 900, 24
 LEAD = 2.2            # seconds of picture before the first word
 TAIL = 3.8            # seconds after the last word
 XFADE = 0.5           # the dissolve between scenes; within a scene the cut is hard
+CLIP_PUNCH = 1.18     # the closest a punch-in goes on a video clip (a still may go closer)
 
 # the snippets in order: source (media/legend/<name>.mp4 or .jpg), the narration time (s) at
 # which it takes over, the camera move on a still (zoom from, zoom to, drift x, drift y, and
@@ -395,7 +397,7 @@ def main() -> int:
         for j, i in enumerate(idx):
             snippets[i].clip_a, snippets[i].clip_speed = a0, speed
             if j:
-                snippets[i].punch = max(1.0, snippets[i].move[0] / snippets[idx[0]].move[0])
+                snippets[i].punch = min(CLIP_PUNCH, max(1.0, snippets[i].move[0] / snippets[idx[0]].move[0]))
         if src.duration < (b1 - a0) * 0.75:
             print(f'[legend] {name}: the clip is {src.duration:.1f}s for {b1 - a0:.1f}s of film; it will hold its last frame', flush=True)
 

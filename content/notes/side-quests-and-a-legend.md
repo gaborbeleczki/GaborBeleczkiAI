@@ -45,14 +45,14 @@ Sit at the desk for the first time and the display tells a story: *The Legend of
   <track kind="captions" src="/media/legend.vtt" srclang="en" label="English" default>
 </video>
 
-The script is mine. The voice is a preset text-to-speech voice; the eight pictures were made with an image model; the last shot is the studio itself. Everything else is assembled by a script, which now cuts the film like footage rather than a slideshow: the dragon's scene is a real video clip, made with an image-to-video model from its still, the last shot is a recording of this room, and the stills still waiting for their clips get punch-in cuts, flickering candlelight and drifting dust in the meantime. The captions are timed from a forced alignment of the narration, and a small score (a drone, four chords and a plucked string) is synthesised with numpy.
+The script is mine. The voice is a preset text-to-speech voice; the eight pictures were made with an image model; the last shot is the studio itself. Everything else is assembled by a script, which cuts the film like footage rather than a slideshow: every scene is a live-action video clip, made with an image-to-video model from its still, with a punch-in on the line that needs it, and the last shot is a recording of this room. The captions are timed from a forced alignment of the narration, and a small score (a drone, four chords and a plucked string) is synthesised with numpy.
 
 ## What was generated, and by what
 
 Worth being exact about, on a site about applied AI:
 
 - **Image model** (GPT Image, through Higgsfield): the film's eight stills (one of them, cropped, is the portrait in the Hello dossier), the poster on the wall, the crayon drawing, two photo prints on the cork board, three fabric and rug textures, and the restyled weather in the two window photos.
-- **Video model** (Seedance 2.0 Mini, through Higgsfield): the dragon's scene in the film, from its still.
+- **Video model** (Seedance 2.5, through Higgsfield): all eight scenes of the film, as hyper-realistic live action, each from its still.
 - **Text-to-speech** (a preset voice, through Higgsfield): the film's narration.
 - **Code**: everything else. The room, the cloth, the light, the rain, the pages, the score, and the jokes.
 

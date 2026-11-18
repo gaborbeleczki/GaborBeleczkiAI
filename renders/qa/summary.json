@@ -1,6 +1,6 @@
 {
-  "generated": "2026-11-17T20:49:29.107Z",
-  "seconds": 794,
+  "generated": "2026-11-18T09:33:44.982Z",
+  "seconds": 820,
   "screenshots": {
     "shots": [
       "page-original-desktop",
@@ -56,24 +56,24 @@
   "perf": {
     "errors": [],
     "page": {
-      "loadMs": 553,
-      "lcpMs": 180,
+      "loadMs": 557,
+      "lcpMs": 224,
       "transferKB": 2170
     },
     "studio": {
-      "domLoadMs": 238,
-      "readyMs": 33360,
-      "transferKB": 16210,
-      "frames": 4,
+      "domLoadMs": 264,
+      "readyMs": 20102,
+      "transferKB": 16360,
+      "frames": 2,
       "frameMs": {
-        "median": 1826.8,
-        "p95": 4549.9
+        "median": 14382.7,
+        "p95": 14382.7
       },
       "renderer": {
         "focus": "home",
         "module": "hello",
         "screenReady": true,
-        "night": true,
+        "night": false,
         "dpr": 1,
         "size": [
           1280,
@@ -83,7 +83,7 @@
       "note": "software WebGL (SwiftShader) in headless Chromium"
     },
     "dist": {
-      "totalKB": 35879,
+      "totalKB": 36193,
       "modelsKB": 1366,
       "texturesKB": 12707,
       "jsKB": 928
@@ -92,9 +92,9 @@
   "pixeldiff": {
     "results": {
       "evening": {
-        "mismatchPct": 18.45,
-        "meanAbsLuma": 15.87,
-        "meanLumaWebGL": 102.5,
+        "mismatchPct": 18.57,
+        "meanAbsLuma": 15.89,
+        "meanLumaWebGL": 102.6,
         "meanLumaCycles": 103.8
       },
       "day": {
@@ -271,8 +271,8 @@
         "name": "music: 16 s offline render, no clipping, not silent",
         "pass": true,
         "detail": {
-          "peak": 0.544,
-          "rms": 0.104
+          "peak": 0.558,
+          "rms": 0.103
         },
         "errors": []
       },
