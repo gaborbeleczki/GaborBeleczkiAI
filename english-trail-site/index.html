@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Elli angol ösvénye</title>
+<meta name="description" content="Játékos angolgyakorlás gyerekeknek a Super Minds Starter és Level 1 könyvekhez.">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Elli angol">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F6F9FF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111726" media="(prefers-color-scheme: dark)">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px)}</style>
+</head>
+<body>
+
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one phone-width column on squared exercise-book paper; sticky stats bar on top, tab bar at the bottom, lessons open as a full-screen sheet. */
+:root{
+  --paper:#F6F9FF; --grid:rgba(64,104,196,.11); --card:#FFFFFF; --card-2:#EEF3FC; --line:#D5DFEF;
+  --ink:#1D2742; --ink-soft:#56627F; --accent:#2B4BD8; --accent-deep:#1C35A8; --on-accent:#FFFFFF;
+  --good:#17924F; --good-bg:#DCF5E6; --bad:#D2402F; --bad-bg:#FCE3DF; --gold:#E9A800; --flame:#F26B1D;
+  --shadow:0 3px 0 rgba(29,39,66,.13);
+  --f-display:"Baloo 2","Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  --f-body:"Nunito","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#111726; --grid:rgba(130,160,255,.07); --card:#1A2234; --card-2:#222C42; --line:#2E3A56;
+  --ink:#E7ECF8; --ink-soft:#A2ADC6; --accent:#7F97FF; --accent-deep:#5B74E6; --on-accent:#0D1330;
+  --good:#45C983; --good-bg:#14352A; --bad:#FF7A6B; --bad-bg:#3B1E1C; --gold:#FFC93A; --flame:#FF9450;
+  --shadow:0 3px 0 rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#111726; --grid:rgba(130,160,255,.07); --card:#1A2234; --card-2:#222C42; --line:#2E3A56;
+  --ink:#E7ECF8; --ink-soft:#A2ADC6; --accent:#7F97FF; --accent-deep:#5B74E6; --on-accent:#0D1330;
+  --good:#45C983; --good-bg:#14352A; --bad:#FF7A6B; --bad-bg:#3B1E1C; --gold:#FFC93A; --flame:#FF9450;
+  --shadow:0 3px 0 rgba(0,0,0,.35); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background-color:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:22px 22px;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--card)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:10px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;margin:0;text-wrap:balance}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.muted{color:var(--ink-soft)}
+.small{font-size:.86rem}
+.eyebrow{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--ink-soft)}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--card);border-bottom:2px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:10px;padding-block:8px}
+.chip-player{display:flex;align-items:center;gap:8px;background:var(--card-2);border:2px solid var(--line);border-radius:999px;padding:3px 12px 3px 4px;font-weight:800;min-width:0}
+.chip-player .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--card);font-size:1.15rem}
+.chip-player .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:9em}
+.stats{margin-left:auto;display:flex;gap:6px;align-items:center}
+.stat{display:flex;align-items:center;gap:3px;font-weight:800;font-family:var(--f-display);font-size:1.05rem;padding:2px 8px;border-radius:10px;font-variant-numeric:tabular-nums}
+.stat.fl{color:var(--flame)} .stat.fl.off{color:var(--ink-soft);filter:grayscale(1)}
+.stat.xp{color:var(--gold)}
+.ring{width:34px;height:34px;flex:none}
+.ring circle{fill:none;stroke-width:5}
+.ring .bg{stroke:var(--line)} .ring .fg{stroke:var(--good);stroke-linecap:round;transition:stroke-dashoffset .5s}
+.iconbtn{border:2px solid var(--line);background:var(--card);border-radius:12px;width:38px;height:38px;display:grid;place-items:center;font-size:1.05rem;flex:none}
+
+/* tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:2px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs .wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding-block:6px}
+.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:0;padding:4px 2px;border-radius:12px;font-weight:800;font-size:.72rem;color:var(--ink-soft)}
+.tab .ti{font-size:1.35rem;line-height:1.2}
+.tab[aria-current="page"]{color:var(--accent);background:var(--card-2)}
+main{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+
+/* buttons */
+.btn{border:0;border-radius:14px;padding:12px 18px;font-family:var(--f-display);font-weight:700;font-size:1.08rem;letter-spacing:.01em;
+  background:var(--card);color:var(--ink);box-shadow:0 4px 0 var(--line);border:2px solid var(--line);transition:transform .06s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent-deep);box-shadow:0 4px 0 var(--accent-deep)}
+.btn.good{background:var(--good);color:#fff;border-color:transparent;box-shadow:0 4px 0 rgba(0,0,0,.22)}
+.btn.bad{background:var(--bad);color:#fff;border-color:transparent;box-shadow:0 4px 0 rgba(0,0,0,.22)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+.btn.sm{padding:7px 12px;font-size:.95rem;border-radius:11px}
+.btn.wide{width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* cards */
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.stack{display:flex;flex-direction:column;gap:14px}
+.section-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:26px 0 10px}
+
+/* exam banner */
+.banner{position:relative;overflow:hidden;background:var(--accent);color:var(--on-accent);border-radius:20px;padding:16px 16px 16px 16px;box-shadow:0 4px 0 var(--accent-deep);margin-top:16px}
+.banner h2{font-size:1.45rem}
+.banner p{margin:6px 0 12px;opacity:.95}
+.banner .btn{background:var(--card);color:var(--ink);border-color:transparent;box-shadow:0 4px 0 rgba(0,0,0,.2)}
+.banner .ele{position:absolute;right:-6px;bottom:-14px;font-size:5.2rem;opacity:.9;transform:rotate(-8deg);pointer-events:none}
+.banner .row{position:relative;z-index:1}
+
+/* book & unit path */
+.book{margin-top:24px}
+.book-h{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+.book-cover{width:44px;height:58px;border-radius:6px 10px 10px 6px;display:grid;place-items:center;color:#fff;font-family:var(--f-display);font-weight:800;font-size:.8rem;box-shadow:inset 6px 0 0 rgba(0,0,0,.18),0 3px 0 rgba(0,0,0,.15);flex:none;text-align:center;line-height:1}
+.book-h h2{font-size:1.35rem}
+.unit{margin-top:18px}
+.unit-band{display:flex;align-items:center;gap:12px;border-radius:16px;padding:10px 14px;color:var(--u-ink,#fff);background:var(--u);box-shadow:0 4px 0 rgba(0,0,0,.18)}
+.unit-band .un{font-family:var(--f-display);font-weight:800;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+.unit-band .h3{display:block;font-family:var(--f-display);font-weight:700;font-size:1.3rem;line-height:1.15;text-wrap:balance}
+.unit-band{font:inherit;cursor:pointer}
+.unit-band .ui{font-size:1.9rem;margin-left:auto}
+.unit-band .tag{display:inline-block;background:rgba(255,255,255,.92);color:#B3261E;border-radius:999px;padding:1px 9px;font-weight:800;font-size:.75rem;margin-left:6px;vertical-align:2px}
+.trail{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0 4px}
+.node-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;transform:translateX(var(--dx,0))}
+.node{width:72px;height:66px;border-radius:50%;border:0;background:var(--u);color:var(--u-ink,#fff);font-size:1.7rem;display:grid;place-items:center;box-shadow:0 6px 0 rgba(0,0,0,.25),inset 0 -6px 0 rgba(0,0,0,.12);transition:transform .08s}
+.node:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.node.done{filter:saturate(.85)}
+.node.next{animation:bob 1.6s ease-in-out infinite}
+.node-wrap .lbl{font-weight:800;font-size:.8rem;color:var(--ink-soft);text-align:center;max-width:9.5em;line-height:1.15}
+.node-wrap .stars{font-size:.85rem;letter-spacing:1px;min-height:1em;color:var(--gold)}
+.node-wrap .stars .off{color:var(--line)}
+.start-tip{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:2px 10px;font-weight:800;font-size:.78rem;color:var(--accent);margin-bottom:4px;box-shadow:var(--shadow)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* lesson sheet */
+.lesson{position:fixed;inset:0;z-index:50;background:var(--paper);display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px)}
+.l-top{display:flex;align-items:center;gap:12px;padding-block:12px;width:100%}
+.bar{flex:1;height:16px;background:var(--line);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--good);border-radius:999px;transition:width .35s;box-shadow:inset 0 -4px 0 rgba(0,0,0,.12)}
+.combo{font-family:var(--f-display);font-weight:800;color:var(--flame);min-width:3.2em;text-align:right}
+.l-body{flex:1;overflow-y:auto;padding-block:8px 20px}
+.l-foot{border-top:2px solid var(--line);background:var(--card);padding-bottom:env(safe-area-inset-bottom,0px)}
+.l-foot .wrap{display:flex;align-items:center;gap:12px;padding-block:14px;flex-wrap:wrap}
+.l-foot .fb{flex:1 1 220px;min-width:0;font-weight:800}
+.l-foot .fb .big{font-family:var(--f-display);font-size:1.35rem;display:block}
+.l-foot.ok{background:var(--good-bg);border-top-color:var(--good)} .l-foot.ok .fb{color:var(--good)}
+.l-foot.no{background:var(--bad-bg);border-top-color:var(--bad)} .l-foot.no .fb{color:var(--bad)}
+.l-foot .btn{flex:0 0 auto;min-width:9em}
+.q-title{font-family:var(--f-display);font-size:1.45rem;font-weight:700;margin:6px 0 14px}
+.prompt{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.bigpic{width:132px;height:132px;border-radius:22px;background:var(--card);border:2px solid var(--line);display:grid;place-items:center;font-size:4.6rem;box-shadow:var(--shadow);flex:none}
+.bigpic svg{width:78%;height:78%}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:10px 14px;font-weight:800;font-size:1.2rem;box-shadow:var(--shadow);min-width:0;overflow-wrap:anywhere}
+.bubble.hu{font-weight:700}
+.bubble .say{margin-left:8px}
+.ele-sm{font-size:2.4rem}
+.speak{border:2px solid var(--line);background:var(--card-2);border-radius:12px;padding:4px 10px;font-size:1.1rem;box-shadow:0 3px 0 var(--line)}
+.speak.huge{width:110px;height:110px;border-radius:26px;font-size:3rem;background:var(--accent);color:var(--on-accent);border-color:var(--accent-deep);box-shadow:0 6px 0 var(--accent-deep)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.opts.one{grid-template-columns:1fr}
+.opt{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 12px;font-weight:800;font-size:1.15rem;box-shadow:0 4px 0 var(--line);text-align:center;min-height:56px;overflow-wrap:anywhere}
+.opt .pic{font-size:3.2rem;display:grid;place-items:center;height:76px}
+.opt .pic svg{width:70px;height:70px}
+.opt .k{display:block;font-size:.72rem;color:var(--ink-soft);font-weight:700}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--card-2);box-shadow:0 4px 0 var(--accent)}
+.opt.right{border-color:var(--good);background:var(--good-bg);box-shadow:0 4px 0 var(--good)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg);box-shadow:0 4px 0 var(--bad)}
+.opt:disabled{cursor:default}
+
+/* tiles */
+.slots{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:8px 0 18px}
+.slotgrp{display:flex;gap:5px}
+.slot{width:40px;height:48px;border-radius:10px;border:0;border-bottom:3px solid var(--ink-soft);background:var(--card-2);font-family:var(--f-display);font-weight:800;font-size:1.5rem;display:grid;place-items:center;padding:0}
+.slot.filled{border-bottom-color:var(--accent);background:var(--card)}
+.slot.right{border-bottom-color:var(--good);color:var(--good)}
+.slot.wrong{border-bottom-color:var(--bad);color:var(--bad)}
+.answer-line{min-height:64px;border-bottom:3px solid var(--line);display:flex;flex-wrap:wrap;gap:8px;align-content:flex-end;padding:6px 0 10px;margin-bottom:18px}
+.answer-line.ok{border-bottom-color:var(--good)} .answer-line.bad{border-bottom-color:var(--bad)}
+.bank{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}
+.tile{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:8px 13px;font-weight:800;font-size:1.15rem;box-shadow:0 3px 0 var(--line);min-width:44px}
+.tile.letter{font-family:var(--f-display);font-size:1.45rem;width:46px;height:50px;padding:0}
+.tile.used{visibility:hidden}
+.typein{width:100%;font:inherit;font-family:var(--f-display);font-size:1.6rem;font-weight:700;padding:10px 14px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);letter-spacing:.04em}
+.typein:focus{border-color:var(--accent);outline:none}
+.hintline{font-family:var(--f-display);letter-spacing:.25em;color:var(--ink-soft);font-size:1.2rem;margin:4px 0 12px}
+
+/* pairs */
+.pairs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pairs .col{display:flex;flex-direction:column;gap:10px}
+.pair{min-height:64px}
+.pair.gone{opacity:.25;pointer-events:none;border-color:var(--good)}
+
+/* result */
+.result{text-align:center;padding-top:20px}
+.result .ele{font-size:5rem;display:inline-block;animation:hop .9s ease-in-out 2}
+.result h2{font-size:2rem;margin:6px 0}
+.res-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.res-stat{border:2px solid var(--line);border-radius:14px;background:var(--card);padding:10px 4px}
+.res-stat b{display:block;font-family:var(--f-display);font-size:1.5rem}
+.res-stat span{font-size:.78rem;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-16px) rotate(-6deg)}}
+
+/* shuffle / words / games */
+.picker{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:thin}
+.pchip{flex:none;border:2px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-weight:800;font-size:.9rem;white-space:nowrap}
+.pchip[aria-pressed="true"]{background:var(--u,var(--accent));color:var(--u-ink,#fff);border-color:transparent}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.scard{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:10px;text-align:center;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.scard .hint{font-size:2.2rem;height:52px;display:grid;place-items:center}
+.scard .hint svg{width:44px;height:44px}
+.scard .hint.txt{font-size:.95rem;font-weight:800;color:var(--ink-soft);height:auto;min-height:52px}
+.scramble{font-family:var(--f-display);font-weight:800;font-size:1.25rem;letter-spacing:.18em;color:var(--accent);overflow-wrap:anywhere}
+.reveal{font-weight:800;min-height:1.4em}
+.reveal.hide{color:transparent;background:var(--card-2);border-radius:8px;width:80%}
+.slist{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.slist li{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.slist .scr{font-weight:800;color:var(--accent)}
+.wcard{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 10px;display:flex;align-items:center;gap:10px;min-width:0}
+.wcard .wp{font-size:1.8rem;width:44px;height:44px;display:grid;place-items:center;flex:none}
+.wcard .wp svg{width:36px;height:36px}
+.wcard .wt{min-width:0;flex:1}
+.wcard .wt b{display:block;overflow-wrap:anywhere}
+.mast{display:flex;gap:2px;margin-top:3px}
+.mast i{width:10px;height:6px;border-radius:3px;background:var(--line)}
+.mast i.on{background:var(--good)}
+.mem{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mcard{aspect-ratio:3/4;max-width:100%;border-radius:14px;border:2px solid var(--line);background:var(--accent);color:var(--on-accent);font-weight:800;display:grid;place-items:center;font-size:1rem;box-shadow:0 4px 0 var(--accent-deep);padding:4px;overflow-wrap:anywhere;text-align:center}
+.mcard.open{background:var(--card);color:var(--ink);box-shadow:0 4px 0 var(--line)}
+.mcard.open .pv{font-size:2.3rem}
+.mcard.open svg{width:48px;height:48px}
+.mcard.got{background:var(--good-bg);border-color:var(--good);color:var(--good);box-shadow:none}
+.game-card{display:flex;gap:14px;align-items:center}
+.game-card .gi{font-size:2.6rem;width:64px;height:64px;border-radius:18px;display:grid;place-items:center;background:var(--card-2);flex:none}
+.game-card .gt{flex:1;min-width:0}
+.game-card h3{font-size:1.2rem}
+
+/* exam */
+.ex-sec{margin-top:16px}
+.ex-sec h3{font-size:1.25rem;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.ex-sec h3 .pts{font-family:var(--f-body);font-size:.85rem;color:var(--ink-soft);font-weight:800}
+.ex-item{border-top:2px dashed var(--line);padding:12px 0;display:flex;flex-direction:column;gap:8px}
+.ex-item:first-of-type{border-top:0}
+.ex-item .qn{font-weight:800}
+.dlg{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
+.dlg .who{font-family:var(--f-display);font-weight:800;font-size:1.2rem;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--card-2)}
+.dlg .ln{font-size:1.15rem;font-weight:700;line-height:2.1}
+.blank{display:inline-block;min-width:4.6em;padding:0 8px;margin:0 3px;border:0;border-bottom:3px solid var(--ink-soft);background:var(--card-2);border-radius:8px 8px 2px 2px;font-weight:800;font-size:1.05rem;line-height:1.7;color:var(--accent);vertical-align:baseline}
+.blank.active{border-bottom-color:var(--accent);background:var(--card);box-shadow:0 0 0 2px var(--accent)}
+.blank.right{border-bottom-color:var(--good);color:var(--good)} .blank.wrong{border-bottom-color:var(--bad);color:var(--bad)}
+.wordbank{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:2px dashed var(--line);border-radius:14px;margin-top:8px}
+.wordbank .tile.spent{opacity:.35}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;vertical-align:middle;margin:0 4px}
+.seg button{border:0;background:var(--card);padding:4px 12px;font-weight:800;font-size:1.05rem}
+.seg button+button{border-left:2px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.seg.right{border-color:var(--good)} .seg.wrong{border-color:var(--bad)}
+.kidcards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kid{border:2px solid var(--line);border-radius:16px;padding:10px;background:var(--card-2);text-align:center}
+.kid .face{font-size:2.6rem}
+.kid .tp{font-size:2.4rem}
+.kid b{font-family:var(--f-display);font-size:1.25rem}
+.fix{font-weight:800;color:var(--good);font-size:.95rem}
+.fix.bad{color:var(--bad)}
+.ex-inp{font:inherit;font-weight:800;font-size:1.1rem;padding:6px 10px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);width:11em;max-width:100%}
+.ex-inp.right{border-color:var(--good)} .ex-inp.wrong{border-color:var(--bad)}
+.picopts{display:flex;gap:10px;flex-wrap:wrap}
+.picopt{border:2px solid var(--line);background:var(--card);border-radius:14px;min-width:110px;height:96px;display:grid;place-items:center;box-shadow:0 3px 0 var(--line);padding:4px 10px;line-height:1}
+.picopt[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 3px 0 var(--accent)}
+.picopt.right{border-color:var(--good);background:var(--good-bg)} .picopt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.picopt svg{width:60px;height:60px}
+.score{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.score .pct{font-family:var(--f-display);font-weight:800;font-size:3rem;line-height:1;color:var(--accent)}
+.grade{font-family:var(--f-display);font-weight:800;font-size:1.1rem;border-radius:12px;padding:4px 12px;background:var(--card-2)}
+.parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px}
+.part{border:2px solid var(--line);border-radius:12px;padding:6px 10px;font-weight:800;font-size:.9rem}
+.part b{font-family:var(--f-display);font-size:1.15rem}
+.topics{margin:8px 0 0;padding-left:1.2em}
+.topics li{margin:3px 0}
+.hist{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.hist span{border:2px solid var(--line);border-radius:10px;padding:2px 8px;font-weight:800;font-size:.82rem;font-variant-numeric:tabular-nums}
+
+/* sheets & toasts */
+.sheet-bg{position:fixed;inset:0;z-index:60;background:rgba(10,15,30,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-height:88vh;overflow-y:auto;border:2px solid var(--line)}
+.sheet h2{font-size:1.4rem;margin-bottom:10px}
+.plist{display:flex;flex-direction:column;gap:8px}
+.prow{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:14px;padding:8px 10px;background:var(--card);text-align:left;width:100%}
+.prow[aria-current="true"]{border-color:var(--accent);background:var(--card-2)}
+.prow .av{font-size:1.6rem}
+.avs{display:flex;gap:6px;flex-wrap:wrap}
+.avs button{font-size:1.5rem;width:44px;height:44px;border-radius:12px;border:2px solid var(--line);background:var(--card)}
+.avs button[aria-pressed="true"]{border-color:var(--accent);background:var(--card-2)}
+.field{display:flex;flex-direction:column;gap:4px;font-weight:800}
+.field input,.field select{font:inherit;font-weight:700;padding:9px 12px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:70;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-weight:800;max-width:calc(100% - 32px);text-align:center}
+.sync{font-size:.8rem;font-weight:800;color:var(--ink-soft)}
+.note{border-left:4px solid var(--gold);background:var(--card-2);padding:8px 12px;border-radius:0 10px 10px 0;font-size:.9rem}
+.copybox{width:100%;min-height:160px;font:inherit;font-size:.85rem;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink);padding:8px}
+.timer{font-family:var(--f-display);font-weight:800;font-size:1.2rem;min-width:3em;text-align:right;font-variant-numeric:tabular-nums}
+.flash-ok{animation:fok .35s} .flash-no{animation:fno .35s}
+@keyframes fok{50%{background:var(--good-bg)}} @keyframes fno{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+canvas.confetti{position:fixed;inset:0;pointer-events:none;z-index:80;width:100%;height:100%}
+@media (max-width:420px){.bigpic{width:112px;height:112px;font-size:3.8rem}.opt .pic{font-size:2.8rem;height:66px}.slot{width:34px;height:44px;font-size:1.3rem}.tile.letter{width:42px;height:46px}.stat{padding:2px 4px;font-size:.98rem}.chip-player .nm{max-width:5.5em}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<header class="top"><div class="wrap">
+  <button class="chip-player" data-act="players" aria-label="Tanuló váltása és beállítások"><span class="av" id="hAv">🐘</span><span class="nm" id="hName">Tanuló</span></button>
+  <div class="stats">
+    <span class="stat fl" id="hStreak" title="Napi sorozat">🔥<span>0</span></span>
+    <span class="stat xp" id="hXp" title="XP pontok">⭐<span>0</span></span>
+    <svg class="ring" viewBox="0 0 40 40" aria-label="Napi cél"><circle class="bg" cx="20" cy="20" r="15"/><circle class="fg" id="hRing" cx="20" cy="20" r="15" transform="rotate(-90 20 20)" stroke-dasharray="94.25" stroke-dashoffset="94.25"/><text x="20" y="24.5" text-anchor="middle" font-size="12" font-weight="800" fill="currentColor" id="hRingT"></text></svg>
+    <button class="iconbtn" data-act="sound" id="hSound" aria-label="Hangok be/ki">🔊</button>
+  </div>
+</div></header>
+<main id="view"></main>
+<nav class="tabs" aria-label="Fő menü"><div class="wrap">
+  <button class="tab" data-go="path"><span class="ti">🗺️</span>Ösvény</button>
+  <button class="tab" data-go="shuffle"><span class="ti">🔤</span>Betűkirakó</button>
+  <button class="tab" data-go="games"><span class="ti">🎮</span>Játékok</button>
+  <button class="tab" data-go="exam"><span class="ti">📝</span>Témazáró</button>
+  <button class="tab" data-go="words"><span class="ti">📚</span>Szótár</button>
+</div></nav>
+<section class="lesson" id="lesson" hidden>
+  <div class="wrap l-top"><button class="iconbtn" data-act="quit" aria-label="Kilépés a leckéből">✕</button><div class="bar"><i id="lBar"></i></div><span class="combo" id="lCombo"></span></div>
+  <div class="l-body"><div class="wrap" id="lBody"></div></div>
+  <div class="l-foot" id="lFoot"><div class="wrap"><div class="fb" id="lFb"></div><button class="btn primary" id="lBtn" disabled>Ellenőrzés</button></div></div>
+</section>
+
+<script>
+/* ===== Course content =====
+   Super Minds Second Edition Starter and Level 1, unit by unit (words and sentences as printed in the Student's Books).
+   Words: "english|magyar|picture" separated by ";". Picture codes: emoji, #colour, %shape, @icon, nN = number.
+   Unofficial practice material; not affiliated with Cambridge University Press. */
+const COLORS={red:"#E53935",blue:"#1E66F5",yellow:"#FDD835",green:"#2E9E44",orange:"#FB8C00",pink:"#F48FB1",purple:"#8E44AD",brown:"#8D5524",black:"#1B1B1B",white:"#FFFFFF",grey:"#9E9E9E"};
+const COL_HU0={red:"piros",blue:"kék",yellow:"sárga",green:"zöld",orange:"narancssárga",pink:"rózsaszín",purple:"lila",brown:"barna",black:"fekete",white:"fehér",grey:"szürke"};
+const colours=list=>list.map(c=>c+"|"+COL_HU0[c]+"|#"+c).join(";");
+const NUM_EN=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
+const NUM_HU=["nulla","egy","kettő","három","négy","öt","hat","hét","nyolc","kilenc","tíz","tizenegy","tizenkettő","tizenhárom","tizennégy","tizenöt","tizenhat","tizenhét","tizennyolc","tizenkilenc","húsz"];
+const NUM_HU_ATTR=["nulla","egy","két","három","négy","öt","hat","hét","nyolc","kilenc","tíz","tizenegy","tizenkét","tizenhárom","tizennégy","tizenöt","tizenhat","tizenhét","tizennyolc","tizenkilenc","húsz"];
+const numWords=(a,b)=>NUM_EN.slice(a,b+1).map((e,i)=>`${e}|${NUM_HU[a+i]}|n${a+i}`).join(";");
+
+const BOOKS=[
+{id:"sm1",title:"Super Minds 1",sub:"Second Edition · Level 1",cover:"#D63A3F",units:[
+ {id:"u0",n:"0",title:"Friends",hu:"Barátok",color:"#F28C28",icon:"👋",alpha:true,sticker:"🦊",
+  groups:[{t:"Colours",hu:"Színek",w:colours(["yellow","red","orange","purple","green","blue"])},{t:"Numbers",hu:"Számok 1–10",w:numWords(1,10)},
+   {t:"Words",hu:"Szavak",w:`hello|szia|👋; name|név|📛; bag|táska|🎒; cat|macska|🐱; after|után|; before|előtt|`}],
+  sents:[["Hi, I'm Whisper.","Szia, Whisper vagyok."],["What's your name?","Hogy hívnak?"],["I'm Carlos.","Carlos vagyok."],["What a nice name!","Milyen szép név!"],["How old are you?","Hány éves vagy?"],["I'm seven.","Hét éves vagyok."],["I'm six.","Hat éves vagyok."],["Look at me!","Nézz rám!"],["Listen to me.","Figyelj rám!"],["What's your name, cat?","Hogy hívnak, cica?"]],
+  gaps:[{q:"What's your ___?",o:["name","old"],a:"name",hu:"Hogy hívnak?"},{q:"How ___ are you?",o:["old","name"],a:"old",hu:"Hány éves vagy?"},{q:"___ Carlos.",o:["I'm","I"],a:"I'm",hu:"Carlos vagyok."},{q:"What a ___ name!",o:["nice","old"],a:"nice",hu:"Milyen szép név!"},{q:"I'm ___. (7)",o:["seven","six"],a:"seven"}],
+  note:"Gyakorold a bemutatkozást: What's your name? – I'm … · How old are you? – I'm seven."},
+ {id:"u1",n:"1",title:"At school",hu:"Az iskolában",color:"#3D6BE0",icon:"🎒",sticker:"🦉",
+  groups:[
+   {t:"School things",hu:"Iskolai eszközök",w:`ruler|vonalzó|📏; pen|toll|🖊️; book|könyv|📕; rubber|radír|@rubber; pencil case|tolltartó|@pcase; pencil|ceruza|✏️; desk|iskolapad|@desk; notebook|füzet|📓; bag|táska|🎒; paper|papír|📄; box|doboz|📦`},
+   {t:"Classroom language",hu:"Utasítások",w:`sit|ülj|🪑; open|nyisd ki|📖; close|csukd be|📕; pass me|add ide|; get|vegyél|; write|írj|✍️; put away|tedd el|; take out|vedd elő|; please|kérlek|🙏; here you are|tessék|`},
+   {t:"Senses",hu:"Érzékek",w:`look|nézni|👀; listen|hallgatni|👂; smell|szagolni|👃; taste|ízlelni|👅; touch|megérinteni|✋`}],
+  sents:[["What's this?","Mi ez?"],["It's a ruler.","Ez egy vonalzó."],["Is it a pencil?","Ez egy ceruza?"],["No, it isn't. It's a pen.","Nem, nem az. Ez egy toll."],["Is it a ruler? Yes, it is.","Ez egy vonalzó? Igen, az."],["Sit at your desk, please.","Ülj a padodhoz, kérlek!"],["Open your book, please.","Nyisd ki a könyvedet, kérlek!"],["Write one to ten.","Írd le egytől tízig!"],["Close your bag, please.","Csukd be a táskádat, kérlek!"],["Pass me a pencil, please.","Add ide a ceruzát, kérlek!"],["Here you are.","Tessék."],["Put away your book, please.","Tedd el a könyvedet, kérlek!"],["Take out your ruler, please.","Vedd elő a vonalzódat, kérlek!"],["Watch out!","Vigyázz!"]],
+  gaps:[{q:"What's ___? It's a ruler.",o:["this","it's"],a:"this",p:"📏"},{q:"Is it a pencil? No, it ___.",o:["isn't","is"],a:"isn't",p:"🖊️"},{q:"Is it a book? Yes, it ___.",o:["is","isn't"],a:"is",p:"📕"},{q:"___ me a pencil, please.",o:["Pass","Sit"],a:"Pass"},{q:"Put ___ your book, please.",o:["away","out"],a:"away",hu:"Tedd el a könyvedet!"},{q:"Take ___ your ruler, please.",o:["out","away"],a:"out",hu:"Vedd elő a vonalzódat!"},{q:"It's ___ ruler.",o:["a","an"],a:"a"},{q:"I ___ with my ears.",o:["listen","taste"],a:"listen",p:"👂"},{q:"I ___ with my tongue.",o:["taste","look"],a:"taste",p:"👅"}],
+  riddles:[["pencil","You write or draw with it. You can rub it out."],["pen","You write with it. It has got ink."],["rubber","You don't like what you wrote. You use this."],["ruler","You draw straight lines with it. It has got numbers on it."],["book","You open it and read it. It has got pictures."],["pencil case","Your pencils, rubber and ruler are in it."],["bag","Your books and pencil case are in it."],["paper","You draw or paint on it."],["notebook","You open it and write in it."],["desk","You sit at it and write at school."],["box","You can put things in it. It has got a lid."]],
+  note:"Kérdés és válasz: Is it a pencil? – Yes, it is. / No, it isn't."},
+ {id:"u2",n:"2",title:"Let's play",hu:"Játsszunk!",color:"#E5484D",icon:"🪁",exam:true,adj:true,sticker:"🐼",
+  groups:[
+   {t:"Toys",hu:"Játékok",w:`computer game|számítógépes játék|🎮; kite|sárkány|🪁; plane|repülő|✈️; bike|bicikli|🚲; doll|baba|🪆; monster|szörny|👾; train|vonat|🚂; go-kart|gokart|🏎️; car|autó|🚗; ball|labda|⚽; teddy|plüssmaci|🧸`},
+   {t:"Adjectives",hu:"Melléknevek",w:`big|nagy|; small|kicsi|; long|hosszú|; short|rövid|; old|régi, öreg|; new|új|; ugly|csúnya|; beautiful|gyönyörű|; cold|hideg|🥶`},
+   {t:"Colours",hu:"Színek",w:colours(["blue","orange","black","pink","yellow","green","purple","white","brown"])},
+   {t:"Shapes",hu:"Alakzatok",w:`triangle|háromszög|%triangle; circle|kör|%circle; square|négyzet|%square; rectangle|téglalap|%rectangle`},
+   {t:"His & her",hu:"Az ő… (fiú / lány)",w:`his|az ő …-ja (fiúé)|👦; her|az ő …-ja (lányé)|👧; name|név|📛; favourite|kedvenc|⭐; toy|játék|🧸; colour|szín|🎨; number|szám|🔢`}],
+  sents:[["What's his name?","Mi a neve? (fiú)"],["His name's Ben.","A neve Ben."],["What's her name?","Mi a neve? (lány)"],["Her name's Kate.","A neve Kate."],["How old is he?","Hány éves? (fiú)"],["He's ten.","Tíz éves."],["How old is she?","Hány éves? (lány)"],["She's eight.","Nyolc éves."],["What's his favourite toy?","Mi a kedvenc játéka? (fiú)"],["His favourite toy's his train.","A kedvenc játéka a vonata."],["What's her favourite toy?","Mi a kedvenc játéka? (lány)"],["Her favourite toy's her plane.","A kedvenc játéka a repülője."],["It's a big white ball.","Ez egy nagy fehér labda."],["It's an ugly ball.","Ez egy csúnya labda."],["A big blue plane.","Egy nagy kék repülő."],["An old pink bike.","Egy régi rózsaszín bicikli."],["A new purple bike.","Egy új lila bicikli."],["What's your favourite colour?","Mi a kedvenc színed?"],["My favourite colour is blue.","A kedvenc színem a kék."]],
+  gaps:[{q:"What's ___ name?",p:"👦",o:["his","her"],a:"his"},{q:"What's ___ name?",p:"👧",o:["his","her"],a:"her"},{q:"___ name's Ben.",p:"👦",o:["His","Her"],a:"His"},{q:"___ name's Kate.",p:"👧",o:["His","Her"],a:"Her"},{q:"Her favourite toy's ___ plane.",p:"👧",o:["her","his"],a:"her"},{q:"His favourite toy's ___ train.",p:"👦",o:["his","her"],a:"his"},{q:"How old is ___? She's eight.",o:["she","he"],a:"she"},{q:"It's ___ ugly ball.",o:["an","a"],a:"an"},{q:"___ old pink bike.",o:["An","A"],a:"An"},{q:"It's ___ big kite.",o:["a","an"],a:"a"}],
+  note:"Figyelj az a / an szóra: a big ball, de an ugly ball, an old bike!"},
+ {id:"u3",n:"3",title:"Pet show",hu:"Kisállat-bemutató",color:"#2BA84A",icon:"🐸",sticker:"🐸",
+  groups:[{t:"Animals",hu:"Állatok",w:`donkey|szamár|; elephant|elefánt|🐘; spider|pók|🕷️; cat|macska|🐱; rat|patkány|🐀; frog|béka|🐸; duck|kacsa|🦆; lizard|gyík|🦎; dog|kutya|🐶`},
+   {t:"Where?",hu:"Hol van?",w:`in|-ban, -ben (benne)|; on|-on, -en (rajta)|; under|alatt|; pond|tó|; wood|erdő|🌲; tree|fa|🌳; fish|hal|🐟; bird|madár|🐦`},
+   {t:"Animal needs",hu:"Mire van szüksége?",w:`food|étel|🍲; water|víz|💧; air|levegő|💨; shelter|menedék|🏠`}],
+  sents:[["The frog's in my bag.","A béka a táskámban van."],["It's under my chair.","A székem alatt van."],["The frog's on my hat.","A béka a kalapomon van."],["Where is it?","Hol van?"],["I like frogs. What about you?","Szeretem a békákat. És te?"],["I like frogs, too.","Én is szeretem a békákat."],["I don't like big frogs!","Nem szeretem a nagy békákat!"],["I like spiders and lizards.","Szeretem a pókokat és a gyíkokat."],["I don't like rats.","Nem szeretem a patkányokat."],["There are eight dogs.","Nyolc kutya van."],["The dog needs food.","A kutyának élelemre van szüksége."]],
+  gaps:[{q:"The frog's ___ my bag.",o:["in","on","under"],a:"in",hu:"A béka a táskámban van."},{q:"It's ___ my chair.",o:["under","in","on"],a:"under",hu:"A székem alatt van."},{q:"The frog's ___ my hat.",o:["on","under","in"],a:"on",hu:"A béka a kalapomon van."},{q:"I like frogs. What ___ you?",o:["about","is"],a:"about"},{q:"I don't like ___.",o:["rats","rat"],a:"rats",p:"🐀"},{q:"The dog ___ water.",o:["needs","need"],a:"needs",p:"💧"}],
+  note:"in = benne · on = rajta · under = alatta"},
+ {id:"u4",n:"4",title:"Lunchtime",hu:"Ebédidő",color:"#F2A100",ink:"#1D2742",icon:"🍕",sticker:"🐭",
+  groups:[{t:"Food",hu:"Ételek",w:`apple|alma|🍎; banana|banán|🍌; cake|torta|🍰; pizza|pizza|🍕; sausage|kolbász|; cheese sandwich|sajtos szendvics|🥪; fish|hal|🐟; chicken|csirke|🍗; peas|borsó|; steak|steak|🥩; carrots|répa|🥕`},
+   {t:"More food",hu:"Még több étel",w:`ice cream|fagyi|🍦; orange juice|narancslé|🧃; hot dog|hot dog|🌭; cheese|sajt|🧀; potato|krumpli|🥔; salad|saláta|🥗; hungry|éhes|`},
+   {t:"Numbers 11–20",hu:"Számok 11–20",w:numWords(11,20)}],
+  sents:[["I've got a carrot.","Van egy répám."],["Now I haven't got a carrot!","Most nincs répám!"],["Me too!","Én is!"],["Have we got any fish?","Van halunk?"],["No, we haven't.","Nem, nincs."],["Yes, we have!","Igen, van!"],["Lunchtime! What's for lunch?","Ebédidő! Mi az ebéd?"],["Sorry. We haven't got pizza.","Bocsi. Nincs pizzánk."],["Is it from a tree?","Fáról származik?"],["Is it from an animal?","Állattól származik?"],["We need twelve bananas.","Tizenkét banán kell."]],
+  gaps:[{q:"I've ___ a carrot.",o:["got","get"],a:"got",p:"🥕"},{q:"I ___ got a carrot!",o:["haven't","have"],a:"haven't",hu:"Nincs répám!"},{q:"Have we got ___ fish?",o:["any","a"],a:"any"},{q:"Have we got any pizza? Yes, we ___.",o:["have","haven't"],a:"have",p:"🍕"},{q:"Have we got any fish? No, we ___.",o:["haven't","have"],a:"haven't"},{q:"An apple is from a ___.",o:["tree","animal"],a:"tree",p:"🍎"}],
+  note:"I've got = van nekem · I haven't got = nincs nekem"},
+ {id:"u5",n:"5",title:"Free time",hu:"Szabadidő",color:"#12A4B6",icon:"🚲",days:true,sticker:"🐬",
+  groups:[{t:"Days",hu:"A hét napjai",w:`Monday|hétfő|; Tuesday|kedd|; Wednesday|szerda|; Thursday|csütörtök|; Friday|péntek|; Saturday|szombat|; Sunday|vasárnap|`},
+   {t:"Activities",hu:"Mit csinálsz?",w:`go swimming|úszni jár|🏊; go fishing|horgászni jár|🎣; play football|focizik|⚽; play board games|társasozik|🎲; play tennis|teniszezik|🎾; sing songs|dalokat énekel|🎤; ride my bike|biciklizem|🚴; watch TV|tévét néz|📺; play computer games|számítógépes játékot játszik|🎮; sleep|alszik|😴`},
+   {t:"Sports",hu:"Sportok",w:`go skiing|síelni jár|⛷️; go surfing|szörfözni jár|🏄; go climbing|mászni jár|🧗; go running|futni jár|🏃; go sledging|szánkózni jár|🛷; weekend|hétvége|; bored|unatkozik|🥱`}],
+  sents:[["I go swimming on Mondays.","Hétfőnként úszni járok."],["I play football on Tuesdays.","Keddenként focizom."],["I go fishing on Wednesdays.","Szerdánként horgászni járok."],["I watch TV on Sundays.","Vasárnaponként tévét nézek."],["Do you watch TV at the weekend?","Nézel tévét hétvégén?"],["No, I don't.","Nem."],["Do you play computer games?","Játszol számítógépes játékokkal?"],["Yes, I do.","Igen."],["I'm bored.","Unatkozom."],["I like football.","Szeretem a focit."],["I don't like surfing.","Nem szeretek szörfözni."]],
+  gaps:[{q:"I go swimming ___ Mondays.",o:["on","in"],a:"on"},{q:"Do you play tennis? Yes, I ___.",o:["do","don't"],a:"do"},{q:"Do you watch TV? No, I ___.",o:["don't","do"],a:"don't"},{q:"I ___ fishing on Wednesdays.",o:["go","play"],a:"go",p:"🎣"},{q:"I ___ football on Tuesdays.",o:["play","go"],a:"play",p:"⚽"},{q:"I ___ my bike.",o:["ride","play"],a:"ride",p:"🚴"}],
+  note:"A hét napjait nagy kezdőbetűvel írjuk: Monday, Tuesday … go swimming, de play football!"},
+ {id:"u6",n:"6",title:"The old house",hu:"A régi ház",color:"#7B4FD6",icon:"🏚️",sticker:"🦇",
+  groups:[{t:"Rooms",hu:"Helyiségek",w:`bedroom|hálószoba|🛏️; bathroom|fürdőszoba|🛁; living room|nappali|🛋️; kitchen|konyha|🍳; hall|előszoba|; stairs|lépcső|; cellar|pince|; dining room|ebédlő|🍽️`},
+   {t:"Homes",hu:"Otthonok",w:`house|ház|🏠; flat|lakás|🏢; garden|kert|🌷; tent|sátor|⛺; window|ablak|🪟; tree house|faház|🌳; house boat|lakóhajó|🛥️; cave house|barlanglakás|; yurt|jurta|`}],
+  sents:[["There's a fish in the hall.","Van egy hal az előszobában."],["There are three fish in the kitchen.","Három hal van a konyhában."],["Is there a park?","Van park?"],["No, there isn't.","Nem, nincs."],["Is there a school?","Van iskola?"],["Yes, there is.","Igen, van."],["Are there any trees?","Vannak fák?"],["No, there aren't.","Nem, nincsenek."],["Are there any houses?","Vannak házak?"],["Yes, there are.","Igen, vannak."],["I live in a house.","Egy házban lakom."],["How many are there?","Hány van?"]],
+  gaps:[{q:"There ___ a fish in the hall.",o:["is","are"],a:"is"},{q:"There ___ three fish in the kitchen.",o:["are","is"],a:"are"},{q:"Is there a park? No, there ___.",o:["isn't","aren't"],a:"isn't"},{q:"Are there any trees? No, there ___.",o:["aren't","isn't"],a:"aren't"},{q:"Are there any houses? Yes, there ___.",o:["are","is"],a:"are"},{q:"I live in a ___.",o:["house","bathroom"],a:"house",p:"🏠"}],
+  note:"There's (is) = egy dologra · There are = többre: There are three bedrooms."},
+ {id:"u7",n:"7",title:"Get dressed",hu:"Öltözködj!",color:"#D6409F",icon:"👕",sticker:"🦩",
+  groups:[{t:"Clothes",hu:"Ruhák",w:`sweater|pulóver|; skirt|szoknya|; shorts|rövidnadrág|🩳; trousers|nadrág|; jacket|dzseki|🧥; socks|zokni|🧦; jeans|farmer|👖; shoes|cipő|👟; baseball cap|baseballsapka|🧢; T-shirt|póló|👕`},
+   {t:"Patterns",hu:"Minták",w:`hat|kalap|🎩; shirt|ing|👔; plain|egyszínű|; stripes|csíkok|; spots|pöttyök|; zigzags|cikcakkok|; flowers|virágok|🌸`}],
+  sents:[["Do you like these shoes?","Tetszik ez a cipő?"],["Yes, I do.","Igen."],["Do you like this hat?","Tetszik ez a kalap?"],["No, I don't.","Nem."],["Is he wearing a red hat?","Piros kalap van rajta? (fiú)"],["No, he isn't.","Nem."],["Jim's wearing a blue hat.","Jimen kék kalap van."],["Is she wearing a yellow T-shirt?","Sárga póló van rajta? (lány)"],["Yes, she is.","Igen."],["It's a white T-shirt with zigzags and spots.","Ez egy fehér póló cikcakkokkal és pöttyökkel."],["Are you eating a hot dog? Yes, I am.","Hot dogot eszel? Igen."]],
+  gaps:[{q:"Do you like ___ shoes?",o:["these","this"],a:"these",p:"👟"},{q:"Do you like ___ hat?",o:["this","these"],a:"this",p:"🎩"},{q:"Is he wearing a cap? Yes, he ___.",o:["is","isn't"],a:"is",p:"🧢"},{q:"Is she wearing a skirt? No, she ___.",o:["isn't","is"],a:"isn't"},{q:"Jim's ___ a blue hat.",o:["wearing","wear"],a:"wearing"},{q:"Are you eating a hot dog? Yes, I ___.",o:["am","is"],a:"am"}],
+  note:"this = ez (egy) · these = ezek (több): these shoes, these socks."},
+ {id:"u8",n:"8",title:"The robot",hu:"A robot",color:"#5C7CFA",icon:"🤖",sticker:"🐙",
+  groups:[{t:"Body",hu:"Testrészek",w:`arm|kar|💪; hand|kéz|✋; knee|térd|; fingers|ujjak|🖐️; leg|láb|🦵; foot|lábfej|🦶; toes|lábujjak|; head|fej|; tongue|nyelv|👅; nose|orr|👃`},
+   {t:"I can …",hu:"Mit tudsz csinálni?",w:`skip|ugrókötelezni|; stand on one leg|fél lábon állni|; swim|úszni|🏊; sing|énekelni|🎤; fly|repülni|🕊️; walk|sétálni|🚶; cook|főzni|🧑‍🍳; draw|rajzolni|✏️; dance|táncolni|💃; play the piano|zongorázni|🎹; ride a horse|lovagolni|🏇; ride a bike|biciklizni|🚴; play tennis|teniszezni|🎾; play chess|sakkozni|♟️; fly a kite|sárkányt eregetni|🪁`}],
+  sents:[["I can stand on one leg.","Tudok fél lábon állni."],["I can skip.","Tudok ugrókötelezni."],["I can swim.","Tudok úszni."],["But I can't fly.","De repülni nem tudok."],["I can't touch my toes.","Nem érem el a lábujjaimat."],["A penguin can swim.","A pingvin tud úszni."],["A penguin can't fly.","A pingvin nem tud repülni."],["Can you cook?","Tudsz főzni?"],["Yes, I can.","Igen, tudok."],["Can you draw?","Tudsz rajzolni?"],["No, I can't.","Nem, nem tudok."],["Go four steps forwards.","Lépj négyet előre!"]],
+  gaps:[{q:"A penguin ___ fly.",o:["can't","can"],a:"can't",p:"🐧"},{q:"A penguin ___ swim.",o:["can","can't"],a:"can",p:"🐧"},{q:"A fish ___ walk.",o:["can't","can"],a:"can't",p:"🐟"},{q:"A bird ___ fly.",o:["can","can't"],a:"can",p:"🐦"},{q:"Can you cook? Yes, I ___.",o:["can","can't"],a:"can"},{q:"Can you draw? No, I ___.",o:["can't","can"],a:"can't"},{q:"I've got two ___.",o:["hands","hand"],a:"hands",p:"🙌"}],
+  note:"can = tud · can't = nem tud: I can swim. I can't fly."},
+ {id:"u9",n:"9",title:"At the beach",hu:"A tengerparton",color:"#0E9F8E",icon:"🏖️",sticker:"🐢",
+  groups:[{t:"Holiday fun",hu:"Nyaralás",w:`paint a picture|képet festeni|🎨; listen to music|zenét hallgatni|🎧; catch a fish|halat fogni|🎣; take a photo|fényképezni|📷; eat ice cream|fagyit enni|🍦; play the guitar|gitározni|🎸; read a book|könyvet olvasni|📖; make a sandcastle|homokvárat építeni|🏰; look for shells|kagylót keresni|🐚`},
+   {t:"Places",hu:"Helyek",w:`beach|tengerpart|🏖️; sea|tenger|🌊; mountains|hegyek|⛰️; countryside|vidék|🌾; city|nagyváros|🏙️; lake|tó|🏞️; theme park|vidámpark|🎢; campsite|kemping|🏕️; sunglasses|napszemüveg|🕶️; holidays|vakáció|`}],
+  sents:[["Let's eat ice cream.","Együnk fagyit!"],["I'm not sure.","Nem vagyok benne biztos."],["Let's play the guitar.","Gitározzunk!"],["Good idea.","Jó ötlet."],["Let's listen to music.","Hallgassunk zenét!"],["Sorry, I don't want to.","Bocsi, nincs kedvem."],["Let's go to the mountains.","Menjünk a hegyekbe!"],["Where are my sunglasses?","Hol a napszemüvegem?"],["They're on my head!","A fejemen van!"],["Where's my hat?","Hol a kalapom?"],["It's on my head!","A fejemen van!"],["We can swim here.","Itt tudunk úszni."]],
+  gaps:[{q:"___ eat ice cream.",o:["Let's","Lets"],a:"Let's",p:"🍦"},{q:"Let's play the guitar. Good ___.",o:["idea","sure"],a:"idea"},{q:"Where ___ my sunglasses?",o:["are","is"],a:"are",p:"🕶️"},{q:"Where's my hat? It's ___ my head!",o:["on","in"],a:"on"},{q:"They ___ in my bag.",o:["aren't","isn't"],a:"aren't"},{q:"Let's ___ a sandcastle.",o:["make","take"],a:"make",p:"🏰"},{q:"Let's ___ a photo.",o:["take","make"],a:"take",p:"📷"}],
+  note:"Let's … = Gyerünk, …! Javaslatra válasz: Good idea. / I'm not sure. / Sorry, I don't want to."},
+]},
+{id:"st",title:"Super Minds Starter",sub:"Second Edition · Starter",cover:"#2B8C9E",units:[
+ {id:"s0",n:"0",title:"Say Hello!",hu:"Köszönj!",color:"#12A4B6",icon:"👋",sticker:"🐣",
+  groups:[{t:"Colours",hu:"Színek",w:colours(["blue","green","yellow","orange","red","pink"])},{t:"Numbers",hu:"Számok 1–10",w:numWords(1,10)},{t:"Hello",hu:"Köszönés",w:`hello|szia|👋; friends|barátok|🧑‍🤝‍🧑; name|név|📛`}],
+  sents:[["Hello! What's your name?","Szia! Hogy hívnak?"],["I'm Misty.","Misty vagyok."],["What colour is it?","Milyen színű?"],["It's blue.","Kék."],["Let's be friends!","Legyünk barátok!"]],
+  gaps:[{q:"What's your ___?",o:["name","colour"],a:"name"},{q:"___ Misty.",o:["I'm","It's"],a:"I'm"},{q:"What ___ is it? It's red.",o:["colour","name"],a:"colour"}]},
+ {id:"s1",n:"1",title:"My classroom",hu:"Az osztálytermem",color:"#2BA84A",icon:"🏫",sticker:"🦋",
+  groups:[{t:"Classroom",hu:"Az osztályteremben",w:`window|ablak|🪟; door|ajtó|🚪; chair|szék|🪑; pencil|ceruza|✏️; book|könyv|📕; table|asztal|@table; crayon|zsírkréta|🖍️; pen|toll|🖊️; rubber|radír|@rubber`},
+   {t:"Instructions",hu:"Utasítások",w:`stand up|állj fel|; sit down|ülj le|; open your book|nyisd ki a könyved|📖; close your book|csukd be a könyved|; butterfly|pillangó|🦋; ice|jég|🧊`}],
+  sents:[["Stand up!","Állj fel!"],["Sit down, Paul.","Ülj le, Paul!"],["Open your book.","Nyisd ki a könyvedet!"],["Close your book.","Csukd be a könyvedet!"],["What is it?","Mi ez?"],["It's a book.","Ez egy könyv."],["It's a pencil.","Ez egy ceruza."],["It's a table.","Ez egy asztal."],["It's ice!","Ez jég!"],["Look! It's my classroom.","Nézd! Ez az osztálytermem."]],
+  gaps:[{q:"Sit ___, Paul.",o:["down","up"],a:"down"},{q:"Stand ___!",o:["up","down"],a:"up"},{q:"What is it? It's a ___.",o:["book","books"],a:"book",p:"📕"},{q:"___ your book.",o:["Open","Sit"],a:"Open",p:"📖"}]},
+ {id:"s2",n:"2",title:"My body",hu:"A testem",color:"#D6409F",icon:"👾",sticker:"🐙",
+  groups:[{t:"Body",hu:"Testrészek",w:`eyes|szemek|👀; ears|fülek|👂; mouth|száj|👄; arms|karok|💪; nose|orr|👃; head|fej|; legs|lábak|🦵`},
+   {t:"Monster fun",hu:"Szörnyes szavak",w:`walk|sétálni|🚶; run|futni|🏃; wave|integetni|👋; sit|ülni|🪑; monster|szörny|👾; skeleton|csontváz|💀; chocolate|csoki|🍫; ice cream|fagyi|🍦`}],
+  sents:[["I've got two eyes.","Két szemem van."],["How many ears?","Hány fül?"],["How many eyes have you got?","Hány szemed van?"],["I've got three eyes.","Három szemem van."],["How many heads have you got?","Hány fejed van?"],["I've got two heads.","Két fejem van."],["I've got five noses.","Öt orrom van."],["Run, run, run!","Fuss, fuss, fuss!"]],
+  gaps:[{q:"I've got two ___.",o:["eyes","eye"],a:"eyes",p:"👀"},{q:"I've got one ___.",o:["nose","noses"],a:"nose",p:"👃"},{q:"How ___ ears have you got?",o:["many","old"],a:"many"},{q:"I've ___ two arms.",o:["got","get"],a:"got",p:"💪"}],
+  note:"one nose – two eyes: kettőtől többes szám, -s a végén!"},
+ {id:"s3",n:"3",title:"My family",hu:"A családom",color:"#7B4FD6",icon:"👨‍👩‍👧",sticker:"🐻",
+  groups:[{t:"Family",hu:"Család",w:`mum|anya|👩; dad|apa|👨; grandpa|nagypapa|👴; grandma|nagymama|👵; sister|lánytestvér|👧; brother|fiútestvér|👦`},
+   {t:"Animal family",hu:"Állatcsalád",w:`hen|tyúk|🐔; dog|kutya|🐶; duck|kacsa|🦆; cat|macska|🐱`}],
+  sents:[["This is my brother.","Ő a fiútestvérem."],["Is this your brother?","Ő a fiútestvéred?"],["Yes, it is.","Igen, ő az."],["No, it isn't.","Nem, nem ő."],["This is my sister.","Ő a lánytestvérem."],["I'm not your sister.","Nem vagyok a lánytestvéred."],["I'm your brother.","A fiútestvéred vagyok."],["Is this your sister?","Ő a lánytestvéred?"]],
+  gaps:[{q:"Is this your mum? Yes, it ___.",o:["is","isn't"],a:"is",p:"👩"},{q:"Is this your brother? No, it ___.",o:["isn't","is"],a:"isn't"},{q:"___ is my grandpa.",o:["This","Is"],a:"This",p:"👴"},{q:"I'm ___ your sister.",o:["not","no"],a:"not"}]},
+ {id:"s4",n:"4",title:"At the zoo",hu:"Az állatkertben",color:"#E6A700",ink:"#1D2742",icon:"🦁",sticker:"🦁",
+  groups:[{t:"Zoo animals",hu:"Állatkerti állatok",w:`fish|hal|🐟; parrot|papagáj|🦜; zebra|zebra|🦓; lion|oroszlán|🦁; penguin|pingvin|🐧; monkey|majom|🐒; frog|béka|🐸; big|nagy|; small|kicsi|`},
+   {t:"Habitats",hu:"Hol élnek?",w:`tree|fa|🌳; pond|tó|; grassland|füves puszta|🌾; zoo|állatkert|; animal|állat|`}],
+  sents:[["It's a big lion.","Ez egy nagy oroszlán."],["It's a big fish.","Ez egy nagy hal."],["It's a small fish.","Ez egy kicsi hal."],["What's your favourite animal?","Mi a kedvenc állatod?"],["A penguin!","Egy pingvin!"],["A black and white penguin.","Egy fekete-fehér pingvin."],["The frog lives in the pond.","A béka a tóban él."],["The monkey lives in the tree.","A majom a fán él."],["The lion lives on the grassland.","Az oroszlán a füves pusztán él."]],
+  gaps:[{q:"It's a ___ lion.",o:["big","small"],a:"big",p:"🦁"},{q:"The frog lives ___ the pond.",o:["in","on"],a:"in",p:"🐸"},{q:"The lion lives ___ the grassland.",o:["on","in"],a:"on",p:"🦁"},{q:"The monkey lives in the ___.",o:["tree","pond"],a:"tree",p:"🐒"},{q:"What's your ___ animal?",o:["favourite","big"],a:"favourite"}]},
+ {id:"s5",n:"5",title:"My food",hu:"Az ételeim",color:"#F28C28",icon:"🍰",sticker:"🐷",
+  groups:[{t:"Food",hu:"Ételek",w:`milk|tej|🥛; cakes|sütik|🍰; oranges|narancsok|🍊; tomatoes|paradicsomok|🍅; chocolate|csoki|🍫; pears|körték|🍐`},
+   {t:"Fruit & vegetables",hu:"Gyümölcs és zöldség",w:`potatoes|krumplik|🥔; carrots|répák|🥕; bananas|banánok|🍌`}],
+  sents:[["I like oranges.","Szeretem a narancsot."],["I don't like milk.","Nem szeretem a tejet."],["I like cakes.","Szeretem a sütit."],["I don't like pears.","Nem szeretem a körtét."],["Do you like pink?","Szereted a rózsaszínt?"],["Yes, I do.","Igen."],["No, I don't.","Nem."],["Do you like chocolate?","Szereted a csokit?"],["How about you?","És te?"]],
+  gaps:[{q:"Do you like cakes? Yes, I ___.",o:["do","don't"],a:"do",p:"🍰"},{q:"Do you like milk? No, I ___.",o:["don't","do"],a:"don't",p:"🥛"},{q:"I ___ like pears. 👎",o:["don't","do"],a:"don't"},{q:"I like ___.",o:["oranges","orange"],a:"oranges",p:"🍊"}]},
+ {id:"s6",n:"6",title:"My town",hu:"A városom",color:"#3D6BE0",icon:"🏙️",baskets:true,sticker:"🐦",
+  groups:[{t:"Places",hu:"Helyek a városban",w:`bus stop|buszmegálló|🚏; school|iskola|🏫; cinema|mozi|🎬; hospital|kórház|🏥; toy shop|játékbolt|🧸; park|park|🏞️`},
+   {t:"More places",hu:"Még több hely",w:`market|piac|🧺; café|kávézó|☕; playground|játszótér|🛝; sports centre|sportközpont|🏟️`}],
+  sents:[["There's a park.","Van egy park."],["There are three bus stops.","Van három buszmegálló."],["There are two cinemas.","Van két mozi."],["Look! There are two cinemas!","Nézd! Két mozi van!"],["Where's the park?","Hol van a park?"],["It's there.","Ott van."],["This is a hospital.","Ez egy kórház."],["There's a pen.","Van egy toll."],["There are four pens.","Van négy toll."]],
+  gaps:[{q:"There ___ a park.",o:["is","are"],a:"is"},{q:"There ___ two cinemas.",o:["are","is"],a:"are"},{q:"There are four ___.",o:["pens","pen"],a:"pens",p:"🖊️🖊️🖊️🖊️"},{q:"Where's the cinema? It's ___.",o:["there","the"],a:"there"}],
+  note:"There's a … = egy van · There are … = több van, és ne felejtsd el a -s-t: three bus stops!"},
+ {id:"s7",n:"7",title:"Jobs",hu:"Foglalkozások",color:"#9A6B43",icon:"🧑‍⚕️",sticker:"🐶",
+  groups:[{t:"Jobs",hu:"Foglalkozások",w:`teacher|tanár|🧑‍🏫; fire fighter|tűzoltó|🧑‍🚒; gardener|kertész|🧑‍🌾; police officer|rendőr|👮; vet|állatorvos|🐶🩺; doctor|orvos|🧑‍⚕️`},
+   {t:"More jobs",hu:"Még több foglalkozás",w:`farmer|gazda|🚜; shop assistant|eladó|🛒; dentist|fogorvos|🦷; inside|bent|🏠; outside|kint|🌳`}],
+  sents:[["He's a police officer.","Ő rendőr. (férfi)"],["She's a gardener.","Ő kertész. (nő)"],["Is she a vet?","Ő állatorvos? (nő)"],["Yes, she is.","Igen, az."],["Is he a fire fighter?","Ő tűzoltó? (férfi)"],["No, he isn't. He's a gardener.","Nem, nem az. Ő kertész."],["Is she a doctor?","Ő orvos? (nő)"],["He's a farmer. He's outside.","Ő gazda. Kint van."],["Look! I'm a vet.","Nézd! Állatorvos vagyok."]],
+  gaps:[{q:"Is she a vet? Yes, ___ is.",p:"👩",o:["she","he"],a:"she"},{q:"Is he a doctor? No, he ___.",p:"👨",o:["isn't","is"],a:"isn't"},{q:"___ a fire fighter.",p:"👨",o:["He's","She's"],a:"He's"},{q:"___ a teacher.",p:"👩",o:["She's","He's"],a:"She's"},{q:"A farmer works ___.",o:["outside","inside"],a:"outside",p:"🚜"}]},
+ {id:"s8",n:"8",title:"My clothes",hu:"A ruháim",color:"#5C7CFA",icon:"🧣",sticker:"🐧",
+  groups:[{t:"Clothes",hu:"Ruhák",w:`hat|sapka|🧢; coat|kabát|🧥; sweater|pulóver|; scarf|sál|🧣; gloves|kesztyű|🧤; T-shirt|póló|👕; boots|csizma|🥾; jeans|farmer|👖`},
+   {t:"Hot or cold?",hu:"Meleg vagy hideg?",w:`soft|puha|; hard|kemény|; cold|hideg|🥶; hot|meleg|🥵; belt|öv|; sunglasses|napszemüveg|🕶️`}],
+  sents:[["I'm wearing a hat.","Sapka van rajtam."],["I'm wearing my hat!","Rajtam van a sapkám!"],["Is he wearing a scarf?","Van rajta sál? (fiú)"],["Yes, he is.","Igen."],["Is he wearing a coat?","Van rajta kabát? (fiú)"],["No, he isn't.","Nem."],["Is she wearing a scarf?","Van rajta sál? (lány)"],["Yes, she is.","Igen."],["It's cold!","Hideg van!"]],
+  gaps:[{q:"Is he wearing a coat? Yes, he ___.",o:["is","isn't"],a:"is",p:"🧥"},{q:"Is she wearing a hat? No, she ___.",o:["isn't","is"],a:"isn't"},{q:"I'm ___ my gloves.",o:["wearing","wear"],a:"wearing",p:"🧤"},{q:"It's ___! Put on your scarf.",o:["cold","hot"],a:"cold",p:"🥶"}]},
+ {id:"s9",n:"9",title:"My hobbies",hu:"A hobbijaim",color:"#E5484D",icon:"⚽",sticker:"🐬",
+  groups:[{t:"Hobbies",hu:"Hobbik",w:`play football|focizni|⚽; run|futni|🏃; paint a picture|képet festeni|🎨; swim|úszni|🏊; read|olvasni|📖; dance|táncolni|💃`},
+   {t:"-ing",hu:"Éppen most…",w:`playing football|focizik|⚽; running|fut|🏃; painting|fest|🎨; swimming|úszik|🏊; reading|olvas|📖; dancing|táncol|💃; watching films|filmet néz|🎬; playing computer games|számítógépes játékot játszik|🎮`}],
+  sents:[["I'm dancing!","Táncolok!"],["I'm swimming.","Úszom."],["I'm running.","Futok."],["Are you swimming?","Úszol?"],["Yes, I am.","Igen."],["No, I'm not.","Nem."],["Are you dancing? Yes, I am!","Táncolsz? Igen!"],["Look, I'm playing football!","Nézd, focizom!"],["Do you like reading? Yes, I do.","Szeretsz olvasni? Igen."]],
+  gaps:[{q:"Are you running? No, I'm ___.",o:["not","no"],a:"not",p:"🏃"},{q:"Are you swimming? Yes, I ___.",o:["am","is"],a:"am",p:"🏊"},{q:"I'm ___!",o:["dancing","dance"],a:"dancing",p:"💃"},{q:"Look, I'm ___ football!",o:["playing","play"],a:"playing",p:"⚽"}]},
+]}];
+</script>
+<style>
+.emo{display:inline-block;line-height:1;white-space:nowrap}
+.countpic{display:flex;flex-wrap:wrap;gap:4px;align-items:center;max-width:240px;font-size:1.7rem;line-height:1}
+.countpic svg{width:30px;height:30px}
+.countpic .cdot svg{width:34px;height:34px}
+.bigpic .countpic{font-size:1.25rem;max-width:118px;justify-content:center}
+.bigpic .countpic svg{width:22px;height:22px}
+.prompt-pic{min-width:132px;min-height:110px;border-radius:22px;background:var(--card);border:2px solid var(--line);display:grid;place-items:center;padding:10px;box-shadow:var(--shadow)}
+.prompt-pic svg{width:90px;height:90px}
+.gapq .blank{min-width:3.5em}
+.hello{display:flex;gap:12px;align-items:center;margin-top:16px}
+.hello .ele-big{font-size:3.2rem;line-height:1;flex:none;animation:hop 1.4s ease-in-out 1}
+.hello .msg{min-width:0;flex:1}
+.hello b{font-family:var(--f-display);font-size:1.3rem;display:block}
+.lvl{margin-top:6px;font-weight:800;font-size:.85rem;color:var(--ink-soft)}
+.lvlbar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:4px}
+.lvlbar i{display:block;height:100%;background:var(--gold);border-radius:99px}
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin-top:10px}
+.stk{border:2px solid var(--line);border-radius:16px;background:var(--card-2);padding:8px 4px;text-align:center;font-weight:800;font-size:.72rem;line-height:1.2;min-width:0;overflow-wrap:anywhere}
+.stk .se{font-size:2.3rem;display:block;line-height:1.2}
+.stk.lock{opacity:.55}.stk.lock .se{filter:grayscale(1) brightness(.6)}
+.stk.got{background:var(--card);border-color:var(--gold);box-shadow:0 3px 0 var(--gold)}
+.gaphu{display:block;font-size:.9rem;font-weight:700;color:var(--ink-soft);margin-top:4px}
+.famcode{font-family:var(--f-display);font-weight:800;font-size:1.5rem;letter-spacing:.08em;color:var(--accent);user-select:all}
+.bk{border-color:var(--accent);box-shadow:0 4px 0 var(--accent)}
+.bk-h{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.bk-h h2{font-size:1.45rem}
+.bk-h .gi{font-size:2.1rem;width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--card-2);flex:none}
+.bk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.bk-grid .field select{width:100%;min-width:0}
+.bk-grid .field:first-child{grid-column:1/-1}
+.chk{display:flex;gap:8px;align-items:center;font-weight:700;margin-top:12px}
+.chk input{width:20px;height:20px;accent-color:var(--accent)}
+.bk-go{font-size:1.25rem;padding:14px 30px}
+.stars-lg{font-size:1.4rem;color:var(--gold);letter-spacing:2px}
+.stars-lg .off{color:var(--line)}
+</style>
+<script>
+(()=>{"use strict";
+/* ---------- helpers ---------- */
+const $=(s,el=document)=>el.querySelector(s), $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rnd=n=>Math.floor(Math.random()*n), pick=a=>a[rnd(a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+const sample=(a,n)=>shuffle(a).slice(0,n);
+const norm=s=>String(s).toLowerCase().replace(/[’`]/g,"'").replace(/[\s\-.!?,]+/g,"");
+const normSent=s=>String(s).toLowerCase().replace(/[’`]/g,"'").replace(/\s+/g," ").trim();
+const dayKey=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const yesterday=()=>{const d=new Date();d.setDate(d.getDate()-1);return dayKey(d)};
+const graphemes=s=>{try{return [...new Intl.Segmenter().segment(s)].length}catch(e){return Math.max(1,Math.round([...s].length/2))}};
+const PRAISE=["Ügyes!","Szuper!","Nagyszerű!","Pompás!","Így tovább!","Telitalálat!","Nagyon jó!"];
+const OOPS=["Majdnem!","Semmi baj, később újra jön.","Ezt még gyakoroljuk."];
+
+/* ---------- pictures ---------- */
+const SHAPES=["triangle","circle","square","rectangle"];
+const SHAPE_FILL={circle:"#E53935",square:"#1E66F5",triangle:"#2E9E44",rectangle:"#FB8C00",star:"#FDD835",heart:"#D6409F",oval:"#8E44AD",diamond:"#12A4B6"};
+function starPts(){const p=[];for(let i=0;i<10;i++){const r=i%2?19:45,a=-Math.PI/2+i*Math.PI/5;p.push((50+r*Math.cos(a)).toFixed(1)+","+(53+r*Math.sin(a)).toFixed(1))}return p.join(" ")}
+const STAR=starPts();
+function shapeSVG(n,fill){fill=fill||SHAPE_FILL[n]||"#3D6BE0";const d={circle:'<circle cx="50" cy="50" r="40"/>',square:'<rect x="13" y="13" width="74" height="74" rx="3"/>',triangle:'<polygon points="50,10 92,86 8,86"/>',rectangle:'<rect x="5" y="27" width="90" height="46" rx="3"/>',star:'<polygon points="'+STAR+'"/>',heart:'<path d="M50 88C22 68 6 52 6 33 6 19 17 9 30 9c9 0 16 5 20 13 4-8 11-13 20-13 13 0 24 10 24 24 0 19-16 35-44 55z"/>',oval:'<ellipse cx="50" cy="50" rx="45" ry="28"/>',diamond:'<polygon points="50,5 88,50 50,95 12,50"/>'}[n];return '<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="'+fill+'" stroke="rgba(0,0,0,.28)" stroke-width="3" stroke-linejoin="round">'+d+'</g></svg>'}
+function swatchSVG(c){return '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 8c20 0 40 10 42 32 2 18-8 26-6 38 1 9-10 16-24 14-12-2-16-8-30-6C18 88 6 80 8 64c2-12 10-16 8-28C14 18 30 8 50 8z" fill="'+c+'" stroke="rgba(0,0,0,.3)" stroke-width="3"/></svg>'}
+function numPic(n){let dots="";for(let i=0;i<(n>12?0:n);i++){const row=i<6?0:1,col=i%6;dots+='<circle cx="'+(20+col*12)+'" cy="'+(78+row*12)+'" r="4.4" fill="#E9A800"/>'}return '<svg viewBox="0 0 100 100" aria-hidden="true"><text x="50" y="'+(n>12?68:n>6?58:62)+'" text-anchor="middle" font-size="56" font-weight="800" font-family="Baloo 2, sans-serif" fill="currentColor">'+n+'</text>'+dots+'</svg>'}
+const S2='stroke="rgba(0,0,0,.28)" stroke-width="2"';
+const ICONS={
+ rubber:'<svg viewBox="0 0 64 64" aria-hidden="true"><g transform="rotate(-18 32 32)"><rect x="8" y="22" width="48" height="22" rx="5" fill="#F48FB1"/><rect x="34" y="22" width="22" height="22" fill="#5C7CFA"/><rect x="8" y="22" width="48" height="22" rx="5" fill="none" '+S2+'/></g></svg>',
+ glue:'<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="22" y="22" width="20" height="36" rx="4" fill="#F2B705" '+S2+'/><rect x="25" y="32" width="14" height="14" rx="2" fill="#fff" opacity=".85"/><rect x="22" y="8" width="20" height="14" rx="3" fill="#E53935" '+S2+'/></svg>',
+ pcase:'<svg viewBox="0 0 64 64" aria-hidden="true"><polygon points="40,10 50,22 46,25 36,13" fill="#FB8C00"/><polygon points="50,22 54,28 46,25" fill="#E8C9A0"/><rect x="4" y="22" width="56" height="28" rx="14" fill="#7B4FD6" '+S2+'/><path d="M12 30h40" stroke="#FDD835" stroke-width="3" stroke-dasharray="3 3"/></svg>',
+ sharp:'<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="38" y="28" width="22" height="9" fill="#FDD835" '+S2+'/><polygon points="38,28 29,32.5 38,37" fill="#E8C9A0"/><rect x="8" y="19" width="32" height="27" rx="4" fill="#12A4B6" '+S2+'/><circle cx="24" cy="32.5" r="7" fill="#0B4F58"/></svg>',
+ table:'<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="18" width="56" height="8" rx="2" fill="#B07A4A" '+S2+'/><rect x="9" y="26" width="6" height="30" fill="#8A5A32"/><rect x="49" y="26" width="6" height="30" fill="#8A5A32"/></svg>',
+ desk:'<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="16" width="52" height="7" rx="2" fill="#C08A55" '+S2+'/><rect x="10" y="23" width="44" height="12" fill="#9A6B43"/><rect x="14" y="26" width="10" height="7" fill="#E53935"/><rect x="25" y="25" width="6" height="8" fill="#1E66F5"/><rect x="11" y="35" width="4" height="22" fill="#6B7280"/><rect x="49" y="35" width="4" height="22" fill="#6B7280"/></svg>',
+ floor:'<svg viewBox="0 0 64 64" aria-hidden="true"><polygon points="14,22 50,22 62,56 2,56" fill="#C9A27A" '+S2+'/><path d="M8 39h48M26 22l-6 34M38 22l6 34" stroke="rgba(0,0,0,.28)" stroke-width="2"/></svg>',
+ board:'<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="3" y="8" width="58" height="40" rx="3" fill="#8A5A32"/><rect x="7" y="12" width="50" height="32" fill="#2E6B4F"/><path d="M13 22h22M13 30h30M13 37h14" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".85"/><rect x="10" y="48" width="44" height="4" fill="#6B4426"/><rect x="40" y="45" width="8" height="3" fill="#fff"/></svg>'};
+function picHTML(p){if(!p)return"";const c=p[0];if(c==="#")return swatchSVG(COLORS[p.slice(1)]);if(c==="%")return shapeSVG(p.slice(1));if(c==="@")return ICONS[p.slice(1)]||"";if(/^n\d+$/.test(p))return numPic(+p.slice(1));const g=graphemes(p);return '<span class="emo"'+(g>1?' style="font-size:'+(1.5/Math.min(g,4)).toFixed(2)+'em"':'')+'>'+p+'</span>'}
+
+/* ---------- course index ---------- */
+const UNITS=[],UNIT={};
+const chunk=(arr,max)=>{const n=Math.ceil(arr.length/max),out=[];let i=0;for(let k=0;k<n;k++){const s=Math.ceil((arr.length-i)/(n-k));out.push(arr.slice(i,i+s));i+=s}return out};
+function firstGrapheme(t){try{return [...new Intl.Segmenter().segment(t)][0].segment}catch(e){const m=t.match(/^(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*|.)/u);return m?m[0]:t}}
+function groupIcon(g){const w=g.words.find(x=>x.p&&!/^[#%@]|^n\d/.test(x.p));if(w)return firstGrapheme(w.p);const f=g.words[0]&&g.words[0].p||"";return f[0]==="#"?"🎨":f[0]==="%"?"🔺":/^n\d/.test(f)?"🔢":f[0]==="@"?"✏️":"⭐"}
+BOOKS.forEach(b=>b.units.forEach(u=>{u.book=b;u.words=[];u.groups.forEach((g,gi)=>{g.words=g.w.split(";").map(s=>s.trim()).filter(Boolean).map(s=>{const [en,hu,p]=s.split("|").map(x=>(x||"").trim());return {en,hu,p,key:u.id+":"+en,unit:u,g:gi}});u.words.push(...g.words)});
+ const L=[];u.groups.forEach((g,gi)=>{const ch=chunk(g.words,8);ch.forEach((c,ci)=>L.push({id:u.id+":g"+gi+"-"+ci,kind:"words",words:c,name:g.hu+(ch.length>1?" "+(ci+1):""),icon:groupIcon(g),unit:u}))});
+ if(u.sents&&u.sents.length)L.push({id:u.id+":s",kind:"sents",name:"Mondatok",icon:"💬",unit:u});
+ L.push({id:u.id+":mix",kind:"mix",name:"Ismétlés",icon:"🏆",unit:u});u.lessons=L;UNITS.push(u);UNIT[u.id]=u}));
+const LESSON={};UNITS.forEach(u=>u.lessons.forEach(l=>LESSON[l.id]=l));
+const unitLabel=u=>/^\d+$/.test(u.n)?"Unit "+u.n:u.n;
+const COL_HU=COL_HU0;
+
+/* ---------- state ---------- */
+const LS="elli-english-v1",LSUI="elli-english-ui";
+const AVATARS=["🐘","🦒","🦊","🐼","🐯","🐰","🦁","🐧"];
+const newPlayer=(name,av)=>({name,av,xp:0,streak:0,last:"",days:{},goal:30,les:{},w:{},ex:[],best:{speed:0,mem:0},perfect:0,stk:[]});
+function defaultState(){const id="p"+Date.now().toString(36);return {v:1,cur:id,updatedAt:0,settings:{sound:true,voice:true,rate:.9},players:{[id]:newPlayer("Tanuló","🐘")}}}
+function loadLocal(){try{const s=JSON.parse(localStorage.getItem(LS)||"null");return s&&s.v===1?s:null}catch(e){return null}}
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+let S=loadLocal()||defaultState();
+function ensureState(){if(!S.settings)S.settings={sound:true,voice:true,rate:.9};if(!S.players||!Object.keys(S.players).length){const d=defaultState();S.players=d.players;S.cur=d.cur}if(!S.players[S.cur])S.cur=Object.keys(S.players)[0];for(const p of Object.values(S.players)){const d=newPlayer(p.name,p.av);for(const k in d)if(p[k]===undefined)p[k]=d[k]}}
+ensureState();
+let UI={sel:{shuffle:"u2",words:"u2",games:"u2",exam:"u2"},exp:{u0:1,u1:1,u2:1},bk:{g:"all",n:10,s:1}};
+try{const u=JSON.parse(localStorage.getItem(LSUI)||"null");if(u&&u.sel&&u.exp)UI=u}catch(e){}
+if(!UI.bk)UI.bk={g:"all",n:10,s:1};for(const k of ["shuffle","words","games","exam"])if(!UNIT[UI.sel[k]])UI.sel[k]="u2";if(UI.bk.g!=="all"&&!UNIT[UI.sel.shuffle].groups[+UI.bk.g])UI.bk.g="all";
+const saveUI=()=>{try{localStorage.setItem(LSUI,JSON.stringify(UI))}catch(e){}};
+const P=()=>S.players[S.cur];
+const MILESTONES=[{id:"first",e:"🌟",n:"Első lecke",h:"Fejezz be egy leckét!",ok:p=>Object.keys(p.les).length>0},{id:"perfect",e:"💎",n:"Hibátlan lecke",h:"Csinálj meg egy leckét hiba nélkül!",ok:p=>p.perfect>0},
+ {id:"s3",e:"🔥",n:"3 nap egymás után",h:"Gyakorolj 3 napig egymás után!",ok:p=>p.streak>=3},{id:"s7",e:"🏆",n:"7 nap egymás után",h:"Gyakorolj egy hétig minden nap!",ok:p=>p.streak>=7},
+ {id:"x100",e:"💯",n:"100 XP",h:"Gyűjts 100 XP-t!",ok:p=>p.xp>=100},{id:"x500",e:"🚀",n:"500 XP",h:"Gyűjts 500 XP-t!",ok:p=>p.xp>=500},{id:"x1000",e:"👑",n:"1000 XP",h:"Gyűjts 1000 XP-t!",ok:p=>p.xp>=1000},
+ {id:"test",e:"📝",n:"Első próbadolgozat",h:"Írj egy próbadolgozatot!",ok:p=>p.ex.length>0},{id:"test90",e:"🥇",n:"90% fölött",h:"Írj 90% feletti próbadolgozatot!",ok:p=>p.ex.some(e=>e.pct>=90)},
+ {id:"speed",e:"⚡",n:"Villám",h:"Érj el 15 pontot a Villámkörben!",ok:p=>p.best.speed>=15},{id:"mem",e:"🧠",n:"Memóriabajnok",h:"Nyerj Memóriát 10 lépésből!",ok:p=>p.best.mem>0&&p.best.mem<=10}];
+function stickerList(p=P()){return UNITS.map(u=>{const bk=u.book.id==="sm1"?"SM1":"Starter";return {id:"u:"+u.id,e:u.sticker||u.icon,n:u.title,h:bk+" "+unitLabel(u)+": csináld meg mind a "+u.lessons.length+" leckét!",ok:x=>u.lessons.every(l=>x.les[l.id])}}).concat(MILESTONES).map(t=>Object.assign({},t,{got:t.ok(p)}))}
+function checkStickers(){const p=P();if(!p.stk)p.stk=[];const fresh=stickerList(p).filter(t=>t.got&&!p.stk.includes(t.id));if(!fresh.length)return;fresh.forEach(t=>p.stk.push(t.id));
+ const t=fresh[fresh.length-1];setTimeout(()=>{toast("Új matrica: "+t.e+" "+t.n+"!");confetti()},$("#lesson").hidden?100:900)}
+const LEVEL_NAMES=["Kis felfedező","Szógyűjtő","Betűbajnok","Mondatépítő","Angol hős","Szuper elme","Nyelvzseni"];
+const levelOf=xp=>Math.floor(Math.sqrt(xp/20))+1, levelXP=l=>20*(l-1)*(l-1);
+function commit(){checkStickers();S.updatedAt=Date.now();saveLocal();scheduleCloud();renderHeader()}
+function addXP(n){const p=P(),t=dayKey();p.xp+=n;p.days[t]=(p.days[t]||0)+n;if(p.last!==t){p.streak=(p.last===yesterday()?p.streak:0)+1;p.last=t}const ks=Object.keys(p.days).sort();while(ks.length>60)delete p.days[ks.shift()]}
+const streakNow=(p=P())=>(p.last===dayKey()||p.last===yesterday())?p.streak:0;
+const todayXP=(p=P())=>p.days[dayKey()]||0;
+function markWord(w,ok){if(!w||!w.key)return;const p=P(),r=p.w[w.key]||[0,0];r[ok?0:1]++;p.w[w.key]=r}
+function mastery(w){const r=P().w[w.key];if(!r)return 0;return Math.max(0,Math.min(5,Math.round(r[0]-r[1]*1.5)))}
+
+/* ---------- cloud sync (db capability, private per viewer) ---------- */
+const cloud={kind:"claude",ref:null,code:null,status:"local",writing:false,pending:false,timer:0};
+/* Supabase family-code sync, used when the page runs outside claude.ai (e.g. on Vercel) */
+const SUPA={url:"https://isyklohdzymraedrzbhd.supabase.co",key:"sb_publishable_ECYCGXzw73BNsizzp1hujQ_Tw3OSVFA"},LSCODE="elli-english-family";
+const loadCode=()=>{try{return localStorage.getItem(LSCODE)}catch(e){return null}};
+const saveCode=()=>{try{cloud.code?localStorage.setItem(LSCODE,cloud.code):localStorage.removeItem(LSCODE)}catch(e){}};
+async function rpc(fn,args){const r=await fetch(SUPA.url+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:SUPA.key,"Content-Type":"application/json"},body:JSON.stringify(args||{})});const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch(e){}
+ if(!r.ok){const err=new Error((j&&j.message)||("HTTP "+r.status));err.code=j&&j.message;throw err}return j}
+async function initSupa(){cloud.kind="supa";cloud.code=loadCode();if(!cloud.code){cloud.status="local";renderSync();if(S.updatedAt>0){cloud.pending=true;scheduleCloud()}return}
+ cloud.status="loading";renderSync();
+ try{const r=await rpc("english_load",{p_code:cloud.code});cloud.status="ok";const d=r&&r.data;
+  if(d&&d.v===1&&(d.updatedAt||0)>(S.updatedAt||0)){S=d;ensureState();saveLocal();renderHeader();if($("#lesson").hidden)render()}
+  else if((S.updatedAt||0)>((d&&d.updatedAt)||0)){cloud.pending=true;scheduleCloud()}}
+ catch(e){if(e.code==="unknown_code"){cloud.code=null;saveCode();cloud.status="local"}else cloud.status="offline"}renderSync()}
+async function flushSupa(){if(cloud.writing||!cloud.pending)return;cloud.writing=true;cloud.pending=false;let again=false;
+ try{if(!cloud.code){cloud.code=await rpc("english_create_household");saveCode()}await rpc("english_save",{p_code:cloud.code,p_data:JSON.parse(JSON.stringify(S))});cloud.status="ok"}
+ catch(e){cloud.pending=true;if(e.code==="unknown_code"){cloud.code=null;saveCode();again=true}else cloud.status="offline"}
+ cloud.writing=false;renderSync();if(again||(cloud.pending&&cloud.status==="ok"))scheduleCloud()}
+async function joinFamily(raw){const k=String(raw||"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(k.length!==10){toast("A családi kód 10 karakter, pl. ABCDE-FGH23");return}const code=k.slice(0,5)+"-"+k.slice(5);
+ try{const r=await rpc("english_load",{p_code:code});const d=r&&r.data;if(d&&d.v===1){const local=S;S=d;ensureState();for(const [id,p] of Object.entries(local.players))if(!S.players[id]&&p.xp>0)S.players[id]=p}
+  cloud.code=code;saveCode();cloud.status="ok";commit();closeSheet();render();toast("Összekapcsolva: "+code)}
+ catch(e){toast(e.code==="unknown_code"?"Nincs ilyen családi kód.":"Nem sikerült kapcsolódni. Próbáld újra!")}}
+let dl=null,cloudTts=null,ttsOff=false;
+async function initCloud(c){try{const [db,user]=await Promise.all([c.use("db"),c.use("user")]);if(!db||!user)return;const uid=await user.id();if(!uid)return;
+ const ref=db.doc("data/users/"+uid+"/progress");cloud.status="loading";renderSync();
+ const to=setTimeout(()=>{if(cloud.status==="loading"){cloud.status="offline";renderSync()}},10000);
+ const snap=await ref.get();clearTimeout(to);cloud.ref=ref;cloud.status="ok";
+ if(snap.exists){const r=snap.data();if(r&&r.v===1&&(r.updatedAt||0)>(S.updatedAt||0)){S=JSON.parse(JSON.stringify(r));ensureState();saveLocal();renderHeader();if($("#lesson").hidden)render()}else if((S.updatedAt||0)>((r&&r.updatedAt)||0))cloud.pending=true}
+ else if(S.updatedAt>0)cloud.pending=true;renderSync()}catch(e){cloud.status="local";renderSync()}}
+function scheduleCloud(){if(cloud.kind==='supa'){cloud.pending=true;clearTimeout(cloud.timer);cloud.timer=setTimeout(flushSupa,1500);return}if(!cloud.ref)return;cloud.pending=true;clearTimeout(cloud.timer);cloud.timer=setTimeout(flushCloud,1500)}
+async function flushCloud(){if(!cloud.ref||cloud.writing||!cloud.pending)return;cloud.writing=true;cloud.pending=false;
+ try{await cloud.ref.set(JSON.parse(JSON.stringify(S)));cloud.status="ok"}catch(e){const c=e&&e.code;if(c==="invalid_argument"||c==="revoked"||c==="not_granted"){cloud.ref=null;cloud.status="local"}else if(c==="unavailable"){cloud.pending=true}else cloud.status="error"}
+ cloud.writing=false;renderSync();if(cloud.pending)scheduleCloud()}
+function syncText(){if(cloud.kind==="supa")return {ok:"☁️ Mentve a családi kódhoz: "+cloud.code+" – más eszközön is megvan.",loading:"☁️ Betöltés…",offline:"☁️ Most nincs kapcsolat – ezen az eszközön tárolom, és később mentem.",local:"💾 Az első befejezett lecke után családi kódot kapsz, amivel minden eszközön megvan a haladás."}[cloud.status]||"";return {ok:"☁️ Mentve a fiókodba – más eszközön is megvan.",loading:"☁️ Betöltés…",offline:"☁️ A mentés most nem érhető el, ezen az eszközön tárolom.",error:"☁️ A mentés nem sikerült, ezen az eszközön tárolom.",local:"💾 Ezen az eszközön tárolva."}[cloud.status]}
+function renderSync(){$$("[data-sync]").forEach(e=>e.textContent=syncText())}
+
+/* ---------- sound & voice ---------- */
+let AC=null;
+function beep(kind){if(!S.settings.sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const seq={ok:[[660,0,.09],[990,.09,.16]],no:[[220,0,.16],[175,.12,.22]],done:[[523,0,.12],[659,.12,.12],[784,.24,.12],[1047,.36,.32]],tap:[[880,0,.05]]}[kind];const t0=AC.currentTime+.01;
+ seq.forEach(([f,st,du])=>{const o=AC.createOscillator(),g=AC.createGain();o.type=kind==="no"?"square":"triangle";o.frequency.value=f;g.gain.setValueAtTime(.0001,t0+st);g.gain.exponentialRampToValueAtTime(kind==="no"?.05:.16,t0+st+.015);g.gain.exponentialRampToValueAtTime(.0001,t0+st+du);o.connect(g).connect(AC.destination);o.start(t0+st);o.stop(t0+st+du+.03)})}catch(e){}}
+const synth=("speechSynthesis" in window)?window.speechSynthesis:null;
+const canSpeak=()=>S.settings.voice&&!ttsOff&&!!(cloudTts||synth);
+function pickVoice(){if(!synth)return null;const vs=synth.getVoices();return vs.find(v=>/en[-_]GB/i.test(v.lang)&&/female|Serena|Kate|Libby|Sonia|Martha|UK English Female/i.test(v.name))||vs.find(v=>/en[-_]GB/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null}
+function browserSay(t){if(!synth)return;try{synth.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-GB";const v=pickVoice();if(v)u.voice=v;u.rate=S.settings.rate;synth.speak(u)}catch(e){}}
+function say(t){if(!t||!S.settings.voice||ttsOff)return;if(cloudTts){cloudTts.speak(t,{language:"en",rate:S.settings.rate}).catch(e=>{const c=e&&e.code;if(c==="not_granted"){ttsOff=true;refreshSpeakers()}else if(c==="rate_limited"||c==="unavailable"||c==="upstream_error"||c==="no_gesture")browserSay(t)});return}browserSay(t)}
+function refreshSpeakers(){$$(".speak").forEach(b=>b.hidden=!canSpeak())}
+const spk=(text,cls="")=>'<button class="speak '+cls+'" data-act="say" data-say="'+esc(text)+'" aria-label="Meghallgatom"'+(canSpeak()?"":" hidden")+'>🔊</button>';
+
+/* ---------- small UI bits ---------- */
+let toastT=0;
+function toast(m){let t=$(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2400)}
+function sheet(html){closeSheet();const bg=document.createElement("div");bg.className="sheet-bg";bg.innerHTML='<div class="sheet" role="dialog" aria-modal="true">'+html+'</div>';bg.addEventListener("click",e=>{if(e.target===bg)closeSheet()});document.body.appendChild(bg);const f=bg.querySelector("input,button");f&&f.focus({preventScroll:true});renderSync()}
+function closeSheet(){$$(".sheet-bg").forEach(e=>e.remove())}
+function confetti(){if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;const c=document.createElement("canvas");c.className="confetti";document.body.appendChild(c);const x=c.getContext("2d");const W=c.width=innerWidth*devicePixelRatio,H=c.height=innerHeight*devicePixelRatio;const cols=["#E53935","#FDD835","#1E66F5","#2E9E44","#FB8C00","#D6409F"];
+ const ps=Array.from({length:90},()=>({x:W/2+(Math.random()-.5)*W*.3,y:H*.35,vx:(Math.random()-.5)*16*devicePixelRatio,vy:(-Math.random()*14-6)*devicePixelRatio,r:(4+Math.random()*5)*devicePixelRatio,c:pick(cols),a:Math.random()*6}));let f=0;
+ (function step(){x.clearRect(0,0,W,H);ps.forEach(p=>{p.vy+=.5*devicePixelRatio;p.x+=p.vx;p.y+=p.vy;p.a+=.2;x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.c;x.fillRect(-p.r,-p.r/2,p.r*2,p.r);x.restore()});if(++f<100)requestAnimationFrame(step);else c.remove()})()}
+
+/* ---------- header ---------- */
+function renderHeader(){const p=P();$("#hAv").textContent=p.av;$("#hName").textContent=p.name;const st=streakNow();const hs=$("#hStreak");hs.classList.toggle("off",p.last!==dayKey());hs.lastElementChild.textContent=st;hs.title=st?st+" napos sorozat":"Ma még nem gyakoroltál";
+ $("#hXp span").textContent=p.xp;const fr=Math.min(1,todayXP()/p.goal);$("#hRing").setAttribute("stroke-dashoffset",(94.25*(1-fr)).toFixed(1));$("#hRingT").textContent=fr>=1?"✓":"";$(".ring").setAttribute("aria-label","Napi cél: "+todayXP()+" / "+p.goal+" XP");
+ $("#hSound").textContent=S.settings.sound?"🔊":"🔇"}
+
+/* =====================================================================
+   Question specs & lesson builders
+   ===================================================================== */
+function distractors(w,n,filter){const pool=w.unit.words;const ok=x=>x!==w&&x.en!==w.en&&filter(x);const same=pool.filter(x=>ok(x)&&x.g===w.g),other=pool.filter(x=>ok(x)&&x.g!==w.g);let r=sample(same,n);if(r.length<n)r=r.concat(sample(other,n-r.length));const seen=new Set([w.en]);return r.filter(x=>!seen.has(x.en)&&seen.add(x.en))}
+function recogSpec(w){const t=w.p?["pic2word","word2pic","pic2word"]:["hu2en","en2hu","hu2en"];if(canSpeak())t.push("listen");let type=pick(t);
+ const needPic=type==="word2pic"||(type==="listen"&&w.p);let ds=distractors(w,3,x=>needPic?(x.p&&x.p!==w.p):type==="en2hu"?x.hu!==w.hu:(!w.p||x.p!==w.p));
+ if(ds.length<1){type=w.p?"pic2word":"hu2en";ds=distractors(w,3,()=>true)}return {type,w,opts:shuffle([w,...ds])}}
+function prodSpec(w){const letters=w.en.replace(/[\s\-']/g,"");if(/\s/.test(w.en)&&letters.length>10)return {type:"order",tokens:w.en.split(" "),extra:[],answer:w.en,hu:w.hu,pic:w.p,w,sayText:w.en};if(letters.length>12)return {type:"type",w};return Math.random()<.7?{type:"spell",w}:{type:"type",w}}
+const SWAP={his:"her",her:"his",His:"Her",Her:"His",in:"on",on:"in",is:"are",are:"is",do:"does"};
+function orderSpec(s){const tokens=s[0].split(" ");const sw=tokens.find(t=>SWAP[t]);const extra=sw&&Math.random()<.6?[SWAP[sw]]:[];return {type:"order",tokens,extra,answer:s[0],hu:s[1],sayText:s[0]}}
+function riddleSpecs(u,words,n){if(!u.riddles)return[];const set=new Set(words.map(w=>w.en));return sample(u.riddles.filter(r=>set.has(r[0])),n).map(([en,text])=>{const w=u.words.find(x=>x.en===en);return {type:"riddle",text,w,opts:shuffle([w,...distractors(w,3,x=>x.g===w.g)])}})}
+/* generated sentence items */
+const SIZE_TOYS=[["kite","🪁"],["ball","⚽"],["car","🚗"],["monster","👾"],["teddy","🧸"],["plane","✈️"],["doll","🪆"],["bike","🚲"],["train","🚂"]];
+const sizePic=(e,big)=>'<span class="emo" style="font-size:'+(big?3.4:1.35)+'rem">'+e+'</span>';
+const trainPic=long=>'<span class="emo" style="font-size:'+(long?1.15:1.6)+'rem">🚂'+"🚃".repeat(long?4:1)+'</span>';
+const art=w=>/^[aeiou]/i.test(w)?"an":"a";
+const itsA=(adjs,noun)=>"It's "+art(adjs[0]||noun)+" "+adjs.concat(noun).join(" ")+".";
+const PAINT=["blue","orange","pink","yellow","green","purple"];
+function adjItem(kind){
+ if(kind==="size"){const [en,e]=pick(SIZE_TOYS),big=Math.random()<.5,other=pick(SIZE_TOYS.filter(t=>t[0]!==en))[0];return {text:itsA([big?"big":"small"],en),right:sizePic(e,big),wrong:sizePic(e,!big),adj:big?"big":"small",opp:big?"small":"big",noun:en,otherNoun:other}}
+ if(kind==="train"){const long=Math.random()<.5;return {text:itsA([long?"long":"short"],"train"),right:trainPic(long),wrong:trainPic(!long),adj:long?"long":"short",opp:long?"short":"long",noun:"train",otherNoun:"boat"}}
+ if(kind==="colour"){const shp=pick(SHAPES),[c1,c2]=sample(PAINT,2);return {text:itsA([c1],shp),right:shapeSVG(shp,COLORS[c1]),wrong:shapeSVG(shp,COLORS[c2]),adj:c1,opp:c2,noun:shp,otherNoun:pick(SHAPES.filter(s=>s!==shp))}}
+ const c=pick(PAINT),[s1,s2]=sample(SHAPES,2);return {text:itsA([c],s1),right:shapeSVG(s1,COLORS[c]),wrong:shapeSVG(s2,COLORS[c]),adj:c,opp:pick(PAINT.filter(x=>x!==c)),noun:s1,otherNoun:s2}}
+function adjSpecs(n){const out=[];const kinds=shuffle(["size","train","colour","shape","size"]);for(let i=0;i<n;i++){const it=adjItem(kinds[i%kinds.length]);const r=i%3;
+ if(r===0)out.push({type:"pickPic",text:it.text,opts:shuffle([{html:it.right,ok:1},{html:it.wrong}]),sayText:it.text});
+ else if(r===1)out.push({type:"pickSent",html:it.right,a:it.text,opts:shuffle([it.text,itsA([it.opp],it.noun),itsA([it.adj],it.otherNoun)]),sayText:it.text});
+ else out.push({type:"order",tokens:it.text.split(" "),extra:[it.opp],answer:it.text,hu:"Mit látsz a képen?",picHTML:it.right,sayText:it.text})}return out}
+const COUNT_OBJ=[["pencil","pencils","ceruza","✏️"],["book","books","könyv","📕"],["ruler","rulers","vonalzó","📏"],["crayon","crayons","zsírkréta","🖍️"],["bag","bags","táska","🎒"],["rubber","rubbers","radír","@rubber"]];
+function countSpec(){const n=1+rnd(10),[s,pl,hu,e]=pick(COUNT_OBJ),c=pick(Object.keys(COL_HU));const ans=NUM_EN[n]+" "+c+" "+(n===1?s:pl);
+ return {type:"order",tokens:ans.split(" "),extra:[n===1?pl:s],answer:ans,hu:NUM_HU_ATTR[n]+" "+COL_HU[c]+" "+hu,picHTML:'<div class="countpic">'+Array(n).fill(picHTML(e)).join("")+'<span class="cdot">'+swatchSVG(COLORS[c])+'</span></div>',sayText:ans}}
+const VEG=[["pen","pens","🖊️","toll"],["pencil","pencils","✏️","ceruza"],["book","books","📕","könyv"],["cake","cakes","🍰","süti"],["pear","pears","🍐","körte"],["lion","lions","🦁","oroszlán"]];
+function basketSpec(){const n=1+rnd(6),[s,pl,e,hu]=pick(VEG);const ans=n===1?"There's a "+s+".":"There are "+NUM_EN[n]+" "+pl+".";
+ return {type:"order",tokens:ans.split(" "),extra:n===1?[pl+"."]:["is",s+"."],answer:ans,hu:n===1?"Van egy "+hu+".":"Van "+NUM_HU_ATTR[n]+" "+hu+".",picHTML:'<div class="countpic">'+Array(n).fill(e).join("")+'</div>',sayText:ans}}
+
+const ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),DAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+function alphaSpec(){const i=1+rnd(24),after=Math.random()<.5,L=ABC[i],a=after?ABC[i+1]:ABC[i-1];return {type:"gap",q:"What's "+(after?"after":"before")+" '"+L+"'? '___'",o:shuffle([a,after?ABC[i-1]:ABC[i+1],ABC[(i+5)%26]]),a,hu:after?"Melyik betű jön utána?":"Melyik betű van előtte?"}}
+function daySpec(){const i=rnd(6);return {type:"gap",q:DAYS[i]+", ___ …",o:shuffle([DAYS[i+1],DAYS[(i+3)%7],DAYS[(i+5)%7]]),a:DAYS[i+1],hu:"Melyik nap jön utána?"}}
+function wordsLesson(words,u){const ws=shuffle(words);const items=ws.map(recogSpec);const pp=ws.filter(w=>w.p);
+ const pairs=pp.length>=4?[{type:"pairs",words:sample(pp,Math.min(5,pp.length)),mode:"pic"}]:ws.length>=4?[{type:"pairs",words:sample(ws,Math.min(5,ws.length)),mode:"hu"}]:[];
+ const prod=shuffle(ws).slice(0,Math.ceil(ws.length*.6)).map(prodSpec);const rid=riddleSpecs(u||ws[0].unit,ws,2);return [...items,...pairs,...rid,...prod]}
+function sentsLesson(u){let it=sample(u.sents,u.adj||u.count||u.baskets?4:6).map(orderSpec).concat(sample(u.gaps||[],4).map(g=>Object.assign({type:"gap"},g)));
+ if(u.adj)it=it.concat(adjSpecs(4));if(u.count)it=it.concat([countSpec(),countSpec(),countSpec()]);if(u.baskets)it=it.concat([basketSpec(),basketSpec()]);if(u.alpha)it=it.concat([alphaSpec(),alphaSpec()]);if(u.days)it=it.concat([daySpec(),daySpec()]);
+ it=it.concat(riddleSpecs(u,u.words,2));return shuffle(it).slice(0,13)}
+function mixLesson(u){const ws=sample(u.words,10);const items=ws.map(w=>Math.random()<.5?recogSpec(w):prodSpec(w));const pp=u.words.filter(w=>w.p);
+ if(pp.length>=4)items.splice(4,0,{type:"pairs",words:sample(pp,5),mode:"pic"});const extra=sample(u.sents||[],2).map(orderSpec).concat(sample(u.gaps||[],1).map(g=>Object.assign({type:"gap"},g)));if(u.adj)extra.push(...adjSpecs(2));return items.concat(extra)}
+function examPractice(uid){const u=UNIT[uid]||UNIT.u2;
+ if(u.id==="u2"){const shapes=u.groups.find(g=>g.t==="Shapes").words;return shuffle([...sample(u.gaps.slice(0,7),4).map(x=>Object.assign({type:"gap"},x)),...adjSpecs(4),...sample(shapes,2).map(w=>({type:"spell",w})),
+  orderSpec(["What's her favourite toy?","Mi a kedvenc játéka? (lány)"]),orderSpec(["His name's Max.","A neve Max."]),Object.assign({type:"gap"},pick(UNIT.u0.gaps.slice(0,4)))])}
+ const extra=u.alpha?[alphaSpec()]:u.days?[daySpec()]:u.baskets?[basketSpec()]:[];
+ return shuffle([...sample(u.words,6).map(w=>Math.random()<.5?recogSpec(w):prodSpec(w)),...sample(u.gaps||[],4).map(g=>Object.assign({type:"gap"},g)),...sample(u.sents,2).map(orderSpec),...extra])}
+function weakWords(){const p=P();return UNITS.flatMap(u=>u.words).filter(w=>p.w[w.key]&&p.w[w.key][1]>0).sort((a,b)=>{const ra=p.w[a.key],rb=p.w[b.key];return (rb[1]*2-rb[0])-(ra[1]*2-ra[0])}).slice(0,8)}
+
+/* =====================================================================
+   Lesson player
+   ===================================================================== */
+const L={};let Q=null;
+function startLesson(o){Object.assign(L,{title:"",lessonId:null,xp:10,mode:"lesson"},o,{queue:o.items.slice(),done:0,total:o.items.length,mistakes:0,firstTry:0,combo:0,best:0,state:"ask"});
+ $("#lesson").hidden=false;document.documentElement.style.overflow="hidden";if(L.mode==="speed"){L.score=0;L.end=Date.now()+60000;tickSpeed()}nextQ()}
+function closeLesson(){$("#lesson").hidden=true;document.documentElement.style.overflow="";clearTimeout(L.tk);L.state="closed";try{synth&&synth.cancel()}catch(e){}render()}
+function setBar(){const tot=L.done+L.queue.length+(L.state==="ask"?1:0);$("#lBar").style.width=(L.mode==="speed"?Math.max(0,(L.end-Date.now())/600):100*L.done/Math.max(1,tot))+"%";$("#lCombo").textContent=L.mode==="speed"?"⭐ "+L.score:(L.combo>=3?"🔥"+L.combo:"")}
+function foot(state,html,btn){const f=$("#lFoot");f.className="l-foot"+(state==="ok"?" ok":state==="no"?" no":"");$("#lFb").innerHTML=html||"";const b=$("#lBtn");b.textContent=btn||"Ellenőrzés";b.className="btn "+(state==="ok"?"good":state==="no"?"bad":"primary");b.disabled=state==="ask"}
+function ready(on){$("#lBtn").disabled=!on}
+function nextQ(){if(!L.queue.length||(L.mode==="speed"&&Date.now()>=L.end))return finishLesson();const spec=L.queue.shift();L.state="ask";Q={spec};setBar();foot("ask","",L.mode==="speed"?"":"Ellenőrzés");$("#lBtn").hidden=L.mode==="speed";renderQ();$(".l-body").scrollTop=0}
+const body=()=>$("#lBody");
+function promptWord(w,showSpeak){return '<div class="prompt">'+(w.p?'<div class="bigpic">'+picHTML(w.p)+'</div>':"")+'<div class="bubble hu">'+esc(w.hu)+(showSpeak?spk(w.en):"")+'</div></div>'}
+function renderQ(){const s=Q.spec,t=s.type;
+ if(t==="pic2word")return choice("Mi ez angolul?",'<div class="prompt"><div class="bigpic">'+picHTML(s.w.p)+'</div></div>',s.opts.map(o=>({html:esc(o.en),say:o.en})),s.opts.indexOf(s.w),s.w);
+ if(t==="word2pic"){say(s.w.en);return choice("Melyik kép ez?",'<div class="prompt"><span class="ele-sm">🐘</span><div class="bubble">'+esc(s.w.en)+spk(s.w.en)+'</div></div>',s.opts.map(o=>({html:'<span class="pic">'+picHTML(o.p)+'</span>'})),s.opts.indexOf(s.w),s.w)}
+ if(t==="listen"){say(s.w.en);const pics=s.opts.every(o=>o.p);return choice("Mit hallasz?",'<div class="prompt" style="justify-content:center">'+spk(s.w.en,"huge")+'</div>',s.opts.map(o=>({html:pics?'<span class="pic">'+picHTML(o.p)+'</span>':esc(o.en)})),s.opts.indexOf(s.w),s.w)}
+ if(t==="hu2en")return choice("Hogy mondod angolul?",'<div class="prompt"><span class="ele-sm">🐘</span><div class="bubble hu">'+esc(s.w.hu)+'</div></div>',s.opts.map(o=>({html:esc(o.en),say:o.en})),s.opts.indexOf(s.w),s.w);
+ if(t==="en2hu"){say(s.w.en);return choice("Mit jelent?",'<div class="prompt"><span class="ele-sm">🐘</span><div class="bubble">'+esc(s.w.en)+spk(s.w.en)+'</div></div>',s.opts.map(o=>({html:esc(o.hu)})),s.opts.indexOf(s.w),s.w)}
+ if(t==="riddle")return choice("Mire gondolok?",'<div class="prompt"><span class="ele-sm">🐘</span><div class="bubble">'+esc(s.text)+spk(s.text)+'</div></div>',s.opts.map(o=>({html:(o.p?'<span class="pic" style="height:56px;font-size:2.4rem">'+picHTML(o.p)+'</span>':"")+esc(o.en),say:o.en})),s.opts.indexOf(s.w),s.w);
+ if(t==="gap"){const o=shuffle(s.o);const q=esc(s.q).replace("___",'<span class="blank">&nbsp;</span>');Q.full=s.q.replace("___",s.a);return choice("Melyik szó hiányzik?",'<div class="prompt">'+(s.p?'<div class="prompt-pic" style="font-size:3rem">'+picHTML(s.p)+'</div>':'<span class="ele-sm">🐘</span>')+'<div class="bubble gapq">'+q+(s.hu?'<span class="gaphu">'+esc(s.hu)+'</span>':'')+'</div></div>',o.map(x=>({html:esc(x)})),o.indexOf(s.a),null,Q.full)}
+ if(t==="pickSent")return choice("Melyik mondat illik a képhez?",'<div class="prompt"><div class="prompt-pic">'+s.html+'</div></div>',s.opts.map(x=>({html:esc(x),say:x})),s.opts.indexOf(s.a),null,s.a,true);
+ if(t==="pickPic"){say(s.text);return choice("Melyik képhez illik?",'<div class="prompt"><span class="ele-sm">🐘</span><div class="bubble">'+esc(s.text)+spk(s.text)+'</div></div>',s.opts.map(o=>({html:'<span class="pic">'+o.html+'</span>'})),s.opts.findIndex(o=>o.ok),null,s.text)}
+ if(t==="spell")return spellQ(s);if(t==="type")return typeQ(s);if(t==="order")return orderQ(s);if(t==="pairs")return pairsQ(s)}
+/* choice */
+function choice(title,prompt,opts,correct,w,full,one){Q.sel=null;Q.correct=correct;Q.w=w;Q.full=full||(w?w.en:"");
+ body().innerHTML='<h2 class="q-title">'+title+'</h2>'+prompt+'<div class="opts'+(one?" one":"")+'">'+opts.map((o,i)=>'<button class="opt" data-act="opt" data-i="'+i+'" aria-pressed="false"'+(o.say?' data-say="'+esc(o.say)+'"':"")+'>'+o.html+'<span class="k">'+(i+1)+'</span></button>').join("")+'</div>';
+ Q.check=()=>{if(Q.sel==null)return null;const b=$$(".opt",body());b.forEach(x=>x.disabled=true);b[Q.correct].classList.add("right");if(Q.sel!==Q.correct)b[Q.sel].classList.add("wrong");
+  const right=b[Q.correct].cloneNode(true);right.querySelector(".k")&&right.querySelector(".k").remove();return {ok:Q.sel===Q.correct,show:w?w.en+" = "+w.hu:right.textContent.trim()||Q.full}}}
+/* spelling with letter tiles */
+function spellQ(s){const w=s.w,letters=[...w.en.replace(/[\s\-]/g,"")];let order=shuffle(letters.map((c,i)=>i));for(let k=0;k<6&&letters.length>2&&order.every((v,i)=>letters[v]===letters[i]);k++)order=shuffle(order);
+ Q.tiles=order.map(i=>({ch:letters[i],used:false}));Q.slots=letters.map(()=>null);Q.groups=w.en.split(/[\s\-]+/).map(x=>x.length);Q.letters=letters;Q.w=w;Q.full=w.en;
+ body().innerHTML='<h2 class="q-title">Rakd ki a szót!</h2>'+promptWord(w,false)+'<div id="spA"></div>';drawSpell();
+ Q.check=()=>{if(Q.slots.some(x=>x==null))return null;const got=Q.slots.map(i=>Q.tiles[i].ch).join("");const ok=got.toLowerCase()===letters.join("").toLowerCase();Q.locked=true;drawSpell(ok);return {ok,show:w.en+" = "+w.hu}}}
+function drawSpell(res){let k=0;const sl=Q.groups.map(n=>'<div class="slotgrp">'+Array.from({length:n},()=>{const i=k++,t=Q.slots[i];const cls=res==null?(t!=null?" filled":""):(Q.tiles[t]&&Q.tiles[t].ch.toLowerCase()===Q.letters[i].toLowerCase()?" right":" wrong");return '<button class="slot'+cls+'" data-act="slot" data-i="'+i+'" aria-label="'+(i+1)+'. betű">'+(t!=null?esc(Q.tiles[t].ch):"")+'</button>'}).join("")+'</div>').join("");
+ $("#spA").innerHTML='<div class="slots">'+sl+'</div><div class="bank">'+Q.tiles.map((t,i)=>'<button class="tile letter'+(t.used?" used":"")+'" data-act="tile" data-i="'+i+'">'+esc(t.ch)+'</button>').join("")+'</div>';ready(!Q.locked&&Q.slots.every(x=>x!=null))}
+function tapTile(i){if(Q.locked)return;const t=Q.tiles[i];if(!t||t.used)return;const e=Q.slots.indexOf(null);if(e<0)return;Q.slots[e]=i;t.used=true;beep("tap");drawSpell()}
+function tapSlot(i){if(Q.locked||Q.slots[i]==null)return;Q.tiles[Q.slots[i]].used=false;Q.slots[i]=null;drawSpell()}
+/* typing */
+function typeQ(s){const w=s.w;Q.w=w;Q.full=w.en;const hint=w.en.split(/([\s\-])/).map(p=>/[\s\-]/.test(p)?(p==="-"?" - ":"   "):Array(p.length).fill("_").join(" ")).join("");
+ body().innerHTML='<h2 class="q-title">Írd le angolul!</h2>'+promptWord(w,false)+'<div class="hintline" aria-hidden="true">'+hint+'</div><input class="typein" id="typeIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Válasz angolul">';
+ const inp=$("#typeIn");inp.addEventListener("input",()=>ready(!!inp.value.trim()));setTimeout(()=>inp.focus({preventScroll:true}),60);
+ Q.check=()=>{const v=inp.value.trim();if(!v)return null;inp.readOnly=true;const ok=norm(v)===norm(w.en);inp.style.borderColor=ok?"var(--good)":"var(--bad)";return {ok,show:w.en+" = "+w.hu}}}
+/* word order */
+function orderQ(s){Q.toks=shuffle(s.tokens.concat(s.extra||[]).map(t=>({t,used:false})));Q.placed=[];Q.n=s.tokens.length;Q.full=s.answer;Q.w=s.w||null;
+ const pic=s.picHTML?'<div class="prompt-pic">'+s.picHTML+'</div>':s.pic?'<div class="bigpic">'+picHTML(s.pic)+'</div>':'<span class="ele-sm">🐘</span>';
+ body().innerHTML='<h2 class="q-title">Rakd sorba a szavakat!</h2><div class="prompt">'+pic+'<div class="bubble hu">'+esc(s.hu)+(s.sayText?spk(s.sayText):"")+'</div></div><div id="ordA"></div>';drawOrder();
+ Q.check=()=>{if(Q.placed.length<Q.n)return null;const got=Q.placed.map(i=>Q.toks[i].t).join(" ");const ok=normSent(got)===normSent(s.answer);Q.locked=true;drawOrder(ok);return {ok,show:s.answer}}}
+function drawOrder(res){$("#ordA").innerHTML='<div class="answer-line'+(res==null?"":res?" ok":" bad")+'">'+Q.placed.map((i,k)=>'<button class="tile" data-act="placed" data-k="'+k+'">'+esc(Q.toks[i].t)+'</button>').join("")+'</div><div class="bank">'+Q.toks.map((t,i)=>'<button class="tile'+(t.used?" used":"")+'" data-act="tok" data-i="'+i+'">'+esc(t.t)+'</button>').join("")+'</div>';ready(!Q.locked&&Q.placed.length>=Q.n)}
+function tapTok(i){if(Q.locked)return;const t=Q.toks[i];if(!t||t.used)return;t.used=true;Q.placed.push(i);beep("tap");drawOrder()}
+function tapPlaced(k){if(Q.locked)return;const i=Q.placed.splice(k,1)[0];if(i!=null)Q.toks[i].used=false;drawOrder()}
+/* pairs */
+function pairsQ(s){Q.left=shuffle(s.words);Q.right=shuffle(s.words);Q.sel=null;Q.gone=new Set();Q.miss=0;Q.mode=s.mode;
+ body().innerHTML='<h2 class="q-title">Párosítsd!</h2><div class="pairs"><div class="col">'+Q.left.map(w=>'<button class="opt pair" data-act="pair" data-side="l" data-k="'+esc(w.key)+'">'+esc(w.en)+'</button>').join("")+'</div><div class="col">'+Q.right.map(w=>'<button class="opt pair" data-act="pair" data-side="r" data-k="'+esc(w.key)+'">'+(s.mode==="pic"?'<span class="pic" style="height:44px;font-size:2.2rem">'+picHTML(w.p)+'</span>':esc(w.hu))+'</button>').join("")+'</div></div>';
+ foot("ask",'<span class="muted">Koppints egy angol szóra, majd a párjára.</span>',"Ellenőrzés")}
+function tapPair(btn){if(Q.done)return;const side=btn.dataset.side,k=btn.dataset.k;if(Q.gone.has(k))return;
+ if(!Q.sel||Q.sel.side===side){$$(".pair[aria-pressed=true]",body()).forEach(b=>b.setAttribute("aria-pressed","false"));btn.setAttribute("aria-pressed","true");Q.sel={side,k,btn};if(side==="l"){const w=Q.left.find(x=>x.key===k);say(w.en)}return}
+ const a=Q.sel;Q.sel=null;a.btn.setAttribute("aria-pressed","false");
+ if(a.k===k){Q.gone.add(k);[a.btn,btn].forEach(b=>b.classList.add("gone"));const w=Q.left.find(x=>x.key===k);markWord(w,true);beep("tap");if(side==="r")say(w.en);
+  if(Q.gone.size===Q.left.length){Q.done=true;L.state="fb";if(Q.miss===0)L.firstTry++;L.mistakes+=Math.min(Q.miss,2);L.done++;beep("ok");foot("ok",'<span class="big">'+pick(PRAISE)+'</span>Minden pár megvan!',"Tovább");$("#lBtn").focus({preventScroll:true})}}
+ else{Q.miss++;beep("no");[a.btn,btn].forEach(b=>{b.classList.remove("flash-no");void b.offsetWidth;b.classList.add("flash-no")})}}
+/* check & continue */
+function doCheck(){if(!Q||!Q.check)return;const r=Q.check();if(!r)return;L.state="fb";const s=Q.spec;
+ if(r.ok){L.done++;L.combo++;L.best=Math.max(L.best,L.combo);if(!s.retry)L.firstTry++;beep("ok");markWord(Q.w,true);say(Q.full);foot("ok",'<span class="big">'+pick(PRAISE)+'</span>'+esc(r.show),"Tovább")}
+ else{L.combo=0;L.mistakes++;beep("no");markWord(Q.w,false);L.queue.push(Object.assign({},s,{retry:true}));foot("no",'<span class="big">'+pick(OOPS)+'</span>Helyes válasz: '+esc(r.show),"Tovább")}
+ setBar();$("#lBtn").focus({preventScroll:true})}
+function finishLesson(){L.state="end";clearTimeout(L.tk);let xp,html;
+ if(L.mode==="speed"){const p=P();const best=L.score>p.best.speed;if(best)p.best.speed=L.score;xp=Math.min(30,L.score);if(xp)addXP(xp);commit();beep("done");if(L.score>=5)confetti();
+  html='<div class="result"><div class="ele">🐘</div><h2>Lejárt az idő!</h2><p class="muted">'+(best?"Új csúcs! 🏅":"Legjobb eredményed: "+p.best.speed)+'</p><div class="res-stats"><div class="res-stat"><b>'+L.score+'</b><span>Helyes</span></div><div class="res-stat"><b>+'+xp+'</b><span>XP</span></div><div class="res-stat"><b>'+p.best.speed+'</b><span>Csúcs</span></div></div></div>'}
+ else{const acc=Math.round(100*L.firstTry/Math.max(1,L.total));const stars=L.mistakes<=1?3:L.mistakes<=3?2:1;xp=L.xp+(L.mistakes===0?5:0);addXP(xp);
+  if(L.lessonId){const p=P();p.les[L.lessonId]=Math.max(p.les[L.lessonId]||0,stars)}if(L.mistakes===0)P().perfect=(P().perfect||0)+1;commit();beep("done");confetti();
+  html='<div class="result"><div class="ele">🐘</div><h2>'+(L.mistakes===0?"Hibátlan! 💎":stars===3?"Szuper vagy! 🎉":stars===2?"Ügyes voltál! 👏":"Kész! Gyakorold még! 💪")+'</h2><p class="muted">'+esc(L.title)+'</p><div style="font-size:2rem;color:var(--gold)">'+"★".repeat(stars)+'<span style="color:var(--line)">'+"★".repeat(3-stars)+'</span></div><div class="res-stats"><div class="res-stat"><b>+'+xp+'</b><span>XP</span></div><div class="res-stat"><b>'+acc+'%</b><span>Elsőre jó</span></div><div class="res-stat"><b>'+L.best+'</b><span>Leghosszabb sorozat</span></div></div>'+(todayXP()>=P().goal?'<p class="note">🎯 A mai cél teljesítve! A sorozat: '+streakNow()+' nap 🔥</p>':'<p class="muted small">Mai cél: '+todayXP()+' / '+P().goal+' XP</p>')+'</div>'}
+ body().innerHTML=html;$("#lBtn").hidden=false;foot("end","","Tovább");$("#lBtn").disabled=false;$("#lBar").style.width="100%";$("#lCombo").textContent=""}
+function mainBtn(){if(L.state==="ask")doCheck();else if(L.state==="fb")nextQ();else if(L.state==="end")closeLesson()}
+function quitLesson(){if(L.state==="end")return closeLesson();sheet('<h2>Kilépsz a leckéből?</h2><p class="muted">A most megkezdett lecke nem számít bele a haladásba.</p><div class="row"><button class="btn bad" data-act="quitYes">Kilépek</button><button class="btn primary" data-act="closeSheet">Folytatom</button></div>')}
+/* speed round */
+function tickSpeed(){clearTimeout(L.tk);if(L.state==="closed"||L.state==="end")return;setBar();if(Date.now()>=L.end){finishLesson();return}L.tk=setTimeout(tickSpeed,250)}
+function speedItems(units){const ws=units.flatMap(u=>u.words.filter(w=>w.p));return shuffle(ws).concat(shuffle(ws)).slice(0,80).map(w=>{const ds=distractors(w,3,x=>x.p&&x.p!==w.p);return {type:"pic2word",w,opts:shuffle([w,...ds])}})}
+function speedAnswer(i){if(L.state!=="ask")return;const b=$$(".opt",body());Q.sel=i;const ok=i===Q.correct;b.forEach(x=>x.disabled=true);b[Q.correct].classList.add("right");if(!ok)b[i].classList.add("wrong");
+ if(ok){L.score++;beep("ok");markWord(Q.w,true)}else{beep("no");markWord(Q.w,false)}L.state="fb";setBar();setTimeout(()=>{if(L.state==="fb")nextQ()},ok?350:900)}
+
+/* =====================================================================
+   Views
+   ===================================================================== */
+const VIEWS={path:viewPath,shuffle:viewShuffle,games:viewGames,exam:viewExam,words:viewWords};
+let view="path";
+function render(){$("#view").innerHTML=VIEWS[view]();$$(".tab").forEach(b=>b.setAttribute("aria-current",b.dataset.go===view?"page":"false"));refreshSpeakers();renderSync()}
+function go(v){if(!VIEWS[v])v="path";view=v;if(location.hash!=="#"+v)location.hash=v;render();window.scrollTo(0,0)}
+addEventListener("hashchange",()=>{const v=location.hash.slice(1);if(VIEWS[v]&&v!==view){view=v;render();window.scrollTo(0,0)}});
+const starStr=n=>'★'.repeat(n)+'<span class="off">'+'★'.repeat(3-n)+'</span>';
+function nextLessonId(){const p=P();for(const u of UNITS){const l=u.lessons.find(l=>!p.les[l.id]);if(l)return l.id}return null}
+function helloHTML(){const p=P(),lv=levelOf(p.xp),a=levelXP(lv),b=levelXP(lv+1),t=todayXP(),st=streakNow(),noName=p.name==="Tanuló";
+ const msg=t>=p.goal?"Ma már teljesítetted a célt! 🎉 Jöhet még egy kör?":st?"🔥 "+st+" napos sorozat! Ma még "+(p.goal-t)+" XP kell a célhoz.":t?"Ma még "+(p.goal-t)+" XP, és meglesz a napi cél!":"Kezdjük! Ma "+p.goal+" XP a cél – gyerünk! 💪";
+ return '<div class="card hello"><span class="ele-big" aria-hidden="true">🐘</span><div class="msg"><b>Szia, '+esc(noName?"te ott":p.name)+'! '+p.av+'</b><span>'+msg+'</span>'+(noName?'<div style="margin-top:8px"><button class="btn sm" data-act="players">✏️ Add meg a neved</button></div>':'')+
+ '<div class="lvl">Szint '+lv+' · '+LEVEL_NAMES[Math.min(lv-1,LEVEL_NAMES.length-1)]+' · '+p.xp+' / '+b+' XP<div class="lvlbar"><i style="width:'+Math.round(100*(p.xp-a)/Math.max(1,b-a))+'%"></i></div></div></div></div>'}
+function viewPath(){const p=P(),nx=nextLessonId();
+ const eu=UNIT[UI.sel.exam]||UNIT.u2;let h='<div class="wrap">'+helloHTML()+'<div class="banner"><span class="ele" aria-hidden="true">🐘</span><div class="eyebrow" style="color:inherit;opacity:.85">Témazáróra készülsz?</div><h2>Írj próbadolgozatot!</h2><p>Bármelyik fejezetből: szavak, helyesírás, nyelvtan és mondatok – a végén megmutatom, mennyire megy.</p><div class="row"><button class="btn sm" data-go="exam">📝 Próbadolgozat</button><button class="btn sm" data-act="examPractice">⚡ Gyors gyakorlás · '+esc(unitLabel(eu))+'</button></div></div>';
+ for(const b of BOOKS){h+='<section class="book"><div class="book-h"><div class="book-cover" style="background:'+b.cover+'">SM<br>'+(b.id==="sm1"?"1":"St")+'</div><div><h2>'+esc(b.title)+'</h2><div class="muted small">'+esc(b.sub)+'</div></div></div>';
+  for(const u of b.units){const done=u.lessons.filter(l=>p.les[l.id]).length,open=!!UI.exp[u.id];
+   h+='<div class="unit" style="--u:'+u.color+';--u-ink:'+(u.ink||"#fff")+'"><button class="unit-band" style="width:100%;border:0;text-align:left" data-act="toggleUnit" data-u="'+u.id+'" aria-expanded="'+open+'"><span style="min-width:0;display:block"><span class="un" style="display:block">'+esc(unitLabel(u))+(u.exam?'<span class="tag">Témazáró</span>':'')+'</span><span class="h3">'+esc(u.title)+' · '+esc(u.hu)+'</span><span class="small" style="opacity:.92;display:block">'+done+' / '+u.lessons.length+' lecke kész '+(open?"▴":"▾")+'</span></span><span class="ui">'+u.icon+'</span></button>';
+   if(open){h+='<div class="trail">';u.lessons.forEach((l,i)=>{const st=p.les[l.id]||0,isN=l.id===nx;h+='<div class="node-wrap" style="--dx:'+Math.round(Math.sin(i*1.15)*62)+'px">'+(isN?'<span class="start-tip">Kezdd itt!</span>':'')+'<button class="node'+(st?" done":"")+(isN?" next":"")+'" data-lesson="'+l.id+'" aria-label="'+esc(l.name)+'">'+l.icon+'</button><span class="stars">'+starStr(st)+'</span><span class="lbl">'+esc(l.name)+'</span></div>'});
+    if(u.note)h+='<p class="note" style="margin-top:8px">'+esc(u.note)+'</p>';h+='</div>'}
+   h+='</div>'}h+='</section>'}
+ return h+'<p class="muted small" style="margin-top:28px">Nem hivatalos gyakorló oldal a Super Minds Second Edition (Starter és Level 1) könyvek fejezeteihez.</p><p class="sync" data-sync></p></div>'}
+function unitPicker(forView){return '<div class="field" style="margin-bottom:12px"><label for="selU-'+forView+'">Fejezet</label>'+unitSelect("selU-"+forView,UI.sel[forView])+'</div>'}
+function scramble(word){return word.split(" ").map(part=>{const ch=[...part];if(ch.length<3)return ch.reverse().join("");let s=ch;for(let k=0;k<8&&s.join("")===part;k++)s=shuffle(ch);return s.join("")}).join("  ")}
+function unitSelect(id,cur){return '<select id="'+id+'">'+BOOKS.map(b=>'<optgroup label="'+esc(b.title)+'">'+b.units.map(u=>'<option value="'+u.id+'"'+(u.id===cur?" selected":"")+'>'+esc(unitLabel(u))+' · '+esc(u.title)+' ('+esc(u.hu)+')</option>').join("")+'</optgroup>').join("")+'</select>'}
+function bkGroups(u){const g=UI.bk.g;return g==="all"||!u.groups[+g]?u.groups:[u.groups[+g]]}
+function viewShuffle(){const u=UNIT[UI.sel.shuffle],bk=UI.bk,gs=bkGroups(u),nw=gs.reduce((a,g)=>a+g.words.length,0),best=P().les["bk:"+u.id]||0;
+ let h='<div class="wrap"><div class="section-h"><h1>Betűkirakó</h1><span class="eyebrow">'+esc(unitLabel(u))+' · '+esc(u.title)+'</span></div>'+
+ '<div class="card bk"><div class="bk-h"><span class="gi">🔤</span><div><h2>Rakd ki a szót!</h2><div class="muted small">Rakd ki a szavakat az összekevert betűkből! Válassz fejezetet, és indulhat.</div></div></div>'+
+ '<div class="bk-grid"><div class="field"><label for="bkUnit">Fejezet</label>'+unitSelect("bkUnit",u.id)+'</div>'+
+ '<div class="field"><label for="bkGroup">Szavak</label><select id="bkGroup"><option value="all">Minden szó ('+u.words.length+')</option>'+u.groups.map((g,i)=>'<option value="'+i+'"'+(String(i)===String(bk.g)?" selected":"")+'>'+esc(g.hu)+' ('+g.words.length+')</option>').join("")+'</select></div>'+
+ '<div class="field"><label for="bkN">Hány szó?</label><select id="bkN">'+[6,10,15,0].map(n=>'<option value="'+n+'"'+(n===bk.n?" selected":"")+'>'+(n?n+" szó":"Mind ("+nw+")")+'</option>').join("")+'</select></div></div>'+
+ (u.sents&&u.sents.length?'<label class="chk"><input type="checkbox" id="bkS"'+(bk.s?" checked":"")+'> Mondatok is (3 mondat szórendje)</label>':'')+
+ '<div class="row" style="margin-top:14px"><button class="btn primary bk-go" data-act="shufflePlay">▶ Indítás</button><span class="stars-lg" aria-label="Legjobb eredmény ebben a fejezetben">'+starStr(best)+'</span></div></div>'+
+ '<div class="section-h"><h2>Kártyák</h2><span class="eyebrow">'+nw+' szó</span></div><p class="muted" style="margin-top:0">Találd ki a szót, aztán koppints a kártyára a megoldásért!</p>'+
+ '<div class="row" style="margin-bottom:14px"><button class="btn sm" data-act="reshuffle">🔀 Újrakeverés</button><button class="btn sm" data-act="sheet">⬇ Nyomtatható feladatlap</button></div>';
+ gs.forEach(g=>{h+='<h3 style="margin:14px 0 8px">'+esc(g.hu)+'</h3><div class="grid-cards">'+g.words.map(w=>'<button class="scard" data-act="reveal" data-say="'+esc(w.en)+'">'+(w.p?'<span class="hint">'+picHTML(w.p)+'</span>':'<span class="hint txt">'+esc(w.hu)+'</span>')+'<span class="scramble">'+esc(scramble(w.en))+'</span><span class="reveal hide">'+esc(w.en)+'</span></button>').join("")+'</div>'});
+ if(u.sents&&u.sents.length&&UI.bk.g==="all")h+='<h3 style="margin:20px 0 8px">Összekevert mondatok</h3><ul class="slist">'+u.sents.map(s=>'<li><span class="scr">'+esc(shuffle(s[0].split(" ")).join("  /  "))+'</span><span class="muted small">'+esc(s[1])+'</span><button class="btn sm" style="align-self:flex-start;margin-top:4px" data-act="revealSent" data-say="'+esc(s[0])+'">Megoldás</button></li>').join("")+'</ul>';
+ return h+'</div>'}
+function viewWords(){const u=UNIT[UI.sel.words],ww=weakWords();
+ let h='<div class="wrap"><div class="section-h"><h1>Szótár</h1><span class="eyebrow">'+u.words.length+' szó</span></div>'+unitPicker("words")+
+ (ww.length>=3?'<div class="card row" style="margin-bottom:12px"><div style="flex:1;min-width:0"><b>Gyenge szavak</b><div class="muted small">'+esc(ww.map(w=>w.en).join(", "))+'</div></div><button class="btn sm primary" data-act="weak">Gyakorlás</button></div>':"");
+ u.groups.forEach(g=>{h+='<h3 style="margin:14px 0 8px">'+esc(g.hu)+' <span class="muted small">('+esc(g.t)+')</span></h3><div class="grid-cards">'+g.words.map(w=>{const m=mastery(w);return '<div class="wcard"><span class="wp">'+picHTML(w.p||"")+'</span><span class="wt"><b>'+esc(w.en)+'</b><span class="muted small">'+esc(w.hu)+'</span><span class="mast" aria-label="Tudás: '+m+' / 5">'+Array.from({length:5},(_,i)=>'<i class="'+(i<m?"on":"")+'"></i>').join("")+'</span></span>'+spk(w.en)+'</div>'}).join("")+'</div>'});
+ return h+'</div>'}
+/* memory game */
+let MEM=null;
+function newMemory(){const u=UNIT[UI.sel.games];const ws=sample(u.words.filter(w=>w.p),6);if(ws.length<4){toast("Ebben a fejezetben kevés a képes szó – válassz másikat!");return}
+ MEM={cards:shuffle(ws.flatMap(w=>[{k:w.key,w,face:"pic"},{k:w.key,w,face:"word"}])),open:[],got:new Set(),moves:0,lock:false};render()}
+function memHTML(){if(!MEM)return"";return '<div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><b>Memória</b><span class="muted small">Lépések: '+MEM.moves+(P().best.mem?' · Legjobb: '+P().best.mem:'')+'</span></div><div class="mem" style="margin-top:10px">'+MEM.cards.map((c,i)=>{const open=MEM.open.includes(i)||MEM.got.has(c.k);return '<button class="mcard'+(open?" open":"")+(MEM.got.has(c.k)?" got":"")+'" data-act="mem" data-i="'+i+'" aria-label="'+(open?esc(c.w.en):"Kártya")+'">'+(open?(c.face==="pic"?'<span class="pv">'+picHTML(c.w.p)+'</span>':esc(c.w.en)):"🐘")+'</button>'}).join("")+'</div></div>'}
+function tapMem(i){if(!MEM||MEM.lock)return;const c=MEM.cards[i];if(MEM.got.has(c.k)||MEM.open.includes(i))return;MEM.open.push(i);if(c.face==="word")say(c.w.en);beep("tap");
+ if(MEM.open.length===2){MEM.moves++;const [a,b]=MEM.open.map(x=>MEM.cards[x]);if(a.k===b.k){MEM.got.add(a.k);MEM.open=[];markWord(a.w,true);say(a.w.en);beep("ok");
+   if(MEM.got.size*2===MEM.cards.length){const p=P();if(!p.best.mem||MEM.moves<p.best.mem)p.best.mem=MEM.moves;addXP(5);commit();confetti();setTimeout(()=>toast("Kész! "+MEM.moves+" lépés · +5 XP"),200)}}
+  else{MEM.lock=true;setTimeout(()=>{MEM.open=[];MEM.lock=false;render()},900)}}render()}
+function viewGames(){const p=P(),u=UNIT[UI.sel.games],ww=weakWords();
+ return '<div class="wrap"><div class="section-h"><h1>Játékok</h1><span class="eyebrow">'+esc(unitLabel(u))+' · '+esc(u.title)+'</span></div>'+unitPicker("games")+'<div class="stack">'+
+ '<div class="card game-card"><span class="gi">⚡</span><div class="gt"><h3>Villámkör</h3><div class="muted small">60 másodperc: hány képet ismersz fel? Csúcs: '+p.best.speed+'</div></div><button class="btn sm primary" data-act="speed">Indítás</button></div>'+
+ '<div class="card game-card"><span class="gi">🃏</span><div class="gt"><h3>Memória</h3><div class="muted small">Keresd meg a kép és az angol szó párját!</div></div><button class="btn sm primary" data-act="memory">'+(MEM?"Új játék":"Indítás")+'</button></div>'+
+ '<div class="card game-card"><span class="gi">🩹</span><div class="gt"><h3>Gyenge szavak</h3><div class="muted small">'+(ww.length>=3?esc(ww.slice(0,5).map(w=>w.en).join(", "))+"…":"Itt jelennek meg a szavak, amiket eltévesztettél.")+'</div></div><button class="btn sm primary" data-act="weak"'+(ww.length>=3?"":" disabled")+'>Gyakorlás</button></div>'+
+ '<div class="card game-card"><span class="gi">🔤</span><div class="gt"><h3>Betűkirakó</h3><div class="muted small">A fejezet szavai összekevert betűkből.</div></div><button class="btn sm primary" data-act="openBk">Megnyitás</button></div>'+
+ '</div>'+memHTML()+albumHTML()+'</div>'}
+function albumHTML(){const L=stickerList(),n=L.filter(t=>t.got).length;return '<div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3 style="font-size:1.25rem">🏅 Matricaalbum</h3><span class="eyebrow">'+n+' / '+L.length+'</span></div><p class="muted small" style="margin:4px 0 0">Minden befejezett fejezetért és nagy teljesítményért matrica jár. Gyűjtsd össze mind!</p><div class="album">'+L.map(t=>'<div class="stk '+(t.got?"got":"lock")+'" title="'+esc(t.got?t.n:t.h)+'"><span class="se">'+(t.got?t.e:"❔")+'</span>'+esc(t.got?t.n:t.h)+'</div>').join("")+'</div></div>'}
+
+/* =====================================================================
+   Unit 2 mock test (témazáró próbadolgozat)
+   ===================================================================== */
+let EX=null;
+const BOYS=["Ben","Mike","Alex","Mark","Nathan","Sam"],GIRLS=["Kate","Sophie","Olivia","Ruby","Jane","Mia"];
+const EX_INFO={u2:["Bemutatkozás: párbeszéd kiegészítése","his / her kérdések és válaszok (név, kedvenc játék)","Alakzatok: triangle, circle, square, rectangle","Melléknév + játék a mondatban, pl. It's a big kite."]};
+function hintOf(en){return en.split(/([\s\-])/).map(x=>/[\s\-]/.test(x)?(x==="-"?" - ":"   "):Array(x.length).fill("_").join(" ")).join("")}
+function makeExam(uid){const u=UNIT[uid]||UNIT.u2;return u.id==="u2"?makeU2Exam(u):makeGenericExam(u)}
+function finishExam(E){E.items.filter(x=>x.kind==="order").forEach(x=>x.toks=shuffle(x.answer.split(" ").concat(x.extra||[])));E.items.filter(x=>x.kind==="pickpic").forEach(x=>x.a=x.o.findIndex(o=>o.ok));
+ return Object.assign(E,{ans:{},active:(E.items.find(i=>i.kind==="blank")||{}).id||null,graded:false,score:null})}
+function makeGenericExam(u){const items=[],add=(sec,o)=>items.push(Object.assign({id:sec.toLowerCase()+items.filter(x=>x.sec===sec).length,sec},o));
+ const A=sample(u.words,5);A.forEach(w=>{const ds=distractors(w,2,x=>w.p?(x.p&&x.p!==w.p):x.hu!==w.hu);add("A",{kind:"choice",label:w.p?"Mi ez angolul?":"Hogy mondod angolul: „"+w.hu+"”?",html:w.p?picHTML(w.p):"",o:shuffle([w.en,...ds.map(d=>d.en)]),a:w.en})});
+ let pool=u.words.filter(w=>!A.includes(w)&&w.en.replace(/[\s\-]/g,"").length<=11);if(pool.length<4)pool=u.words.filter(w=>w.en.replace(/[\s\-]/g,"").length<=11);
+ sample(pool,4).forEach(w=>add("B",{kind:"type",label:"Írd le angolul!",html:w.p?picHTML(w.p):"",q:w.p?"":"„"+w.hu+"”",hint:hintOf(w.en),a:w.en}));
+ let gaps=sample(u.gaps||[],4).map(g=>({q:g.q,o:g.o,a:g.a,p:g.p,hu:g.hu}));if(u.alpha)gaps[gaps.length-1]=alphaSpec();if(u.days)gaps[gaps.length-1]=daySpec();
+ gaps.forEach(g=>add("C",{kind:"choice",label:"Melyik szó hiányzik?"+(g.hu?" ("+g.hu+")":""),html:g.p?picHTML(g.p):"",text:g.q,o:shuffle(g.o),a:g.a}));
+ sample(u.sents.filter(x=>{const n=x[0].split(" ").length;return n>=3&&n<=9}),3).forEach(x=>{const sw=x[0].split(" ").find(t=>SWAP[t]);add("D",{kind:"order",label:"Rakd sorba: „"+x[1]+"”",answer:x[0],extra:sw?[SWAP[sw]]:[]})});
+ return finishExam({unit:u.id,items,secs:[{k:"A",t:"Szavak",h:"Válaszd ki a helyes szót!"},{k:"B",t:"Helyesírás",h:"Írd le pontosan, betűről betűre!"},{k:"C",t:"Nyelvtan",h:"Melyik szó illik a mondatba?"},{k:"D",t:"Mondatok",h:"Koppints a szavakra a helyes sorrendben!"}]})}
+function makeU2Exam(u){const toys=u.groups[0].words.filter(t=>!/[\s\-]/.test(t.en)&&t.en.length<=7);const [t1,t2]=sample(toys,2);const age=pick(["six","seven","eight"]);
+ const boy={n:pick(BOYS),t:t1,face:"👦",pr:"his",Pr:"His"},girl={n:pick(GIRLS),t:t2,face:"👧",pr:"her",Pr:"Her"};const [k1,k2]=Math.random()<.5?[boy,girl]:[girl,boy];
+ const aName=pick(["Whisper","Misty","Flash","Thunder"]),bName=pick(GIRLS.concat(BOYS).filter(x=>x!==boy.n&&x!==girl.n));
+ const items=[],add=(sec,id,o)=>items.push(Object.assign({id,sec},o));
+ const ansA=["name","I'm","nice","old",age,"you"];ansA.forEach((a,i)=>add("A","bl"+i,{kind:"blank",a}));
+ const dlg=[["A",["Hi, I'm "+aName+". What's your ",0,"?"]],["B",[1," "+bName+"."]],["A",["What a ",2," name! How ",3," are you?"]],["B",["I'm ",4,". And how old are ",5,"?"]]];
+ add("B","b1",{kind:"seg",kid:k1,pre:"What's",post:"name?",o:["his","her"],a:k1.pr});
+ add("B","b2",{kind:"seg",kid:k1,pre:"",post:"name's "+k1.n+".",o:["His","Her"],a:k1.Pr});
+ add("B","b3",{kind:"seg",kid:k2,pre:"What's",post:"favourite toy?",o:["his","her"],a:k2.pr});
+ add("B","b4",{kind:"seg",kid:k2,pre:"",post:"favourite toy's "+k2.pr+" "+k2.t.en+".",o:["His","Her"],a:k2.Pr});
+ add("B","b5",{kind:"type",kid:k1,q:"What's "+k1.pr+" favourite toy?",pre:k1.Pr+" favourite toy's "+k1.pr,post:".",a:k1.t.en,hint:hintOf(k1.t.en)});
+ add("B","b6",{kind:"type",kid:k2,q:"What's "+k2.pr+" name?",pre:k2.Pr+" name's",post:".",a:k2.n});
+ add("B","b7",{kind:"order",label:"Kérdezd meg, mi a kedvenc játéka! ("+(k2.pr==="his"?"fiú":"lány")+")",answer:"What's "+k2.pr+" favourite toy?",extra:[k2.pr==="his"?"her":"his"]});
+ add("B","b8",{kind:"order",label:"Válaszolj: mi "+(k1.pr==="his"?"a fiú":"a lány")+" neve?",answer:k1.Pr+" name's "+k1.n+".",extra:[k1.pr==="his"?"Her":"His"]});
+ const shp=shuffle(SHAPES);shp.slice(0,2).forEach((x,i)=>add("C","c"+i,{kind:"choice",label:"Mi a neve?",html:shapeSVG(x),o:shuffle(SHAPES.slice()).slice(0,3).includes(x)?shuffle([x,...sample(SHAPES.filter(y=>y!==x),2)]):shuffle([x,...sample(SHAPES.filter(y=>y!==x),2)]),a:x}));
+ shp.slice(2).forEach((x,i)=>add("C","c"+(i+2),{kind:"type",label:"Írd le a nevét!",html:shapeSVG(x),hint:hintOf(x),a:x}));
+ shuffle(["size","train","colour","shape"]).forEach((k,i)=>{const it=adjItem(k);add("D","d"+i,{kind:"pickpic",text:it.text,o:shuffle([{h:it.right,ok:1},{h:it.wrong}])})});
+ ["size","colour"].forEach((k,i)=>{const it=adjItem(k);add("D","d"+(4+i),{kind:"order",html:it.right,label:"Írd le, mit látsz! Rakd sorba a szavakat.",answer:it.text,extra:[it.opp]})});
+ ["size","shape"].forEach((k,i)=>{const it=adjItem(k);add("D","d"+(6+i),{kind:"choice",label:"Melyik mondat illik a képhez?",html:it.right,o:shuffle([it.text,itsA([it.opp],it.noun),itsA([it.adj],it.otherNoun)]),a:it.text,sent:true})});
+ return finishExam({unit:u.id,items,dlg,bank:shuffle(ansA.concat(["his","big"])),boy,girl,secs:[{k:"A",t:"Bemutatkozás",h:"Egészítsd ki a párbeszédet! Koppints egy üres helyre, aztán a szóra.",dialogue:true},{k:"B",t:"His / her",h:"",kids:true},{k:"C",t:"Alakzatok",h:""},{k:"D",t:"Melléknevek és játékok",h:""}]})}
+const exItem=id=>EX.items.find(x=>x.id===id);
+function exOk(it){const v=EX.ans[it.id];if(v==null||v==="")return false;if(it.kind==="type")return norm(v)===norm(it.a);if(it.kind==="order")return normSent(v.map(i=>it.toks[i]).join(" "))===normSent(it.answer);return v===it.a}
+function gradeExam(){EX.graded=true;const secs={};EX.secs.forEach(x=>secs[x.k]=[0,0]);EX.items.forEach(it=>{const ok=exOk(it);it.ok=ok;secs[it.sec][1]++;if(ok)secs[it.sec][0]++});
+ const pts=Object.values(secs).reduce((a,x)=>a+x[0],0),max=EX.items.length,pct=Math.round(100*pts/max);EX.score={pts,max,pct,secs};
+ const p=P();p.ex.push({u:EX.unit,t:Date.now(),pct,pts,max});while(p.ex.length>40)p.ex.shift();addXP(20);commit();beep("done");if(pct>=75)confetti();render();setTimeout(()=>{const e=$("#exScore");e&&e.scrollIntoView({behavior:"smooth",block:"start"})},50)}
+const gradeOf=pct=>pct>=90?["5","jeles"]:pct>=75?["4","jó"]:pct>=60?["3","közepes"]:pct>=45?["2","elégséges"]:["1","elégtelen"];
+const cheerOf=pct=>pct>=90?"Fantasztikus! Készen állsz! 🏆":pct>=75?"Nagyon ügyes! Még egy kicsit, és tökéletes! 🌟":pct>=50?"Jó úton jársz! Nézd meg a hibákat, és próbáld újra! 💪":"Semmi baj! Gyakorolj a leckékkel, aztán írd meg újra! 🐘";
+function mark(it){if(!EX.graded)return"";return it.ok?'<span class="fix">✓ Helyes!</span>':'<span class="fix bad">✗ Helyesen: '+esc(it.kind==="order"?it.answer:it.kind==="pickpic"?"a zöld keretes kép":it.a)+'</span>'}
+function exItemHTML(it,n){const g=EX.graded;
+ const seg='<span class="seg'+(g?(it.ok?" right":" wrong"):"")+'">'+(it.o||[]).map(o=>'<button data-act="exSeg" data-id="'+it.id+'" data-v="'+esc(o)+'" aria-pressed="'+(EX.ans[it.id]===o)+'"'+(g?" disabled":"")+'>'+esc(o)+'</button>').join("")+'</span>';
+ const inp='<input class="ex-inp'+(g?(it.ok?" right":" wrong"):"")+'" id="ex-'+it.id+'" data-ex="'+it.id+'" value="'+esc(EX.ans[it.id]||"")+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Válasz"'+(g?" readonly":"")+'>';
+ const pic=it.html?'<span class="prompt-pic" style="min-width:96px;min-height:84px;padding:6px;font-size:3rem">'+it.html+'</span>':"";
+ const kid=it.kid?'<span title="'+(it.kid.pr==="his"?"fiú":"lány")+'">'+it.kid.face+'</span> ':"";
+ let h='<div class="ex-item"><span class="qn">'+(n+1)+'. '+esc(it.label||(it.kind==="seg"?"Válaszd ki: his vagy her?":it.kind==="type"?"Válaszolj a kérdésre!":it.kind==="pickpic"?"Melyik kép illik a mondathoz?":""))+'</span>';
+ if(it.kind==="seg")h+='<div style="font-size:1.15rem;font-weight:700">'+kid+esc(it.pre)+' '+seg+' '+esc(it.post)+'</div>';
+ else if(it.kind==="type")h+=(it.q?'<div style="font-size:1.1rem;font-weight:700">'+kid+esc(it.q)+'</div>':"")+'<div class="row">'+pic+'<span>'+(it.hint?'<span class="hintline">'+it.hint+'</span><br>':"")+'<span style="font-size:1.1rem;font-weight:700">'+esc(it.pre||"")+' '+inp+esc(it.post||"")+'</span></span></div>';
+ else if(it.kind==="order"){const pl=EX.ans[it.id]||[];h+=pic+'<div class="answer-line'+(g?(it.ok?" ok":" bad"):"")+'" style="min-height:52px;margin-bottom:8px">'+pl.map((i,k)=>'<button class="tile" data-act="exUntok" data-id="'+it.id+'" data-k="'+k+'"'+(g?" disabled":"")+'>'+esc(it.toks[i])+'</button>').join("")+'</div><div class="bank" style="justify-content:flex-start">'+it.toks.map((t,i)=>'<button class="tile'+(pl.includes(i)?" used":"")+'" data-act="exTok" data-id="'+it.id+'" data-i="'+i+'"'+(g?" disabled":"")+'>'+esc(t)+'</button>').join("")+'</div>'}
+ else if(it.kind==="pickpic")h+='<div style="font-weight:800;font-size:1.1rem"><i>'+esc(it.text)+'</i> '+spk(it.text)+'</div><div class="picopts">'+it.o.map((o,i)=>'<button class="picopt'+(g?(i===it.a?" right":EX.ans[it.id]===i?" wrong":""):"")+'" data-act="exPic" data-id="'+it.id+'" data-v="'+i+'" aria-pressed="'+(EX.ans[it.id]===i)+'" aria-label="'+(i+1)+'. kép"'+(g?" disabled":"")+'>'+o.h+'</button>').join("")+'</div>';
+ else{const txt=it.text?'<div class="bubble gapq" style="display:inline-block">'+esc(it.text).replace("___",'<span class="blank">&nbsp;</span>')+'</div>':"";
+  h+=(pic||txt?'<div class="row">'+pic+txt+'</div>':"")+(it.sent?'<div class="stack" style="gap:8px">'+it.o.map(o=>'<button class="opt" style="text-align:left;font-size:1.05rem;padding:10px 12px;min-height:0" data-act="exPick" data-id="'+it.id+'" data-v="'+esc(o)+'" aria-pressed="'+(EX.ans[it.id]===o)+'"'+(g?" disabled":"")+'>'+esc(o)+'</button>').join("")+'</div>'
+  :'<div class="row">'+it.o.map(o=>'<button class="tile"'+(EX.ans[it.id]===o?' style="border-color:var(--accent);box-shadow:0 3px 0 var(--accent)"':'')+' data-act="exPick" data-id="'+it.id+'" data-v="'+esc(o)+'"'+(g?" disabled":"")+'>'+esc(o)+'</button>').join("")+'</div>')}
+ return h+(it.kind==="pickpic"&&g?(it.ok?'<span class="fix">✓ Helyes!</span>':'<span class="fix bad">✗ A zöld keretes kép a helyes.</span>'):mark(it))+'</div>'}
+function viewExam(){if(!EX||EX.unit!==UI.sel.exam)EX=makeExam(UI.sel.exam);const g=EX.graded,p=P(),u=UNIT[EX.unit];
+ const hist=p.ex.filter(e=>(e.u||"u2")===EX.unit).slice(-8);
+ let h='<div class="wrap"><div class="section-h"><h1>Témazáró</h1><span class="eyebrow">'+EX.items.length+' pont</span></div>'+unitPicker("exam")+
+ '<div class="card"><b>📝 '+esc(unitLabel(u))+' · '+esc(u.title)+' – próbadolgozat</b><ul class="topics">'+(EX_INFO[u.id]||["Szavak: mi ez angolul?","Helyesírás: írd le a szavakat","Nyelvtan: melyik szó hiányzik?","Mondatok: rakd sorba a szavakat"]).map(t=>'<li>'+esc(t)+'</li>').join("")+'</ul>'+
+ (hist.length?'<div class="hist" aria-label="Korábbi eredmények">'+hist.map(e=>'<span>'+new Date(e.t).toLocaleDateString("hu-HU",{month:"short",day:"numeric"})+' · '+e.pct+'%</span>').join("")+'</div>':'<p class="muted small" style="margin:8px 0 0">Minden alkalommal új feladatlapot kapsz. Írd meg többször!</p>')+
+ '<div class="row" style="margin-top:12px"><button class="btn sm" data-act="exNew">🔄 Új feladatlap</button><button class="btn sm" data-act="exPrint">⬇ Nyomtatható változat</button><button class="btn sm" data-act="examPractice">⚡ Gyors gyakorlás</button></div></div>';
+ if(g){const s=EX.score,gr=gradeOf(s.pct);h+='<div class="card" id="exScore" style="margin-top:14px"><div class="score"><span class="pct">'+s.pct+'%</span><div><div><b>'+s.pts+' / '+s.max+' pont</b></div><span class="grade">Becsült jegy: '+gr[0]+' ('+gr[1]+')</span></div></div><p style="font-weight:800;margin:10px 0 0">'+cheerOf(s.pct)+'</p><div class="parts">'+EX.secs.map(x=>'<div class="part">'+x.k+') '+esc(x.t)+'<br><b>'+s.secs[x.k][0]+' / '+s.secs[x.k][1]+'</b></div>').join("")+'</div><p class="muted small" style="margin:10px 0 0">A jegy csak becslés (90%-tól 5-ös). A hibás feladatoknál ott a helyes válasz.</p><div class="row" style="margin-top:10px"><button class="btn sm primary" data-act="exNew">🔄 Új feladatlap</button></div></div>'}
+ const used=new Set(Object.entries(EX.ans).filter(([k])=>k.startsWith("bl")).map(([,v])=>v));
+ for(const sec of EX.secs){const its=EX.items.filter(i=>i.sec===sec.k);h+='<div class="card ex-sec"><h3>'+sec.k+') '+esc(sec.t)+' <span class="pts">'+its.length+' pont</span></h3>'+(sec.h?'<p class="muted small" style="margin:4px 0 10px">'+esc(sec.h)+'</p>':"");
+  if(sec.dialogue){const blank=i=>{const it=exItem("bl"+i),v=EX.ans[it.id];const cls=g?(it.ok?" right":" wrong"):(EX.active===it.id?" active":"");return '<button class="blank'+cls+'" data-act="exBlank" data-id="'+it.id+'"'+(g?" disabled":"")+'>'+(v?esc(v):"&nbsp;")+'</button>'};
+   h+='<div class="dlg">'+EX.dlg.map(([who,parts])=>'<span class="who">'+who+'</span><span class="ln">'+parts.map(x=>typeof x==="number"?blank(x):esc(x)).join("")+'</span>').join("")+'</div><div class="wordbank">'+EX.bank.map(w=>'<button class="tile'+(used.has(w)?" spent":"")+'" data-act="exBank" data-v="'+esc(w)+'"'+(g?" disabled":"")+'>'+esc(w)+'</button>').join("")+'</div>'+
+   (g?'<div style="margin-top:8px">'+its.filter(i=>!i.ok).map(i=>'<span class="fix bad">'+(+i.id.slice(2)+1)+'. hely: '+esc(i.a)+'</span>').join(" · ")+(its.every(i=>i.ok)?'<span class="fix">✓ Minden helyes!</span>':'')+'</div>':"");h+='</div>';continue}
+  if(sec.kids)h+='<div class="kidcards" style="margin:8px 0 6px">'+[EX.boy,EX.girl].map(k=>'<div class="kid"><div class="face">'+k.face+'</div><b>'+esc(k.n)+'</b><div class="tp">'+picHTML(k.t.p)+'</div><div class="muted small">kedvenc játéka</div></div>').join("")+'</div>';
+  its.forEach((it,n)=>h+=exItemHTML(it,n));h+='</div>'}
+ const left=EX.items.filter(it=>{const v=EX.ans[it.id];return v==null||v===""||(Array.isArray(v)&&!v.length)}).length;
+ if(!g)h+='<div class="card" style="margin-top:14px;text-align:center"><p class="muted" style="margin:0 0 10px">'+(left?left+" feladat még üres.":"Minden feladat kész! 🎉")+'</p><button class="btn primary wide" data-act="exGrade">✅ Javítás</button></div>';
+ return h+'</div>'}
+
+/* printable worksheets (downloaded as .html) */
+const PRINT_CSS='body{font-family:Nunito,Arial,sans-serif;color:#111;max-width:760px;margin:24px auto;padding:0 16px;line-height:1.5}h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:22px 0 8px;border-bottom:2px solid #222}table{border-collapse:collapse;width:100%}td{border:1px solid #bbb;padding:6px 8px;vertical-align:middle}.pic{font-size:30px;width:56px;text-align:center}.pic svg{width:40px;height:40px}.scr{font-size:20px;letter-spacing:.18em;font-weight:700}.ln{display:inline-block;min-width:160px;border-bottom:1.5px solid #333;height:1.3em}.key{page-break-before:always}.small{color:#555;font-size:13px}.box{border:1.5px solid #333;border-radius:8px;padding:8px 10px;margin:6px 0}.svgp svg{width:64px;height:64px;vertical-align:middle}@media print{body{margin:0 auto}}';
+const docHTML=(title,inner)=>'<!doctype html><html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+'</title><style>'+PRINT_CSS+'</style></head><body>'+inner+'</body></html>';
+function shuffleSheet(u){const rows=u.words.map((w,i)=>({w,scr:scramble(w.en)}));const sents=(u.sents||[]).slice(0,10).map(s=>({s,scr:shuffle(s[0].split(" ")).join("  /  ")}));
+ let h='<h1>Szókeverő – '+esc(unitLabel(u))+': '+esc(u.title)+' ('+esc(u.hu)+')</h1><div class="small">Név: ____________________ &nbsp; Dátum: ____________</div><h2>1. Rakd helyre a betűket, és írd le a szót!</h2><table>'+rows.map((r,i)=>'<tr><td style="width:28px">'+(i+1)+'.</td><td class="pic">'+(r.w.p?picHTML(r.w.p):'<span class="small">'+esc(r.w.hu)+'</span>')+'</td><td class="scr">'+esc(r.scr)+'</td><td><span class="ln"></span></td></tr>').join("")+'</table>';
+ if(sents.length)h+='<h2>2. Rakd sorba a szavakat, és írd le a mondatot!</h2>'+sents.map((x,i)=>'<div class="box"><b>'+(i+1)+'.</b> <b>'+esc(x.scr)+'</b> <span class="small">('+esc(x.s[1])+')</span><br><br><span class="ln" style="min-width:90%"></span></div>').join("");
+ h+='<div class="key"><h1>Megoldókulcs</h1><h2>1.</h2><p>'+rows.map((r,i)=>(i+1)+". "+esc(r.w.en)).join(" · ")+'</p>'+(sents.length?'<h2>2.</h2><p>'+sents.map((x,i)=>(i+1)+". "+esc(x.s[0])).join("<br>")+'</p>':"")+'</div>';
+ const txt="Szókeverő – "+unitLabel(u)+": "+u.title+"\n\n"+rows.map((r,i)=>(i+1)+". "+r.scr+"   ("+r.w.hu+")   ________").join("\n")+(sents.length?"\n\nMondatok:\n"+sents.map((x,i)=>(i+1)+". "+x.scr+"  ("+x.s[1]+")").join("\n"):"")+"\n\nMegoldás: "+rows.map(r=>r.w.en).join(", ");
+ return {html:docHTML("Szókeverő "+u.title,h),txt}}
+function examSheet(E){const u=UNIT[E.unit];let h='<h1>'+esc(unitLabel(u))+' · '+esc(u.title)+' – próbadolgozat</h1><div class="small">Név: ____________________ &nbsp; Dátum: ____________ &nbsp; Pont: ____ / '+E.items.length+'</div>';
+ for(const sec of E.secs){const its=E.items.filter(i=>i.sec===sec.k);h+='<h2>'+sec.k+') '+esc(sec.t)+' ('+its.length+' pont)</h2>';
+  if(sec.dialogue){h+='<div class="box"><b>Szókészlet:</b> '+E.bank.map(esc).join(" · ")+'</div>'+E.dlg.map(([who,parts])=>'<p><b>'+who+':</b> '+parts.map(x=>typeof x==="number"?'<span class="ln" style="min-width:90px"></span>':esc(x)).join("")+'</p>').join("");continue}
+  if(sec.kids)h+='<table><tr>'+[E.boy,E.girl].map(k=>'<td style="text-align:center"><span style="font-size:34px">'+k.face+'</span><br><b>'+esc(k.n)+'</b><br><span style="font-size:30px">'+picHTML(k.t.p)+'</span><br><span class="small">kedvenc játéka</span></td>').join("")+'</tr></table>';
+  its.forEach((it,n)=>{const pic=it.html?'<span class="svgp" style="font-size:36px">'+it.html+'</span> ':"";h+='<div class="box"><b>'+(n+1)+'.</b> ';
+   if(it.kind==="seg")h+=it.kid.face+' '+esc(it.pre)+' <b>'+it.o.join(" / ")+'</b> '+esc(it.post)+' <span class="small">(húzd alá a jót)</span>';
+   else if(it.kind==="type")h+=esc(it.label||"")+' '+(it.q?(it.kid?it.kid.face+" ":"")+esc(it.q)+'<br>':"")+pic+esc(it.pre||"")+' <span class="ln" style="min-width:130px"></span>'+esc(it.post||"");
+   else if(it.kind==="order")h+=esc(it.label||"")+' '+pic+'<br><span style="font-size:16px;font-weight:700">'+esc(it.toks.join("  /  "))+'</span><br><br><span class="ln" style="min-width:90%"></span>';
+   else if(it.kind==="pickpic")h+='Karikázd be a mondathoz illő képet: <i>'+esc(it.text)+'</i><br>'+it.o.map((o,i)=>'<span style="display:inline-block;margin:6px 16px 0 0;vertical-align:middle" class="svgp">'+(i+1)+') '+o.h+'</span>').join("");
+   else h+=esc(it.label||"")+' '+pic+(it.text?'<b>'+esc(it.text)+'</b>':"")+'<br>'+(it.sent?it.o.map(esc).join("<br>"):'Karikázd be: '+it.o.map(esc).join(" · "));
+   h+='</div>'})}
+ const ans=it=>it.kind==="order"?it.answer:it.kind==="pickpic"?(it.a+1)+". kép":it.a;
+ h+='<div class="key"><h1>Megoldókulcs</h1>'+E.secs.map(sec=>'<p><b>'+sec.k+')</b> '+E.items.filter(i=>i.sec===sec.k).map((i,n)=>(n+1)+". "+esc(ans(i))).join(" · ")+'</p>').join("")+'<p class="small">Pontozás: minden feladat 1 pont. Becsült jegy: 90%-tól 5, 75%-tól 4, 60%-tól 3, 45%-tól 2.</p></div>';
+ const txt=unitLabel(u)+" "+u.title+" – próbadolgozat, megoldókulcs\n"+E.secs.map(sec=>sec.k+") "+E.items.filter(i=>i.sec===sec.k).map(ans).join(" | ")).join("\n");
+ return {html:docHTML("Próbadolgozat "+u.title,h),txt}}
+async function offerFile(name,{html,txt}){if(dl){try{await dl.save({filename:name,data:html});toast("Elmentve: "+name);return}catch(e){const c=e&&e.code;if(c==="declined")return;if(c==="rate_limited"){toast("Már nyitva van egy mentési ablak.");return}}}
+ if(!window.claude){try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=name;document.body.appendChild(a);a.click();a.remove();return}catch(e){}}
+ sheet('<h2>Feladatlap szövege</h2><p class="muted small">A letöltés itt nem érhető el. Másold ki a szöveget, és illeszd be egy dokumentumba nyomtatáshoz.</p><textarea class="copybox" id="copyBox" readonly>'+esc(txt)+'</textarea><div class="row" style="margin-top:10px"><button class="btn primary" data-act="copyTxt">Másolás</button><button class="btn" data-act="closeSheet">Bezárás</button></div>')}
+
+/* players & settings */
+let newAv="🦒";
+function openPlayers(){const p=P();sheet('<h2>Ki tanul most?</h2><div class="plist">'+Object.entries(S.players).map(([id,x])=>'<button class="prow" data-act="pickPlayer" data-id="'+id+'" aria-current="'+(id===S.cur)+'"><span class="av">'+x.av+'</span><span style="flex:1;min-width:0"><b>'+esc(x.name)+'</b><br><span class="muted small">'+x.xp+' XP · 🔥 '+streakNow(x)+' nap</span></span>'+(id===S.cur?"✓":"")+'</button>').join("")+'</div>'+
+ '<h3 style="margin:18px 0 8px">Új tanuló</h3><div class="stack" style="gap:10px"><div class="field"><label for="npName">Név</label><input id="npName" maxlength="20" placeholder="pl. Panni"></div><div class="avs" role="group" aria-label="Kép">'+AVATARS.map(a=>'<button data-act="pickAv" data-v="'+a+'" aria-pressed="'+(a===newAv)+'">'+a+'</button>').join("")+'</div><button class="btn primary" data-act="addPlayer">Hozzáadás</button></div>'+
+ '<h3 style="margin:18px 0 8px">Beállítások – '+esc(p.name)+'</h3><div class="stack" style="gap:10px"><div class="field"><label for="rnName">Név</label><input id="rnName" maxlength="20" value="'+esc(p.name)+'"></div>'+
+ '<div class="field"><label for="goalSel">Napi cél</label><select id="goalSel">'+[10,20,30,50].map(g=>'<option value="'+g+'"'+(g===p.goal?" selected":"")+'>'+g+' XP – '+({10:"laza",20:"normál",30:"komoly",50:"bajnok"})[g]+'</option>').join("")+'</select></div>'+
+ '<div class="field"><label for="rateSel">Felolvasás</label><select id="rateSel"><option value="off"'+(!S.settings.voice?" selected":"")+'>Kikapcsolva</option>'+[[.75,"Lassú"],[.9,"Normál"],[1.05,"Gyors"]].map(([r,n])=>'<option value="'+r+'"'+(S.settings.voice&&Math.abs(S.settings.rate-r)<.01?" selected":"")+'>'+n+'</option>').join("")+'</select></div>'+
+ '<p class="sync" data-sync></p><button class="btn primary" data-act="saveSettings">Kész</button></div>'+famHTML())}
+function famHTML(){if(cloud.kind!=="supa")return"";return '<h3 style="margin:22px 0 6px">Családi kód</h3><p class="muted small" style="margin:0 0 8px">Ezzel a kóddal minden gyerek haladása megvan telefonon, tableten és gépen is. Írd fel valahová!</p>'+
+ (cloud.code?'<div class="row"><span class="famcode">'+esc(cloud.code)+'</span><button class="btn sm" data-act="copyCode">Másolás</button></div>':'<div class="row"><button class="btn sm" data-act="makeCode">Kód létrehozása most</button></div>')+
+ '<div class="stack" style="gap:8px;margin-top:12px"><div class="field"><label for="joinCode">Már van kódod egy másik eszközről?</label><input id="joinCode" placeholder="ABCDE-FGH23" autocapitalize="characters" autocomplete="off" maxlength="12"></div><button class="btn" data-act="joinCode">Csatlakozás</button><p class="muted small" style="margin:0">Csatlakozáskor a kódhoz mentett haladás töltődik be; az itteni, már gyakorló tanulók is megmaradnak.</p></div>'}
+
+/* =====================================================================
+   Events
+   ===================================================================== */
+document.addEventListener("click",e=>{const t=e.target.closest("[data-act],[data-go],[data-lesson]");if(!t)return;
+ if(t.dataset.go){closeSheet();return go(t.dataset.go)}
+ if(t.dataset.lesson){const l=LESSON[t.dataset.lesson];const items=l.kind==="words"?wordsLesson(l.words,l.unit):l.kind==="sents"?sentsLesson(l.unit):mixLesson(l.unit);return startLesson({items,title:unitLabel(l.unit)+" · "+l.name,lessonId:l.id,xp:l.kind==="mix"?15:10})}
+ const a=t.dataset.act,id=t.dataset.id;
+ switch(a){
+ case"say":say(t.dataset.say);break;
+ case"opt":if(L.mode==="speed")return speedAnswer(+t.dataset.i);if(L.state!=="ask")return;$$(".opt",body()).forEach(b=>b.setAttribute("aria-pressed","false"));t.setAttribute("aria-pressed","true");Q.sel=+t.dataset.i;if(t.dataset.say)say(t.dataset.say);ready(true);break;
+ case"tile":tapTile(+t.dataset.i);break;case"slot":tapSlot(+t.dataset.i);break;
+ case"tok":tapTok(+t.dataset.i);break;case"placed":tapPlaced(+t.dataset.k);break;
+ case"pair":tapPair(t);break;
+ case"quit":quitLesson();break;case"quitYes":closeSheet();closeLesson();break;
+ case"closeSheet":closeSheet();break;
+ case"sound":S.settings.sound=!S.settings.sound;commit();if(S.settings.sound)beep("tap");break;
+ case"players":openPlayers();break;
+ case"pickPlayer":S.cur=id;commit();closeSheet();EX=null;MEM=null;render();toast("Szia, "+P().name+"! "+P().av);break;
+ case"pickAv":newAv=t.dataset.v;$$(".avs button").forEach(b=>b.setAttribute("aria-pressed",b===t?"true":"false"));break;
+ case"addPlayer":{const n=($("#npName").value||"").trim().slice(0,20);if(!n){$("#npName").focus();toast("Írd be a nevet!");return}const nid="p"+Date.now().toString(36);S.players[nid]=newPlayer(n,newAv);S.cur=nid;commit();closeSheet();EX=null;MEM=null;render();toast("Szia, "+n+"! "+newAv);break}
+ case"saveSettings":{const p=P();const n=($("#rnName").value||"").trim().slice(0,20);if(n)p.name=n;p.goal=+$("#goalSel").value||30;const r=$("#rateSel").value;if(r==="off")S.settings.voice=false;else{S.settings.voice=true;S.settings.rate=+r}commit();closeSheet();render();break}
+ case"toggleUnit":{const u=t.dataset.u;UI.exp[u]=UI.exp[u]?0:1;saveUI();render();break}
+ case"selUnit":UI.sel[t.dataset.for]=t.dataset.u;saveUI();if(t.dataset.for==="games")MEM=null;render();break;
+ case"reshuffle":render();break;
+ case"reveal":{const r=t.querySelector(".reveal");r.classList.toggle("hide");if(!r.classList.contains("hide"))say(t.dataset.say);break}
+ case"revealSent":t.textContent=t.dataset.say;t.disabled=true;say(t.dataset.say);break;
+ case"shufflePlay":{const u=UNIT[UI.sel.shuffle];let ws=shuffle(bkGroups(u).flatMap(g=>g.words));if(UI.bk.n)ws=ws.slice(0,UI.bk.n);
+  const items=ws.map(w=>/\s/.test(w.en)&&w.en.replace(/[\s\-]/g,"").length>10?prodSpec(w):{type:"spell",w});if(UI.bk.s&&u.sents&&u.sents.length)items.push(...sample(u.sents,3).map(orderSpec));
+  startLesson({items,title:"Betűkirakó · "+unitLabel(u)+" "+u.title,lessonId:"bk:"+u.id,xp:10});break}
+ case"openBk":UI.sel.shuffle=UI.sel.games;UI.bk.g="all";saveUI();go("shuffle");break;
+ case"sheet":{const u=UNIT[UI.sel.shuffle];offerFile("szokevero-"+u.title.toLowerCase().replace(/[^a-z0-9]+/g,"-")+".html",shuffleSheet(u));break}
+ case"copyTxt":{const box=$("#copyBox");const done=()=>toast("Kimásolva!");try{navigator.clipboard.writeText(box.value).then(done,()=>{box.select()})}catch(err){box.select()}break}
+ case"speed":{const u=UNIT[UI.sel.games];if(u.words.filter(w=>w.p).length<4){toast("Ebben a fejezetben kevés a képes szó – válassz másikat!");return}startLesson({items:speedItems([u]),title:"Villámkör",mode:"speed"});break}
+ case"memory":newMemory();break;case"mem":tapMem(+t.dataset.i);break;
+ case"weak":{const ws=weakWords();if(ws.length<3){toast("Még nincs elég eltévesztett szó. Gyakorolj előbb!");return}startLesson({items:wordsLesson(ws),title:"Gyenge szavak",xp:12});break}
+ case"examPractice":{const u=UNIT[UI.sel.exam]||UNIT.u2;startLesson({items:examPractice(u.id),title:unitLabel(u)+" · gyors gyakorlás",xp:12});break}
+ case"exNew":EX=makeExam(UI.sel.exam);render();window.scrollTo(0,0);break;
+ case"exPrint":offerFile("probadolgozat-"+EX.unit+".html",examSheet(EX));break;
+ case"exBlank":if(EX.graded)return;if(EX.ans[id]){delete EX.ans[id]}EX.active=id;render();break;
+ case"exBank":{if(EX.graded)return;const v=t.dataset.v;const tgt=EX.active&&!EX.ans[EX.active]?EX.active:EX.items.find(i=>i.kind==="blank"&&!EX.ans[i.id]);const tid=typeof tgt==="string"?tgt:tgt&&tgt.id;if(!tid)return;
+  for(const k in EX.ans)if(k.startsWith("bl")&&EX.ans[k]===v)delete EX.ans[k];EX.ans[tid]=v;const nx=EX.items.find(i=>i.kind==="blank"&&!EX.ans[i.id]);EX.active=nx?nx.id:null;beep("tap");render();break}
+ case"exSeg":case"exPick":if(EX.graded)return;EX.ans[id]=t.dataset.v;beep("tap");render();break;
+ case"exPic":if(EX.graded)return;EX.ans[id]=+t.dataset.v;beep("tap");render();break;
+ case"exTok":{if(EX.graded)return;const arr=EX.ans[id]||(EX.ans[id]=[]);const i=+t.dataset.i;if(!arr.includes(i))arr.push(i);beep("tap");render();break}
+ case"exUntok":if(EX.graded)return;(EX.ans[id]||[]).splice(+t.dataset.k,1);render();break;
+ case"exGrade":gradeExam();break;
+ case"copyCode":{const done=()=>toast("Kimásolva: "+cloud.code);try{navigator.clipboard.writeText(cloud.code).then(done,()=>toast(cloud.code))}catch(err){toast(cloud.code)}break}
+ case"makeCode":S.updatedAt=Date.now();saveLocal();cloud.pending=true;flushSupa().then(()=>{if(cloud.code)openPlayers();else toast("Most nincs kapcsolat. Próbáld újra később!")});break;
+ case"joinCode":joinFamily($("#joinCode").value);break;
+ }});
+document.addEventListener("change",e=>{const t=e.target;if(t.id&&t.id.startsWith("selU-")){const v=t.id.slice(5);UI.sel[v]=t.value;if(v==="games")MEM=null;if(v==="exam")EX=null;saveUI();render();return}if(t.id==="bkUnit"){UI.sel.shuffle=t.value;UI.bk.g="all";saveUI();render()}else if(t.id==="bkGroup"){UI.bk.g=t.value;saveUI();render()}else if(t.id==="bkN"){UI.bk.n=+t.value;saveUI()}else if(t.id==="bkS"){UI.bk.s=t.checked?1:0;saveUI()}});
+document.addEventListener("input",e=>{const id=e.target.dataset&&e.target.dataset.ex;if(id&&EX&&!EX.graded)EX.ans[id]=e.target.value});
+$("#lBtn").addEventListener("click",mainBtn);
+document.addEventListener("keydown",e=>{
+ if(e.key==="Escape"&&$(".sheet-bg")){e.preventDefault();closeSheet();return}
+ if($("#lesson").hidden||$(".sheet-bg"))return;
+ if(e.key==="Enter"){if(!$("#lBtn").disabled&&!$("#lBtn").hidden){e.preventDefault();mainBtn()}return}
+ if(e.target.id==="typeIn")return;
+ if(L.state==="ask"&&Q&&/^[1-6]$/.test(e.key)){const b=$$(".opt",body())[+e.key-1];b&&!b.classList.contains("pair")&&b.click();return}
+ if(L.state==="ask"&&Q&&Q.tiles&&/^[a-z]$/i.test(e.key)){const i=Q.tiles.findIndex(t=>!t.used&&t.ch.toLowerCase()===e.key.toLowerCase());if(i>=0)tapTile(i);return}
+ if(L.state==="ask"&&Q&&Q.slots&&e.key==="Backspace"){for(let i=Q.slots.length-1;i>=0;i--)if(Q.slots[i]!=null){tapSlot(i);break}}});
+if(synth&&synth.addEventListener)synth.addEventListener("voiceschanged",()=>{});
+
+/* boot */
+renderHeader();view=VIEWS[location.hash.slice(1)]?location.hash.slice(1):"path";render();
+const C=window.claude;
+if(!(C&&typeof C.use==="function"))initSupa();
+if(C&&typeof C.use==="function"){C.use("tts").then(t=>{if(t){cloudTts=t;refreshSpeakers()}}).catch(()=>{});C.use("downloads").then(d=>{dl=d}).catch(()=>{});initCloud(C)}
+})();
+</script>
+
+</body>
+</html>

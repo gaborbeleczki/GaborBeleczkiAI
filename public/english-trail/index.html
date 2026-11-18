@@ -290,18 +290,18 @@ canvas.confetti{position:fixed;inset:0;pointer-events:none;z-index:80;width:100%
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <header class="top"><div class="wrap">
-  <button class="chip-player" data-act="players" aria-label="Tanuló váltása"><span class="av" id="hAv">🐘</span><span class="nm" id="hName">Tanuló</span></button>
+  <button class="chip-player" data-act="players" aria-label="Tanuló váltása és beállítások"><span class="av" id="hAv">🐘</span><span class="nm" id="hName">Tanuló</span></button>
   <div class="stats">
     <span class="stat fl" id="hStreak" title="Napi sorozat">🔥<span>0</span></span>
     <span class="stat xp" id="hXp" title="XP pontok">⭐<span>0</span></span>
-    <svg class="ring" viewBox="0 0 40 40" aria-label="Napi cél"><circle class="bg" cx="20" cy="20" r="15"/><circle class="fg" id="hRing" cx="20" cy="20" r="15" transform="rotate(-90 20 20)" stroke-dasharray="94.25" stroke-dashoffset="94.25"/><text x="20" y="24.5" text-anchor="middle" font-size="12" font-weight="800" fill="currentColor" id="hRingT">🎯</text></svg>
+    <svg class="ring" viewBox="0 0 40 40" aria-label="Napi cél"><circle class="bg" cx="20" cy="20" r="15"/><circle class="fg" id="hRing" cx="20" cy="20" r="15" transform="rotate(-90 20 20)" stroke-dasharray="94.25" stroke-dashoffset="94.25"/><text x="20" y="24.5" text-anchor="middle" font-size="12" font-weight="800" fill="currentColor" id="hRingT"></text></svg>
     <button class="iconbtn" data-act="sound" id="hSound" aria-label="Hangok be/ki">🔊</button>
   </div>
 </div></header>
 <main id="view"></main>
 <nav class="tabs" aria-label="Fő menü"><div class="wrap">
   <button class="tab" data-go="path"><span class="ti">🗺️</span>Ösvény</button>
-  <button class="tab" data-go="shuffle"><span class="ti">🔀</span>Szókeverő</button>
+  <button class="tab" data-go="shuffle"><span class="ti">🔤</span>Betűkirakó</button>
   <button class="tab" data-go="games"><span class="ti">🎮</span>Játékok</button>
   <button class="tab" data-go="exam"><span class="ti">📝</span>Témazáró</button>
   <button class="tab" data-go="words"><span class="ti">📚</span>Szótár</button>
@@ -314,90 +314,142 @@ canvas.confetti{position:fixed;inset:0;pointer-events:none;z-index:80;width:100%
 
 <script>
 /* ===== Course content =====
-   Super Minds Starter (1st grade, last year) and Super Minds 1 (2nd grade, this year), unit by unit.
+   Super Minds Second Edition Starter and Level 1, unit by unit (words and sentences as printed in the Student's Books).
    Words: "english|magyar|picture" separated by ";". Picture codes: emoji, #colour, %shape, @icon, nN = number.
    Unofficial practice material; not affiliated with Cambridge University Press. */
 const COLORS={red:"#E53935",blue:"#1E66F5",yellow:"#FDD835",green:"#2E9E44",orange:"#FB8C00",pink:"#F48FB1",purple:"#8E44AD",brown:"#8D5524",black:"#1B1B1B",white:"#FFFFFF",grey:"#9E9E9E"};
-const COLOUR_W=`red|piros|#red; blue|kék|#blue; yellow|sárga|#yellow; green|zöld|#green; orange|narancssárga|#orange; pink|rózsaszín|#pink; purple|lila|#purple; brown|barna|#brown; black|fekete|#black; white|fehér|#white; grey|szürke|#grey`;
-const NUM_EN=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"];
-const NUM_HU=["nulla","egy","kettő","három","négy","öt","hat","hét","nyolc","kilenc","tíz","tizenegy","tizenkettő"];
-const NUM_HU_ATTR=["nulla","egy","két","három","négy","öt","hat","hét","nyolc","kilenc","tíz","tizenegy","tizenkét"];
+const COL_HU0={red:"piros",blue:"kék",yellow:"sárga",green:"zöld",orange:"narancssárga",pink:"rózsaszín",purple:"lila",brown:"barna",black:"fekete",white:"fehér",grey:"szürke"};
+const colours=list=>list.map(c=>c+"|"+COL_HU0[c]+"|#"+c).join(";");
+const NUM_EN=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
+const NUM_HU=["nulla","egy","kettő","három","négy","öt","hat","hét","nyolc","kilenc","tíz","tizenegy","tizenkettő","tizenhárom","tizennégy","tizenöt","tizenhat","tizenhét","tizennyolc","tizenkilenc","húsz"];
+const NUM_HU_ATTR=["nulla","egy","két","három","négy","öt","hat","hét","nyolc","kilenc","tíz","tizenegy","tizenkét","tizenhárom","tizennégy","tizenöt","tizenhat","tizenhét","tizennyolc","tizenkilenc","húsz"];
 const numWords=(a,b)=>NUM_EN.slice(a,b+1).map((e,i)=>`${e}|${NUM_HU[a+i]}|n${a+i}`).join(";");
 
 const BOOKS=[
-{id:"sm1",title:"Super Minds 1",sub:"2. osztály · az idei piros és fehér könyv",cover:"#D63A3F",units:[
- {id:"w1",n:"Welcome",title:"Colours & numbers",hu:"Színek és számok",color:"#F28C28",icon:"🎨",count:true,
-  groups:[{t:"Colours",hu:"Színek",w:COLOUR_W},{t:"Numbers",hu:"Számok 1–12",w:numWords(1,12)}],
-  sents:[["Five yellow pencils.","Öt sárga ceruza."],["Two green books.","Két zöld könyv."],["What colour is it?","Milyen színű?"],["It's red.","Piros."],["How many pencils?","Hány ceruza?"],["Three blue rulers.","Három kék vonalzó."]],
-  gaps:[{q:"one ___",o:["pencil","pencils"],a:"pencil",p:"✏️"},{q:"four ___",o:["books","book"],a:"books",p:"📕📕📕📕"},{q:"How ___ crayons?",o:["many","old"],a:"many"},{q:"What ___ is it? It's green.",o:["colour","number"],a:"colour"}]},
- {id:"u1",n:"1",title:"At school",hu:"Az iskolában",color:"#3D6BE0",icon:"🎒",
+{id:"sm1",title:"Super Minds 1",sub:"Second Edition · Level 1",cover:"#D63A3F",units:[
+ {id:"u0",n:"0",title:"Friends",hu:"Barátok",color:"#F28C28",icon:"👋",alpha:true,sticker:"🦊",
+  groups:[{t:"Colours",hu:"Színek",w:colours(["yellow","red","orange","purple","green","blue"])},{t:"Numbers",hu:"Számok 1–10",w:numWords(1,10)},
+   {t:"Words",hu:"Szavak",w:`hello|szia|👋; name|név|📛; bag|táska|🎒; cat|macska|🐱; after|után|; before|előtt|`}],
+  sents:[["Hi, I'm Whisper.","Szia, Whisper vagyok."],["What's your name?","Hogy hívnak?"],["I'm Carlos.","Carlos vagyok."],["What a nice name!","Milyen szép név!"],["How old are you?","Hány éves vagy?"],["I'm seven.","Hét éves vagyok."],["I'm six.","Hat éves vagyok."],["Look at me!","Nézz rám!"],["Listen to me.","Figyelj rám!"],["What's your name, cat?","Hogy hívnak, cica?"]],
+  gaps:[{q:"What's your ___?",o:["name","old"],a:"name",hu:"Hogy hívnak?"},{q:"How ___ are you?",o:["old","name"],a:"old",hu:"Hány éves vagy?"},{q:"___ Carlos.",o:["I'm","I"],a:"I'm",hu:"Carlos vagyok."},{q:"What a ___ name!",o:["nice","old"],a:"nice",hu:"Milyen szép név!"},{q:"I'm ___. (7)",o:["seven","six"],a:"seven"}],
+  note:"Gyakorold a bemutatkozást: What's your name? – I'm … · How old are you? – I'm seven."},
+ {id:"u1",n:"1",title:"At school",hu:"Az iskolában",color:"#3D6BE0",icon:"🎒",sticker:"🦉",
   groups:[
-   {t:"School things",hu:"Iskolai eszközök",w:`pencil|ceruza|✏️; pen|toll|🖊️; rubber|radír|@rubber; ruler|vonalzó|📏; book|könyv|📕; notebook|füzet|📓; scissors|olló|✂️; glue|ragasztó|@glue; pencil case|tolltartó|@pcase; sharpener|hegyező|@sharp; school bag|iskolatáska|🎒; paper|papír|📄; folder|mappa|📁; crayon|zsírkréta|🖍️`},
-   {t:"Classroom",hu:"Az osztályterem",w:`table|asztal|@table; chair|szék|🪑; desk|iskolapad|@desk; door|ajtó|🚪; window|ablak|🪟; lamp|lámpa|💡; floor|padló|@floor; board|tábla|@board; screen|kivetítővászon, képernyő|🖥️; projector|projektor|📽️; teacher|tanár|🧑‍🏫; children|gyerekek|🧒🧒`},
-   {t:"Senses",hu:"Érzékek",w:`see|látni|; hear|hallani|; smell|szagolni|; taste|ízlelni|; touch|megérinteni, tapintani|; eyes|szemek|👀; ears|fülek|👂; nose|orr|👃; tongue|nyelv|👅; fingers|ujjak|🖐️`}],
-  sents:[["Hello! What's your name?","Szia! Hogy hívnak?"],["My name is Anna.","A nevem Anna."],["How old are you?","Hány éves vagy?"],["I'm eight.","Nyolc éves vagyok."],["Nice to meet you!","Örülök, hogy megismertelek!"],["Nice to meet you, too.","Én is örülök."],["I see with my eyes.","A szememmel látok."],["I hear with my ears.","A fülemmel hallok."],["I smell with my nose.","Az orrommal szagolok."],["I taste with my tongue.","A nyelvemmel ízlelek."],["I touch with my fingers.","Az ujjaimmal tapintok."],["Open your book, please.","Nyisd ki a könyvedet, kérlek!"],["Put your pencil in your pencil case.","Tedd a ceruzádat a tolltartódba!"]],
-  gaps:[{q:"What's your ___?",o:["name","old","toy"],a:"name"},{q:"How ___ are you?",o:["old","name","big"],a:"old"},{q:"Nice to ___ you!",o:["meet","sit","eat"],a:"meet"},{q:"I see with my ___.",o:["eyes","ears","nose"],a:"eyes"},{q:"I hear with my ___.",o:["ears","eyes","tongue"],a:"ears"},{q:"I smell with my ___.",o:["nose","fingers","ears"],a:"nose"},{q:"I taste with my ___.",o:["tongue","eyes","fingers"],a:"tongue"},{q:"I touch with my ___.",o:["fingers","nose","ears"],a:"fingers"}],
-  riddles:[["pencil","You write or draw with it. You can rub it out."],["pen","Teachers write with it. It has got ink."],["rubber","You don't like what you wrote. You use this."],["ruler","You draw straight lines with it. It has got numbers on it."],["book","You open it and read it. It has got pictures."],["scissors","You cut paper with them."],["glue","You stick paper with it."],["pencil case","Your pencils, rubber and ruler are in it."],["sharpener","Your pencil is not sharp. You use this."],["school bag","Your books and pencil case are in it."],["paper","You draw or paint on it in an art lesson."],["notebook","You open it and write in it."],["folder","You put papers in it."],["table","You eat, drink or work on this big thing."],["chair","You sit on it at school."],["desk","You read and write on it at school."],["door","You open it, walk through it and close it."],["window","You open it and look out of it."],["lamp","It's dark in the classroom. You turn it on."],["floor","You walk on it."],["board","Teachers write on this big thing."],["screen","It shows pictures, videos and book pages."]],
-  note:"Az „Introduction, at school” párbeszéd és a „Senses” mondatok pontos változata a füzetben (exercise notebook) van – az az irányadó."},
- {id:"u2",n:"2",title:"Toys",hu:"Játékok",color:"#E5484D",icon:"🪁",exam:true,adj:true,
+   {t:"School things",hu:"Iskolai eszközök",w:`ruler|vonalzó|📏; pen|toll|🖊️; book|könyv|📕; rubber|radír|@rubber; pencil case|tolltartó|@pcase; pencil|ceruza|✏️; desk|iskolapad|@desk; notebook|füzet|📓; bag|táska|🎒; paper|papír|📄; box|doboz|📦`},
+   {t:"Classroom language",hu:"Utasítások",w:`sit|ülj|🪑; open|nyisd ki|📖; close|csukd be|📕; pass me|add ide|; get|vegyél|; write|írj|✍️; put away|tedd el|; take out|vedd elő|; please|kérlek|🙏; here you are|tessék|`},
+   {t:"Senses",hu:"Érzékek",w:`look|nézni|👀; listen|hallgatni|👂; smell|szagolni|👃; taste|ízlelni|👅; touch|megérinteni|✋`}],
+  sents:[["What's this?","Mi ez?"],["It's a ruler.","Ez egy vonalzó."],["Is it a pencil?","Ez egy ceruza?"],["No, it isn't. It's a pen.","Nem, nem az. Ez egy toll."],["Is it a ruler? Yes, it is.","Ez egy vonalzó? Igen, az."],["Sit at your desk, please.","Ülj a padodhoz, kérlek!"],["Open your book, please.","Nyisd ki a könyvedet, kérlek!"],["Write one to ten.","Írd le egytől tízig!"],["Close your bag, please.","Csukd be a táskádat, kérlek!"],["Pass me a pencil, please.","Add ide a ceruzát, kérlek!"],["Here you are.","Tessék."],["Put away your book, please.","Tedd el a könyvedet, kérlek!"],["Take out your ruler, please.","Vedd elő a vonalzódat, kérlek!"],["Watch out!","Vigyázz!"]],
+  gaps:[{q:"What's ___? It's a ruler.",o:["this","it's"],a:"this",p:"📏"},{q:"Is it a pencil? No, it ___.",o:["isn't","is"],a:"isn't",p:"🖊️"},{q:"Is it a book? Yes, it ___.",o:["is","isn't"],a:"is",p:"📕"},{q:"___ me a pencil, please.",o:["Pass","Sit"],a:"Pass"},{q:"Put ___ your book, please.",o:["away","out"],a:"away",hu:"Tedd el a könyvedet!"},{q:"Take ___ your ruler, please.",o:["out","away"],a:"out",hu:"Vedd elő a vonalzódat!"},{q:"It's ___ ruler.",o:["a","an"],a:"a"},{q:"I ___ with my ears.",o:["listen","taste"],a:"listen",p:"👂"},{q:"I ___ with my tongue.",o:["taste","look"],a:"taste",p:"👅"}],
+  riddles:[["pencil","You write or draw with it. You can rub it out."],["pen","You write with it. It has got ink."],["rubber","You don't like what you wrote. You use this."],["ruler","You draw straight lines with it. It has got numbers on it."],["book","You open it and read it. It has got pictures."],["pencil case","Your pencils, rubber and ruler are in it."],["bag","Your books and pencil case are in it."],["paper","You draw or paint on it."],["notebook","You open it and write in it."],["desk","You sit at it and write at school."],["box","You can put things in it. It has got a lid."]],
+  note:"Kérdés és válasz: Is it a pencil? – Yes, it is. / No, it isn't."},
+ {id:"u2",n:"2",title:"Let's play",hu:"Játsszunk!",color:"#E5484D",icon:"🪁",exam:true,adj:true,sticker:"🐼",
   groups:[
-   {t:"Toys",hu:"Játékok",w:`ball|labda|⚽; doll|baba|🪆; kite|sárkány|🪁; car|autó|🚗; train|vonat|🚂; bike|bicikli|🚲; robot|robot|🤖; teddy bear|plüssmaci|🧸; plane|repülő|✈️; boat|hajó|⛵; computer game|számítógépes játék|🎮; go-kart|gokart|🏎️; yo-yo|jojó|🪀; puzzle|kirakó|🧩`},
-   {t:"Adjectives",hu:"Melléknevek",w:`big|nagy|; small|kicsi|; long|hosszú|; short|rövid|; new|új|; old|régi, öreg|; favourite|kedvenc|`},
-   {t:"Shapes",hu:"Alakzatok",w:`circle|kör|%circle; square|négyzet|%square; triangle|háromszög|%triangle; rectangle|téglalap|%rectangle; star|csillag|%star; heart|szív|%heart; oval|ovális|%oval; diamond|rombusz|%diamond`},
-   {t:"His & her",hu:"Az ő… (fiú / lány)",w:`boy|fiú|👦; girl|lány|👧; his|az ő …-ja (fiúé)|; her|az ő …-ja (lányé)|; name|név|📛; favourite toy|kedvenc játék|`}],
-  sents:[["It's a big kite.","Ez egy nagy sárkány."],["It's a small ball.","Ez egy kicsi labda."],["It's a long train.","Ez egy hosszú vonat."],["It's a new bike.","Ez egy új bicikli."],["It's an old teddy bear.","Ez egy régi plüssmaci."],["It's a red car.","Ez egy piros autó."],["It's a big blue boat.","Ez egy nagy kék hajó."],["What's his name?","Mi a neve? (fiú)"],["His name is Ben.","A neve Ben."],["What's her name?","Mi a neve? (lány)"],["Her name is Lily.","A neve Lily."],["What's his favourite toy?","Mi a kedvenc játéka? (fiú)"],["His favourite toy is his robot.","A kedvenc játéka a robotja."],["What's her favourite toy?","Mi a kedvenc játéka? (lány)"],["Her favourite toy is her kite.","A kedvenc játéka a sárkánya."],["My favourite toy is my ball.","A kedvenc játékom a labdám."],["It's a yellow star.","Ez egy sárga csillag."],["It's a circle.","Ez egy kör."]],
-  gaps:[{q:"What's ___ name?",p:"👦",o:["his","her"],a:"his"},{q:"What's ___ name?",p:"👧",o:["his","her"],a:"her"},{q:"___ name is Tom.",p:"👦",o:["His","Her"],a:"His"},{q:"___ name is Anna.",p:"👧",o:["His","Her"],a:"Her"},{q:"Her favourite toy is ___ doll.",p:"👧",o:["her","his"],a:"her"},{q:"His favourite toy is ___ car.",p:"👦",o:["his","her"],a:"his"},{q:"What's his favourite ___?",o:["toy","name"],a:"toy"},{q:"It's ___ old car.",o:["an","a"],a:"an"},{q:"It's ___ big kite.",o:["a","an"],a:"a"}]},
+   {t:"Toys",hu:"Játékok",w:`computer game|számítógépes játék|🎮; kite|sárkány|🪁; plane|repülő|✈️; bike|bicikli|🚲; doll|baba|🪆; monster|szörny|👾; train|vonat|🚂; go-kart|gokart|🏎️; car|autó|🚗; ball|labda|⚽; teddy|plüssmaci|🧸`},
+   {t:"Adjectives",hu:"Melléknevek",w:`big|nagy|; small|kicsi|; long|hosszú|; short|rövid|; old|régi, öreg|; new|új|; ugly|csúnya|; beautiful|gyönyörű|; cold|hideg|🥶`},
+   {t:"Colours",hu:"Színek",w:colours(["blue","orange","black","pink","yellow","green","purple","white","brown"])},
+   {t:"Shapes",hu:"Alakzatok",w:`triangle|háromszög|%triangle; circle|kör|%circle; square|négyzet|%square; rectangle|téglalap|%rectangle`},
+   {t:"His & her",hu:"Az ő… (fiú / lány)",w:`his|az ő …-ja (fiúé)|👦; her|az ő …-ja (lányé)|👧; name|név|📛; favourite|kedvenc|⭐; toy|játék|🧸; colour|szín|🎨; number|szám|🔢`}],
+  sents:[["What's his name?","Mi a neve? (fiú)"],["His name's Ben.","A neve Ben."],["What's her name?","Mi a neve? (lány)"],["Her name's Kate.","A neve Kate."],["How old is he?","Hány éves? (fiú)"],["He's ten.","Tíz éves."],["How old is she?","Hány éves? (lány)"],["She's eight.","Nyolc éves."],["What's his favourite toy?","Mi a kedvenc játéka? (fiú)"],["His favourite toy's his train.","A kedvenc játéka a vonata."],["What's her favourite toy?","Mi a kedvenc játéka? (lány)"],["Her favourite toy's her plane.","A kedvenc játéka a repülője."],["It's a big white ball.","Ez egy nagy fehér labda."],["It's an ugly ball.","Ez egy csúnya labda."],["A big blue plane.","Egy nagy kék repülő."],["An old pink bike.","Egy régi rózsaszín bicikli."],["A new purple bike.","Egy új lila bicikli."],["What's your favourite colour?","Mi a kedvenc színed?"],["My favourite colour is blue.","A kedvenc színem a kék."]],
+  gaps:[{q:"What's ___ name?",p:"👦",o:["his","her"],a:"his"},{q:"What's ___ name?",p:"👧",o:["his","her"],a:"her"},{q:"___ name's Ben.",p:"👦",o:["His","Her"],a:"His"},{q:"___ name's Kate.",p:"👧",o:["His","Her"],a:"Her"},{q:"Her favourite toy's ___ plane.",p:"👧",o:["her","his"],a:"her"},{q:"His favourite toy's ___ train.",p:"👦",o:["his","her"],a:"his"},{q:"How old is ___? She's eight.",o:["she","he"],a:"she"},{q:"It's ___ ugly ball.",o:["an","a"],a:"an"},{q:"___ old pink bike.",o:["An","A"],a:"An"},{q:"It's ___ big kite.",o:["a","an"],a:"a"}],
+  note:"Figyelj az a / an szóra: a big ball, de an ugly ball, an old bike!"},
+ {id:"u3",n:"3",title:"Pet show",hu:"Kisállat-bemutató",color:"#2BA84A",icon:"🐸",sticker:"🐸",
+  groups:[{t:"Animals",hu:"Állatok",w:`donkey|szamár|; elephant|elefánt|🐘; spider|pók|🕷️; cat|macska|🐱; rat|patkány|🐀; frog|béka|🐸; duck|kacsa|🦆; lizard|gyík|🦎; dog|kutya|🐶`},
+   {t:"Where?",hu:"Hol van?",w:`in|-ban, -ben (benne)|; on|-on, -en (rajta)|; under|alatt|; pond|tó|; wood|erdő|🌲; tree|fa|🌳; fish|hal|🐟; bird|madár|🐦`},
+   {t:"Animal needs",hu:"Mire van szüksége?",w:`food|étel|🍲; water|víz|💧; air|levegő|💨; shelter|menedék|🏠`}],
+  sents:[["The frog's in my bag.","A béka a táskámban van."],["It's under my chair.","A székem alatt van."],["The frog's on my hat.","A béka a kalapomon van."],["Where is it?","Hol van?"],["I like frogs. What about you?","Szeretem a békákat. És te?"],["I like frogs, too.","Én is szeretem a békákat."],["I don't like big frogs!","Nem szeretem a nagy békákat!"],["I like spiders and lizards.","Szeretem a pókokat és a gyíkokat."],["I don't like rats.","Nem szeretem a patkányokat."],["There are eight dogs.","Nyolc kutya van."],["The dog needs food.","A kutyának élelemre van szüksége."]],
+  gaps:[{q:"The frog's ___ my bag.",o:["in","on","under"],a:"in",hu:"A béka a táskámban van."},{q:"It's ___ my chair.",o:["under","in","on"],a:"under",hu:"A székem alatt van."},{q:"The frog's ___ my hat.",o:["on","under","in"],a:"on",hu:"A béka a kalapomon van."},{q:"I like frogs. What ___ you?",o:["about","is"],a:"about"},{q:"I don't like ___.",o:["rats","rat"],a:"rats",p:"🐀"},{q:"The dog ___ water.",o:["needs","need"],a:"needs",p:"💧"}],
+  note:"in = benne · on = rajta · under = alatta"},
+ {id:"u4",n:"4",title:"Lunchtime",hu:"Ebédidő",color:"#F2A100",ink:"#1D2742",icon:"🍕",sticker:"🐭",
+  groups:[{t:"Food",hu:"Ételek",w:`apple|alma|🍎; banana|banán|🍌; cake|torta|🍰; pizza|pizza|🍕; sausage|kolbász|; cheese sandwich|sajtos szendvics|🥪; fish|hal|🐟; chicken|csirke|🍗; peas|borsó|; steak|steak|🥩; carrots|répa|🥕`},
+   {t:"More food",hu:"Még több étel",w:`ice cream|fagyi|🍦; orange juice|narancslé|🧃; hot dog|hot dog|🌭; cheese|sajt|🧀; potato|krumpli|🥔; salad|saláta|🥗; hungry|éhes|`},
+   {t:"Numbers 11–20",hu:"Számok 11–20",w:numWords(11,20)}],
+  sents:[["I've got a carrot.","Van egy répám."],["Now I haven't got a carrot!","Most nincs répám!"],["Me too!","Én is!"],["Have we got any fish?","Van halunk?"],["No, we haven't.","Nem, nincs."],["Yes, we have!","Igen, van!"],["Lunchtime! What's for lunch?","Ebédidő! Mi az ebéd?"],["Sorry. We haven't got pizza.","Bocsi. Nincs pizzánk."],["Is it from a tree?","Fáról származik?"],["Is it from an animal?","Állattól származik?"],["We need twelve bananas.","Tizenkét banán kell."]],
+  gaps:[{q:"I've ___ a carrot.",o:["got","get"],a:"got",p:"🥕"},{q:"I ___ got a carrot!",o:["haven't","have"],a:"haven't",hu:"Nincs répám!"},{q:"Have we got ___ fish?",o:["any","a"],a:"any"},{q:"Have we got any pizza? Yes, we ___.",o:["have","haven't"],a:"have",p:"🍕"},{q:"Have we got any fish? No, we ___.",o:["haven't","have"],a:"haven't"},{q:"An apple is from a ___.",o:["tree","animal"],a:"tree",p:"🍎"}],
+  note:"I've got = van nekem · I haven't got = nincs nekem"},
+ {id:"u5",n:"5",title:"Free time",hu:"Szabadidő",color:"#12A4B6",icon:"🚲",days:true,sticker:"🐬",
+  groups:[{t:"Days",hu:"A hét napjai",w:`Monday|hétfő|; Tuesday|kedd|; Wednesday|szerda|; Thursday|csütörtök|; Friday|péntek|; Saturday|szombat|; Sunday|vasárnap|`},
+   {t:"Activities",hu:"Mit csinálsz?",w:`go swimming|úszni jár|🏊; go fishing|horgászni jár|🎣; play football|focizik|⚽; play board games|társasozik|🎲; play tennis|teniszezik|🎾; sing songs|dalokat énekel|🎤; ride my bike|biciklizem|🚴; watch TV|tévét néz|📺; play computer games|számítógépes játékot játszik|🎮; sleep|alszik|😴`},
+   {t:"Sports",hu:"Sportok",w:`go skiing|síelni jár|⛷️; go surfing|szörfözni jár|🏄; go climbing|mászni jár|🧗; go running|futni jár|🏃; go sledging|szánkózni jár|🛷; weekend|hétvége|; bored|unatkozik|🥱`}],
+  sents:[["I go swimming on Mondays.","Hétfőnként úszni járok."],["I play football on Tuesdays.","Keddenként focizom."],["I go fishing on Wednesdays.","Szerdánként horgászni járok."],["I watch TV on Sundays.","Vasárnaponként tévét nézek."],["Do you watch TV at the weekend?","Nézel tévét hétvégén?"],["No, I don't.","Nem."],["Do you play computer games?","Játszol számítógépes játékokkal?"],["Yes, I do.","Igen."],["I'm bored.","Unatkozom."],["I like football.","Szeretem a focit."],["I don't like surfing.","Nem szeretek szörfözni."]],
+  gaps:[{q:"I go swimming ___ Mondays.",o:["on","in"],a:"on"},{q:"Do you play tennis? Yes, I ___.",o:["do","don't"],a:"do"},{q:"Do you watch TV? No, I ___.",o:["don't","do"],a:"don't"},{q:"I ___ fishing on Wednesdays.",o:["go","play"],a:"go",p:"🎣"},{q:"I ___ football on Tuesdays.",o:["play","go"],a:"play",p:"⚽"},{q:"I ___ my bike.",o:["ride","play"],a:"ride",p:"🚴"}],
+  note:"A hét napjait nagy kezdőbetűvel írjuk: Monday, Tuesday … go swimming, de play football!"},
+ {id:"u6",n:"6",title:"The old house",hu:"A régi ház",color:"#7B4FD6",icon:"🏚️",sticker:"🦇",
+  groups:[{t:"Rooms",hu:"Helyiségek",w:`bedroom|hálószoba|🛏️; bathroom|fürdőszoba|🛁; living room|nappali|🛋️; kitchen|konyha|🍳; hall|előszoba|; stairs|lépcső|; cellar|pince|; dining room|ebédlő|🍽️`},
+   {t:"Homes",hu:"Otthonok",w:`house|ház|🏠; flat|lakás|🏢; garden|kert|🌷; tent|sátor|⛺; window|ablak|🪟; tree house|faház|🌳; house boat|lakóhajó|🛥️; cave house|barlanglakás|; yurt|jurta|`}],
+  sents:[["There's a fish in the hall.","Van egy hal az előszobában."],["There are three fish in the kitchen.","Három hal van a konyhában."],["Is there a park?","Van park?"],["No, there isn't.","Nem, nincs."],["Is there a school?","Van iskola?"],["Yes, there is.","Igen, van."],["Are there any trees?","Vannak fák?"],["No, there aren't.","Nem, nincsenek."],["Are there any houses?","Vannak házak?"],["Yes, there are.","Igen, vannak."],["I live in a house.","Egy házban lakom."],["How many are there?","Hány van?"]],
+  gaps:[{q:"There ___ a fish in the hall.",o:["is","are"],a:"is"},{q:"There ___ three fish in the kitchen.",o:["are","is"],a:"are"},{q:"Is there a park? No, there ___.",o:["isn't","aren't"],a:"isn't"},{q:"Are there any trees? No, there ___.",o:["aren't","isn't"],a:"aren't"},{q:"Are there any houses? Yes, there ___.",o:["are","is"],a:"are"},{q:"I live in a ___.",o:["house","bathroom"],a:"house",p:"🏠"}],
+  note:"There's (is) = egy dologra · There are = többre: There are three bedrooms."},
+ {id:"u7",n:"7",title:"Get dressed",hu:"Öltözködj!",color:"#D6409F",icon:"👕",sticker:"🦩",
+  groups:[{t:"Clothes",hu:"Ruhák",w:`sweater|pulóver|; skirt|szoknya|; shorts|rövidnadrág|🩳; trousers|nadrág|; jacket|dzseki|🧥; socks|zokni|🧦; jeans|farmer|👖; shoes|cipő|👟; baseball cap|baseballsapka|🧢; T-shirt|póló|👕`},
+   {t:"Patterns",hu:"Minták",w:`hat|kalap|🎩; shirt|ing|👔; plain|egyszínű|; stripes|csíkok|; spots|pöttyök|; zigzags|cikcakkok|; flowers|virágok|🌸`}],
+  sents:[["Do you like these shoes?","Tetszik ez a cipő?"],["Yes, I do.","Igen."],["Do you like this hat?","Tetszik ez a kalap?"],["No, I don't.","Nem."],["Is he wearing a red hat?","Piros kalap van rajta? (fiú)"],["No, he isn't.","Nem."],["Jim's wearing a blue hat.","Jimen kék kalap van."],["Is she wearing a yellow T-shirt?","Sárga póló van rajta? (lány)"],["Yes, she is.","Igen."],["It's a white T-shirt with zigzags and spots.","Ez egy fehér póló cikcakkokkal és pöttyökkel."],["Are you eating a hot dog? Yes, I am.","Hot dogot eszel? Igen."]],
+  gaps:[{q:"Do you like ___ shoes?",o:["these","this"],a:"these",p:"👟"},{q:"Do you like ___ hat?",o:["this","these"],a:"this",p:"🎩"},{q:"Is he wearing a cap? Yes, he ___.",o:["is","isn't"],a:"is",p:"🧢"},{q:"Is she wearing a skirt? No, she ___.",o:["isn't","is"],a:"isn't"},{q:"Jim's ___ a blue hat.",o:["wearing","wear"],a:"wearing"},{q:"Are you eating a hot dog? Yes, I ___.",o:["am","is"],a:"am"}],
+  note:"this = ez (egy) · these = ezek (több): these shoes, these socks."},
+ {id:"u8",n:"8",title:"The robot",hu:"A robot",color:"#5C7CFA",icon:"🤖",sticker:"🐙",
+  groups:[{t:"Body",hu:"Testrészek",w:`arm|kar|💪; hand|kéz|✋; knee|térd|; fingers|ujjak|🖐️; leg|láb|🦵; foot|lábfej|🦶; toes|lábujjak|; head|fej|; tongue|nyelv|👅; nose|orr|👃`},
+   {t:"I can …",hu:"Mit tudsz csinálni?",w:`skip|ugrókötelezni|; stand on one leg|fél lábon állni|; swim|úszni|🏊; sing|énekelni|🎤; fly|repülni|🕊️; walk|sétálni|🚶; cook|főzni|🧑‍🍳; draw|rajzolni|✏️; dance|táncolni|💃; play the piano|zongorázni|🎹; ride a horse|lovagolni|🏇; ride a bike|biciklizni|🚴; play tennis|teniszezni|🎾; play chess|sakkozni|♟️; fly a kite|sárkányt eregetni|🪁`}],
+  sents:[["I can stand on one leg.","Tudok fél lábon állni."],["I can skip.","Tudok ugrókötelezni."],["I can swim.","Tudok úszni."],["But I can't fly.","De repülni nem tudok."],["I can't touch my toes.","Nem érem el a lábujjaimat."],["A penguin can swim.","A pingvin tud úszni."],["A penguin can't fly.","A pingvin nem tud repülni."],["Can you cook?","Tudsz főzni?"],["Yes, I can.","Igen, tudok."],["Can you draw?","Tudsz rajzolni?"],["No, I can't.","Nem, nem tudok."],["Go four steps forwards.","Lépj négyet előre!"]],
+  gaps:[{q:"A penguin ___ fly.",o:["can't","can"],a:"can't",p:"🐧"},{q:"A penguin ___ swim.",o:["can","can't"],a:"can",p:"🐧"},{q:"A fish ___ walk.",o:["can't","can"],a:"can't",p:"🐟"},{q:"A bird ___ fly.",o:["can","can't"],a:"can",p:"🐦"},{q:"Can you cook? Yes, I ___.",o:["can","can't"],a:"can"},{q:"Can you draw? No, I ___.",o:["can't","can"],a:"can't"},{q:"I've got two ___.",o:["hands","hand"],a:"hands",p:"🙌"}],
+  note:"can = tud · can't = nem tud: I can swim. I can't fly."},
+ {id:"u9",n:"9",title:"At the beach",hu:"A tengerparton",color:"#0E9F8E",icon:"🏖️",sticker:"🐢",
+  groups:[{t:"Holiday fun",hu:"Nyaralás",w:`paint a picture|képet festeni|🎨; listen to music|zenét hallgatni|🎧; catch a fish|halat fogni|🎣; take a photo|fényképezni|📷; eat ice cream|fagyit enni|🍦; play the guitar|gitározni|🎸; read a book|könyvet olvasni|📖; make a sandcastle|homokvárat építeni|🏰; look for shells|kagylót keresni|🐚`},
+   {t:"Places",hu:"Helyek",w:`beach|tengerpart|🏖️; sea|tenger|🌊; mountains|hegyek|⛰️; countryside|vidék|🌾; city|nagyváros|🏙️; lake|tó|🏞️; theme park|vidámpark|🎢; campsite|kemping|🏕️; sunglasses|napszemüveg|🕶️; holidays|vakáció|`}],
+  sents:[["Let's eat ice cream.","Együnk fagyit!"],["I'm not sure.","Nem vagyok benne biztos."],["Let's play the guitar.","Gitározzunk!"],["Good idea.","Jó ötlet."],["Let's listen to music.","Hallgassunk zenét!"],["Sorry, I don't want to.","Bocsi, nincs kedvem."],["Let's go to the mountains.","Menjünk a hegyekbe!"],["Where are my sunglasses?","Hol a napszemüvegem?"],["They're on my head!","A fejemen van!"],["Where's my hat?","Hol a kalapom?"],["It's on my head!","A fejemen van!"],["We can swim here.","Itt tudunk úszni."]],
+  gaps:[{q:"___ eat ice cream.",o:["Let's","Lets"],a:"Let's",p:"🍦"},{q:"Let's play the guitar. Good ___.",o:["idea","sure"],a:"idea"},{q:"Where ___ my sunglasses?",o:["are","is"],a:"are",p:"🕶️"},{q:"Where's my hat? It's ___ my head!",o:["on","in"],a:"on"},{q:"They ___ in my bag.",o:["aren't","isn't"],a:"aren't"},{q:"Let's ___ a sandcastle.",o:["make","take"],a:"make",p:"🏰"},{q:"Let's ___ a photo.",o:["take","make"],a:"take",p:"📷"}],
+  note:"Let's … = Gyerünk, …! Javaslatra válasz: Good idea. / I'm not sure. / Sorry, I don't want to."},
 ]},
-{id:"st",title:"Super Minds Starter",sub:"1. osztály · a tavalyi könyv, ismétléshez",cover:"#2B8C9E",units:[
- {id:"s0",n:"Hello",title:"Hello!",hu:"Köszönés, színek, számok",color:"#12A4B6",icon:"👋",
-  groups:[{t:"Hello",hu:"Köszönés",w:`hello|szia, helló|👋; goodbye|viszlát|; friend|barát|🧑‍🤝‍🧑; name|név|📛`},{t:"Numbers",hu:"Számok 1–10",w:numWords(1,10)},{t:"Colours",hu:"Színek",w:COLOUR_W}],
-  sents:[["Hello! What's your name?","Szia! Hogy hívnak?"],["I'm Tom.","Tom vagyok."],["Let's be friends!","Legyünk barátok!"],["Count to six.","Számolj hatig!"],["Where are you?","Hol vagy?"],["Goodbye!","Viszlát!"]],
-  gaps:[{q:"What's your ___?",o:["name","friend"],a:"name"},{q:"Let's be ___!",o:["friends","names"],a:"friends"}]},
- {id:"s1",n:"1",title:"My classroom",hu:"Az osztályterem",color:"#2BA84A",icon:"🏫",
-  groups:[{t:"Classroom",hu:"Az osztályteremben",w:`table|asztal|@table; chair|szék|🪑; door|ajtó|🚪; window|ablak|🪟; pencil|ceruza|✏️; book|könyv|📕; teacher|tanár|🧑‍🏫; children|gyerekek|🧒🧒; bag|táska|🎒; rubber|radír|@rubber; crayon|zsírkréta|🖍️`},
-   {t:"Instructions",hu:"Utasítások",w:`sit down|ülj le|; stand up|állj fel|; open your eyes|nyisd ki a szemed|; close your eyes|csukd be a szemed|; open the door|nyisd ki az ajtót|🚪; close the window|csukd be az ablakot|🪟; be quiet|maradj csendben|🤫; look|nézd|👀`}],
-  sents:[["Look! It's my classroom.","Nézd! Ez az osztálytermem."],["Sit down, please.","Ülj le, kérlek!"],["Stand up!","Állj fel!"],["Open your book.","Nyisd ki a könyvedet!"],["Close the door, please.","Csukd be az ajtót, kérlek!"],["Be quiet, please.","Maradj csendben, kérlek!"],["Open your eyes.","Nyisd ki a szemed!"]],
-  gaps:[{q:"Sit ___, please.",o:["down","up"],a:"down"},{q:"Stand ___!",o:["up","down"],a:"up"},{q:"___ your eyes.",o:["Close","Sit"],a:"Close"}]},
- {id:"s2",n:"2",title:"My body",hu:"A testem",color:"#D6409F",icon:"👾",
-  groups:[{t:"Body",hu:"Testrészek 1",w:`head|fej|; hair|haj|; eyes|szemek|👀; ears|fülek|👂; nose|orr|👃; mouth|száj|👄; teeth|fogak|🦷; neck|nyak|`},
-   {t:"Body 2",hu:"Testrészek 2",w:`arms|karok|💪; hands|kezek|🙌; fingers|ujjak|🖐️; tummy|has, pocak|; legs|lábak|🦵; knees|térdek|; feet|lábfejek|🦶; toes|lábujjak|; shoulders|vállak|; monster|szörny|👾`}],
-  sents:[["I've got two eyes.","Két szemem van."],["I've got one nose.","Egy orrom van."],["It has got three legs.","Három lába van."],["How many arms have you got?","Hány karod van?"],["I've got two arms.","Két karom van."],["How many ears has it got?","Hány füle van?"],["It has got four ears.","Négy füle van."],["Oh no, a monster!","Jaj, egy szörny!"]],
-  gaps:[{q:"I've got one ___.",o:["nose","noses"],a:"nose",p:"👃"},{q:"I've got two ___.",o:["eyes","eye"],a:"eyes",p:"👀"},{q:"It ___ got three legs.",o:["has","have"],a:"has",p:"👾"},{q:"I ___ got two hands.",o:["have","has"],a:"have"},{q:"How many ___ have you got?",o:["legs","leg"],a:"legs"},{q:"I've got ten ___.",o:["fingers","finger"],a:"fingers"}],
-  note:"A felmérésen fontos volt az egyes és többes szám (pl. one nose – two eyes), és hogy össze tudják hasonlítani magukat egy szörnnyel: I've got 2 legs, it has got 3 legs."},
- {id:"s3",n:"3",title:"My family",hu:"A családom",color:"#7B4FD6",icon:"👨‍👩‍👧",
-  groups:[{t:"Family",hu:"Család",w:`mum|anya|👩; dad|apa|👨; sister|lánytestvér|👧; brother|fiútestvér|👦; grandma|nagymama|👵; grandpa|nagypapa|👴; baby|kisbaba|👶; family|család|👨‍👩‍👧‍👦; friend|barát|🧑‍🤝‍🧑`}],
-  sents:[["This is my sister.","Ő a lánytestvérem."],["This is my brother.","Ő a fiútestvérem."],["Is this your mum?","Ő az anyukád?"],["Yes, it is.","Igen, ő az."],["No, it isn't.","Nem, nem ő az."],["This is my grandma.","Ő a nagymamám."],["Is this your dad?","Ő az apukád?"],["I'm not your sister.","Nem vagyok a lánytestvéred."]],
-  gaps:[{q:"Is this your mum? Yes, it ___.",o:["is","isn't"],a:"is"},{q:"Is this your brother? No, it ___.",o:["isn't","is"],a:"isn't"},{q:"___ is my grandpa.",o:["This","Is"],a:"This",p:"👴"}]},
- {id:"s4",n:"4",title:"Animals",hu:"Állatok",color:"#E6A700",ink:"#1D2742",icon:"🦁",
-  groups:[{t:"Wild animals",hu:"Vadállatok",w:`lion|oroszlán|🦁; zebra|zebra|🦓; giraffe|zsiráf|🦒; elephant|elefánt|🐘; monkey|majom|🐒; parrot|papagáj|🦜; squirrel|mókus|🐿️; snake|kígyó|🐍; butterfly|pillangó|🦋; fish|hal|🐟; shark|cápa|🦈; frog|béka|🐸; duck|kacsa|🦆; crocodile|krokodil|🐊; hippo|víziló|🦛; bear|medve|🐻; fox|róka|🦊; wolf|farkas|🐺; spider|pók|🕷️; tiger|tigris|🐯; bird|madár|🐦; penguin|pingvin|🐧; turtle|teknős|🐢`},
-   {t:"Farm animals & pets",hu:"Háziállatok",w:`cat|macska|🐱; dog|kutya|🐶; rabbit|nyúl|🐰; mouse|egér|🐭; cow|tehén|🐮; pig|malac|🐷; sheep|birka|🐑; hen|tyúk|🐔; horse|ló|🐴`}],
-  sents:[["The frog lives in the pond.","A béka a tóban él."],["The fish lives in the pond, too.","A hal is a tóban él."],["The monkey lives in the tree.","A majom a fán él."],["The parrot lives in the tree.","A papagáj a fán él."],["The lion lives on the grassland.","Az oroszlán a füves pusztán él."],["The zebra lives on the grassland.","A zebra a füves pusztán él."],["It's a big lion.","Ez egy nagy oroszlán."],["It's a small fish.","Ez egy kicsi hal."],["My favourite animal is a parrot.","A kedvenc állatom a papagáj."],["Can you see the zebra?","Látod a zebrát?"]],
-  gaps:[{q:"The frog lives ___ the pond.",o:["in","on"],a:"in",p:"🐸"},{q:"The lion lives ___ the grassland.",o:["on","in"],a:"on",p:"🦁"},{q:"The parrot lives in the ___.",o:["tree","pond"],a:"tree",p:"🦜"},{q:"The fish lives in the ___.",o:["pond","tree"],a:"pond",p:"🐟"},{q:"The giraffe lives on the ___.",o:["grassland","pond"],a:"grassland",p:"🦒"},{q:"The monkey lives in the ___.",o:["tree","grassland"],a:"tree",p:"🐒"}],
-  note:"A felmérésen az állatnevek és az ilyen mondatok voltak: The lion lives on the grassland. The parrot lives in the tree. The frog lives in the pond."},
- {id:"s5",n:"5",title:"Food",hu:"Ételek",color:"#F28C28",icon:"🍎",
-  groups:[{t:"Fruit",hu:"Gyümölcsök",w:`apple|alma|🍎; banana|banán|🍌; plum|szilva|; pear|körte|🍐; orange|narancs|🍊; peach|őszibarack|🍑; melon|dinnye|🍈; lemon|citrom|🍋; grapes|szőlő|🍇; cherry|cseresznye|🍒; strawberry|eper|🍓; kiwi|kivi|🥝`},
-   {t:"Vegetables",hu:"Zöldségek",w:`tomato|paradicsom|🍅; cucumber|uborka|🥒; pepper|paprika|🫑; carrot|répa|🥕; potato|krumpli|🥔; onion|hagyma|🧅; radish|retek|; pumpkin|tök|🎃; lettuce|saláta|🥬`},
-   {t:"Food & drinks",hu:"Ételek és italok",w:`pizza|pizza|🍕; spaghetti|spagetti|🍝; egg|tojás|🥚; toast|pirítós|🍞; cheese|sajt|🧀; chips|sült krumpli|🍟; chicken|csirke|🍗; ketchup|ketchup|; hot dog|hot dog|🌭; hamburger|hamburger|🍔; chocolate|csokoládé|🍫; cake|torta|🍰; ice cream|fagylalt|🍦; water|víz|💧; tea|tea|🍵; milk|tej|🥛; fruit juice|gyümölcslé|🧃`}],
-  sents:[["I like apples.","Szeretem az almát."],["I don't like onions.","Nem szeretem a hagymát."],["Do you like pizza?","Szereted a pizzát?"],["Yes, I do.","Igen, szeretem."],["No, I don't.","Nem, nem szeretem."],["I'm hungry.","Éhes vagyok."],["I'm thirsty.","Szomjas vagyok."],["I don't know.","Nem tudom."],["Milk, please.","Tejet kérek."],["Do you like bananas?","Szereted a banánt?"]],
-  gaps:[{q:"Do you like cake? Yes, I ___.",o:["do","don't"],a:"do",p:"🍰"},{q:"Do you like onions? No, I ___.",o:["don't","do"],a:"don't",p:"🧅"},{q:"I'm ___. I want water.",o:["thirsty","hungry"],a:"thirsty",p:"💧"},{q:"I'm ___. I want a hamburger.",o:["hungry","thirsty"],a:"hungry",p:"🍔"},{q:"I ___ like carrots. 👎",o:["don't","do"],a:"don't"}]},
- {id:"s6",n:"6",title:"My town",hu:"A városom",color:"#3D6BE0",icon:"🏙️",baskets:true,
-  groups:[{t:"Places",hu:"Helyek a városban",w:`school|iskola|🏫; shop|bolt|🏪; hospital|kórház|🏥; bus stop|buszmegálló|🚏; park|park|🏞️; cinema|mozi|🎬; toy shop|játékbolt|🧸; café|kávézó|☕; market|piac|🧺; playground|játszótér|🛝; sports centre|sportközpont|🏟️; town|város|🏙️`}],
-  sents:[["There's a school.","Van egy iskola."],["There are three shops.","Van három bolt."],["There's a hospital.","Van egy kórház."],["There are five bus stops.","Van öt buszmegálló."],["There's a cinema.","Van egy mozi."],["Is there a café?","Van kávézó?"],["Yes, there is.","Igen, van."],["No, there isn't.","Nem, nincs."],["Where's the toy shop?","Hol van a játékbolt?"],["It's my favourite place.","Ez a kedvenc helyem."]],
-  gaps:[{q:"There ___ a park.",o:["is","are"],a:"is"},{q:"There ___ two cinemas.",o:["are","is"],a:"are"},{q:"There are three ___.",o:["shops","shop"],a:"shops"},{q:"There's a ___.",o:["hospital","hospitals"],a:"hospital"},{q:"Is there a playground? Yes, there ___.",o:["is","are"],a:"is"},{q:"Are there two parks? No, there ___.",o:["aren't","isn't"],a:"aren't"}],
-  note:"Gyakori hiba a többes számú -s elhagyása: There are three shops (nem: three shop)."},
- {id:"s7",n:"7",title:"Jobs",hu:"Foglalkozások",color:"#9A6B43",icon:"🧑‍⚕️",
-  groups:[{t:"Jobs",hu:"Foglalkozások",w:`doctor|orvos|🧑‍⚕️; vet|állatorvos|🐶🩺; dentist|fogorvos|🦷; firefighter|tűzoltó|🧑‍🚒; police officer|rendőr|👮; gardener|kertész|🧑‍🌾; farmer|gazda|🚜; teacher|tanár|🧑‍🏫; clown|bohóc|🤡; shop assistant|eladó|🛒`},
-   {t:"Workplaces",hu:"Munkahelyek",w:`hospital|kórház|🏥; shop|bolt|🏪; circus|cirkusz|🎪; animal hospital|állatkórház|🐾; farm|farm, tanya|🐄; police station|rendőrség|🚓; fire station|tűzoltóság|🚒; school|iskola|🏫; garden|kert|🌷; inside|bent|🏠; outside|kint|🌳`}],
-  sents:[["She's a doctor.","Ő orvos. (nő)"],["He's a vet.","Ő állatorvos. (férfi)"],["She works in a hospital.","Kórházban dolgozik. (nő)"],["He works in a garden.","Kertben dolgozik. (férfi)"],["He works in a circus.","Cirkuszban dolgozik. (férfi)"],["She works in a shop.","Boltban dolgozik. (nő)"],["Is she a doctor?","Ő orvos? (nő)"],["Yes, she is.","Igen, az."],["Is he a firefighter?","Ő tűzoltó? (férfi)"],["No, he isn't.","Nem, nem az."],["What's his job?","Mi a foglalkozása? (férfi)"],["He's a police officer.","Ő rendőr. (férfi)"],["He works on a farm.","Farmon dolgozik."]],
-  gaps:[{q:"Is she a vet? Yes, ___ is.",p:"👩",o:["she","he"],a:"she"},{q:"Is he a teacher? No, he ___.",o:["isn't","is"],a:"isn't",p:"👨"},{q:"___ a clown.",p:"👨",o:["He's","She's"],a:"He's"},{q:"___ a doctor.",p:"👩",o:["She's","He's"],a:"She's"},{q:"A doctor works in a ___.",o:["hospital","circus","garden"],a:"hospital"},{q:"A clown works in a ___.",o:["circus","hospital","school"],a:"circus"},{q:"A gardener works in a ___.",o:["garden","shop","circus"],a:"garden"},{q:"A teacher works in a ___.",o:["school","farm","circus"],a:"school"},{q:"A firefighter works in a ___.",o:["fire station","police station","shop"],a:"fire station"}]},
- {id:"s8",n:"8",title:"Clothes",hu:"Ruhák",color:"#5C7CFA",icon:"🧣",
-  groups:[{t:"Clothes",hu:"Ruhák",w:`jeans|farmernadrág|👖; T-shirt|póló|👕; sweater|pulóver|; hat|sapka|🧢; coat|kabát|🧥; boots|csizma|🥾; scarf|sál|🧣; shoes|cipő|👟; socks|zokni|🧦; dress|ruha (lányruha)|👗; gloves|kesztyű|🧤; shorts|rövidnadrág|🩳; cold|hideg|🥶; hot|meleg|🥵`}],
-  sents:[["I'm wearing my coat.","Rajtam van a kabátom."],["I'm wearing my boots and my scarf.","Rajtam van a csizmám és a sálam."],["Is he wearing a hat?","Van rajta sapka? (fiú)"],["Yes, he is.","Igen."],["Is she wearing a scarf?","Van rajta sál? (lány)"],["No, she isn't.","Nem."],["It's cold!","Hideg van!"],["Put on your sweater.","Vedd fel a pulóveredet!"],["Take off your jacket.","Vedd le a dzsekidet!"],["I'm hot now!","Most melegem van!"],["What are you wearing?","Mi van rajtad?"]],
-  gaps:[{q:"Is he wearing a coat? Yes, he ___.",o:["is","isn't"],a:"is"},{q:"Is she wearing a hat? No, she ___.",o:["isn't","is"],a:"isn't"},{q:"It's cold. Put ___ your coat.",o:["on","off"],a:"on",p:"🥶"},{q:"I'm hot. Take ___ your sweater.",o:["off","on"],a:"off",p:"🥵"},{q:"I'm ___ my jeans.",o:["wearing","wear"],a:"wearing",p:"👖"}]},
- {id:"s9",n:"9",title:"Actions",hu:"Cselekvések",color:"#E5484D",icon:"🏃",
-  groups:[{t:"Actions",hu:"Mit csinálsz?",w:`walk|sétálni|🚶; run|futni|🏃; jump|ugrani|🦘; swim|úszni|🏊; fly|repülni|🕊️; sit|ülni|🪑; stand|állni|🧍; open|kinyitni|📖; close|becsukni|📕; dance|táncolni|💃; sing a song|dalt énekelni|🎤; say hello|köszönni|👋; look in the mirror|tükörbe nézni|🪞; listen to music|zenét hallgatni|🎧; paint a picture|képet festeni|🖌️; show your picture|megmutatni a képed|🖼️; point at the picture|rámutatni a képre|👉; grow|nőni|🌱; touch your hair|megérinteni a hajad|; come with me|velem jönni|; go to school|iskolába menni|🚸; play a game|játszani|🎲; play football|focizni|⚽; play tennis|teniszezni|🎾; guess|kitalálni|❓; sleep|aludni|😴; read a book|könyvet olvasni|📚; write homework|leckét írni|✍️; draw a circle|kört rajzolni|⭕; eat an apple|almát enni|🍎; drink water|vizet inni|🥤; work|dolgozni|💼; count your points|megszámolni a pontjaidat|🔢; stop|megállni|🛑; stay here|itt maradni|; sail a boat|hajózni|⛵; wear boots|csizmát hordani|👢; put on your hat|felvenni a sapkád|🧢; take off your jacket|levenni a dzsekid|; watch films|filmet nézni|🎬; match|párosítani|🧩; help|segíteni|🤝; do gymnastics|tornázni|🤸; ride a bike|biciklizni|🚴; ride a horse|lovagolni|🏇`}],
-  sents:[["I'm swimming.","Úszom."],["Are you dancing?","Táncolsz?"],["No, I'm not.","Nem."],["Yes, I am.","Igen."],["Guess what I'm doing!","Találd ki, mit csinálok!"],["Two children are reading.","Két gyerek olvas."],["Let's play a game!","Játsszunk!"],["I'm riding a bike.","Biciklizem."],["She's dancing.","Táncol. (lány)"],["He's playing football.","Focizik. (fiú)"]],
-  gaps:[{q:"Are you swimming? Yes, I ___.",o:["am","is"],a:"am",p:"🏊"},{q:"Are you dancing? No, I'm ___.",o:["not","no"],a:"not"},{q:"Two children ___ reading.",o:["are","is"],a:"are",p:"📚"},{q:"I'm ___ a song.",o:["singing","sing"],a:"singing",p:"🎤"},{q:"Let's ___ football!",o:["play","go","ride"],a:"play",p:"⚽"},{q:"I ___ a bike.",o:["ride","play"],a:"ride",p:"🚴"}]},
+{id:"st",title:"Super Minds Starter",sub:"Second Edition · Starter",cover:"#2B8C9E",units:[
+ {id:"s0",n:"0",title:"Say Hello!",hu:"Köszönj!",color:"#12A4B6",icon:"👋",sticker:"🐣",
+  groups:[{t:"Colours",hu:"Színek",w:colours(["blue","green","yellow","orange","red","pink"])},{t:"Numbers",hu:"Számok 1–10",w:numWords(1,10)},{t:"Hello",hu:"Köszönés",w:`hello|szia|👋; friends|barátok|🧑‍🤝‍🧑; name|név|📛`}],
+  sents:[["Hello! What's your name?","Szia! Hogy hívnak?"],["I'm Misty.","Misty vagyok."],["What colour is it?","Milyen színű?"],["It's blue.","Kék."],["Let's be friends!","Legyünk barátok!"]],
+  gaps:[{q:"What's your ___?",o:["name","colour"],a:"name"},{q:"___ Misty.",o:["I'm","It's"],a:"I'm"},{q:"What ___ is it? It's red.",o:["colour","name"],a:"colour"}]},
+ {id:"s1",n:"1",title:"My classroom",hu:"Az osztálytermem",color:"#2BA84A",icon:"🏫",sticker:"🦋",
+  groups:[{t:"Classroom",hu:"Az osztályteremben",w:`window|ablak|🪟; door|ajtó|🚪; chair|szék|🪑; pencil|ceruza|✏️; book|könyv|📕; table|asztal|@table; crayon|zsírkréta|🖍️; pen|toll|🖊️; rubber|radír|@rubber`},
+   {t:"Instructions",hu:"Utasítások",w:`stand up|állj fel|; sit down|ülj le|; open your book|nyisd ki a könyved|📖; close your book|csukd be a könyved|; butterfly|pillangó|🦋; ice|jég|🧊`}],
+  sents:[["Stand up!","Állj fel!"],["Sit down, Paul.","Ülj le, Paul!"],["Open your book.","Nyisd ki a könyvedet!"],["Close your book.","Csukd be a könyvedet!"],["What is it?","Mi ez?"],["It's a book.","Ez egy könyv."],["It's a pencil.","Ez egy ceruza."],["It's a table.","Ez egy asztal."],["It's ice!","Ez jég!"],["Look! It's my classroom.","Nézd! Ez az osztálytermem."]],
+  gaps:[{q:"Sit ___, Paul.",o:["down","up"],a:"down"},{q:"Stand ___!",o:["up","down"],a:"up"},{q:"What is it? It's a ___.",o:["book","books"],a:"book",p:"📕"},{q:"___ your book.",o:["Open","Sit"],a:"Open",p:"📖"}]},
+ {id:"s2",n:"2",title:"My body",hu:"A testem",color:"#D6409F",icon:"👾",sticker:"🐙",
+  groups:[{t:"Body",hu:"Testrészek",w:`eyes|szemek|👀; ears|fülek|👂; mouth|száj|👄; arms|karok|💪; nose|orr|👃; head|fej|; legs|lábak|🦵`},
+   {t:"Monster fun",hu:"Szörnyes szavak",w:`walk|sétálni|🚶; run|futni|🏃; wave|integetni|👋; sit|ülni|🪑; monster|szörny|👾; skeleton|csontváz|💀; chocolate|csoki|🍫; ice cream|fagyi|🍦`}],
+  sents:[["I've got two eyes.","Két szemem van."],["How many ears?","Hány fül?"],["How many eyes have you got?","Hány szemed van?"],["I've got three eyes.","Három szemem van."],["How many heads have you got?","Hány fejed van?"],["I've got two heads.","Két fejem van."],["I've got five noses.","Öt orrom van."],["Run, run, run!","Fuss, fuss, fuss!"]],
+  gaps:[{q:"I've got two ___.",o:["eyes","eye"],a:"eyes",p:"👀"},{q:"I've got one ___.",o:["nose","noses"],a:"nose",p:"👃"},{q:"How ___ ears have you got?",o:["many","old"],a:"many"},{q:"I've ___ two arms.",o:["got","get"],a:"got",p:"💪"}],
+  note:"one nose – two eyes: kettőtől többes szám, -s a végén!"},
+ {id:"s3",n:"3",title:"My family",hu:"A családom",color:"#7B4FD6",icon:"👨‍👩‍👧",sticker:"🐻",
+  groups:[{t:"Family",hu:"Család",w:`mum|anya|👩; dad|apa|👨; grandpa|nagypapa|👴; grandma|nagymama|👵; sister|lánytestvér|👧; brother|fiútestvér|👦`},
+   {t:"Animal family",hu:"Állatcsalád",w:`hen|tyúk|🐔; dog|kutya|🐶; duck|kacsa|🦆; cat|macska|🐱`}],
+  sents:[["This is my brother.","Ő a fiútestvérem."],["Is this your brother?","Ő a fiútestvéred?"],["Yes, it is.","Igen, ő az."],["No, it isn't.","Nem, nem ő."],["This is my sister.","Ő a lánytestvérem."],["I'm not your sister.","Nem vagyok a lánytestvéred."],["I'm your brother.","A fiútestvéred vagyok."],["Is this your sister?","Ő a lánytestvéred?"]],
+  gaps:[{q:"Is this your mum? Yes, it ___.",o:["is","isn't"],a:"is",p:"👩"},{q:"Is this your brother? No, it ___.",o:["isn't","is"],a:"isn't"},{q:"___ is my grandpa.",o:["This","Is"],a:"This",p:"👴"},{q:"I'm ___ your sister.",o:["not","no"],a:"not"}]},
+ {id:"s4",n:"4",title:"At the zoo",hu:"Az állatkertben",color:"#E6A700",ink:"#1D2742",icon:"🦁",sticker:"🦁",
+  groups:[{t:"Zoo animals",hu:"Állatkerti állatok",w:`fish|hal|🐟; parrot|papagáj|🦜; zebra|zebra|🦓; lion|oroszlán|🦁; penguin|pingvin|🐧; monkey|majom|🐒; frog|béka|🐸; big|nagy|; small|kicsi|`},
+   {t:"Habitats",hu:"Hol élnek?",w:`tree|fa|🌳; pond|tó|; grassland|füves puszta|🌾; zoo|állatkert|; animal|állat|`}],
+  sents:[["It's a big lion.","Ez egy nagy oroszlán."],["It's a big fish.","Ez egy nagy hal."],["It's a small fish.","Ez egy kicsi hal."],["What's your favourite animal?","Mi a kedvenc állatod?"],["A penguin!","Egy pingvin!"],["A black and white penguin.","Egy fekete-fehér pingvin."],["The frog lives in the pond.","A béka a tóban él."],["The monkey lives in the tree.","A majom a fán él."],["The lion lives on the grassland.","Az oroszlán a füves pusztán él."]],
+  gaps:[{q:"It's a ___ lion.",o:["big","small"],a:"big",p:"🦁"},{q:"The frog lives ___ the pond.",o:["in","on"],a:"in",p:"🐸"},{q:"The lion lives ___ the grassland.",o:["on","in"],a:"on",p:"🦁"},{q:"The monkey lives in the ___.",o:["tree","pond"],a:"tree",p:"🐒"},{q:"What's your ___ animal?",o:["favourite","big"],a:"favourite"}]},
+ {id:"s5",n:"5",title:"My food",hu:"Az ételeim",color:"#F28C28",icon:"🍰",sticker:"🐷",
+  groups:[{t:"Food",hu:"Ételek",w:`milk|tej|🥛; cakes|sütik|🍰; oranges|narancsok|🍊; tomatoes|paradicsomok|🍅; chocolate|csoki|🍫; pears|körték|🍐`},
+   {t:"Fruit & vegetables",hu:"Gyümölcs és zöldség",w:`potatoes|krumplik|🥔; carrots|répák|🥕; bananas|banánok|🍌`}],
+  sents:[["I like oranges.","Szeretem a narancsot."],["I don't like milk.","Nem szeretem a tejet."],["I like cakes.","Szeretem a sütit."],["I don't like pears.","Nem szeretem a körtét."],["Do you like pink?","Szereted a rózsaszínt?"],["Yes, I do.","Igen."],["No, I don't.","Nem."],["Do you like chocolate?","Szereted a csokit?"],["How about you?","És te?"]],
+  gaps:[{q:"Do you like cakes? Yes, I ___.",o:["do","don't"],a:"do",p:"🍰"},{q:"Do you like milk? No, I ___.",o:["don't","do"],a:"don't",p:"🥛"},{q:"I ___ like pears. 👎",o:["don't","do"],a:"don't"},{q:"I like ___.",o:["oranges","orange"],a:"oranges",p:"🍊"}]},
+ {id:"s6",n:"6",title:"My town",hu:"A városom",color:"#3D6BE0",icon:"🏙️",baskets:true,sticker:"🐦",
+  groups:[{t:"Places",hu:"Helyek a városban",w:`bus stop|buszmegálló|🚏; school|iskola|🏫; cinema|mozi|🎬; hospital|kórház|🏥; toy shop|játékbolt|🧸; park|park|🏞️`},
+   {t:"More places",hu:"Még több hely",w:`market|piac|🧺; café|kávézó|☕; playground|játszótér|🛝; sports centre|sportközpont|🏟️`}],
+  sents:[["There's a park.","Van egy park."],["There are three bus stops.","Van három buszmegálló."],["There are two cinemas.","Van két mozi."],["Look! There are two cinemas!","Nézd! Két mozi van!"],["Where's the park?","Hol van a park?"],["It's there.","Ott van."],["This is a hospital.","Ez egy kórház."],["There's a pen.","Van egy toll."],["There are four pens.","Van négy toll."]],
+  gaps:[{q:"There ___ a park.",o:["is","are"],a:"is"},{q:"There ___ two cinemas.",o:["are","is"],a:"are"},{q:"There are four ___.",o:["pens","pen"],a:"pens",p:"🖊️🖊️🖊️🖊️"},{q:"Where's the cinema? It's ___.",o:["there","the"],a:"there"}],
+  note:"There's a … = egy van · There are … = több van, és ne felejtsd el a -s-t: three bus stops!"},
+ {id:"s7",n:"7",title:"Jobs",hu:"Foglalkozások",color:"#9A6B43",icon:"🧑‍⚕️",sticker:"🐶",
+  groups:[{t:"Jobs",hu:"Foglalkozások",w:`teacher|tanár|🧑‍🏫; fire fighter|tűzoltó|🧑‍🚒; gardener|kertész|🧑‍🌾; police officer|rendőr|👮; vet|állatorvos|🐶🩺; doctor|orvos|🧑‍⚕️`},
+   {t:"More jobs",hu:"Még több foglalkozás",w:`farmer|gazda|🚜; shop assistant|eladó|🛒; dentist|fogorvos|🦷; inside|bent|🏠; outside|kint|🌳`}],
+  sents:[["He's a police officer.","Ő rendőr. (férfi)"],["She's a gardener.","Ő kertész. (nő)"],["Is she a vet?","Ő állatorvos? (nő)"],["Yes, she is.","Igen, az."],["Is he a fire fighter?","Ő tűzoltó? (férfi)"],["No, he isn't. He's a gardener.","Nem, nem az. Ő kertész."],["Is she a doctor?","Ő orvos? (nő)"],["He's a farmer. He's outside.","Ő gazda. Kint van."],["Look! I'm a vet.","Nézd! Állatorvos vagyok."]],
+  gaps:[{q:"Is she a vet? Yes, ___ is.",p:"👩",o:["she","he"],a:"she"},{q:"Is he a doctor? No, he ___.",p:"👨",o:["isn't","is"],a:"isn't"},{q:"___ a fire fighter.",p:"👨",o:["He's","She's"],a:"He's"},{q:"___ a teacher.",p:"👩",o:["She's","He's"],a:"She's"},{q:"A farmer works ___.",o:["outside","inside"],a:"outside",p:"🚜"}]},
+ {id:"s8",n:"8",title:"My clothes",hu:"A ruháim",color:"#5C7CFA",icon:"🧣",sticker:"🐧",
+  groups:[{t:"Clothes",hu:"Ruhák",w:`hat|sapka|🧢; coat|kabát|🧥; sweater|pulóver|; scarf|sál|🧣; gloves|kesztyű|🧤; T-shirt|póló|👕; boots|csizma|🥾; jeans|farmer|👖`},
+   {t:"Hot or cold?",hu:"Meleg vagy hideg?",w:`soft|puha|; hard|kemény|; cold|hideg|🥶; hot|meleg|🥵; belt|öv|; sunglasses|napszemüveg|🕶️`}],
+  sents:[["I'm wearing a hat.","Sapka van rajtam."],["I'm wearing my hat!","Rajtam van a sapkám!"],["Is he wearing a scarf?","Van rajta sál? (fiú)"],["Yes, he is.","Igen."],["Is he wearing a coat?","Van rajta kabát? (fiú)"],["No, he isn't.","Nem."],["Is she wearing a scarf?","Van rajta sál? (lány)"],["Yes, she is.","Igen."],["It's cold!","Hideg van!"]],
+  gaps:[{q:"Is he wearing a coat? Yes, he ___.",o:["is","isn't"],a:"is",p:"🧥"},{q:"Is she wearing a hat? No, she ___.",o:["isn't","is"],a:"isn't"},{q:"I'm ___ my gloves.",o:["wearing","wear"],a:"wearing",p:"🧤"},{q:"It's ___! Put on your scarf.",o:["cold","hot"],a:"cold",p:"🥶"}]},
+ {id:"s9",n:"9",title:"My hobbies",hu:"A hobbijaim",color:"#E5484D",icon:"⚽",sticker:"🐬",
+  groups:[{t:"Hobbies",hu:"Hobbik",w:`play football|focizni|⚽; run|futni|🏃; paint a picture|képet festeni|🎨; swim|úszni|🏊; read|olvasni|📖; dance|táncolni|💃`},
+   {t:"-ing",hu:"Éppen most…",w:`playing football|focizik|⚽; running|fut|🏃; painting|fest|🎨; swimming|úszik|🏊; reading|olvas|📖; dancing|táncol|💃; watching films|filmet néz|🎬; playing computer games|számítógépes játékot játszik|🎮`}],
+  sents:[["I'm dancing!","Táncolok!"],["I'm swimming.","Úszom."],["I'm running.","Futok."],["Are you swimming?","Úszol?"],["Yes, I am.","Igen."],["No, I'm not.","Nem."],["Are you dancing? Yes, I am!","Táncolsz? Igen!"],["Look, I'm playing football!","Nézd, focizom!"],["Do you like reading? Yes, I do.","Szeretsz olvasni? Igen."]],
+  gaps:[{q:"Are you running? No, I'm ___.",o:["not","no"],a:"not",p:"🏃"},{q:"Are you swimming? Yes, I ___.",o:["am","is"],a:"am",p:"🏊"},{q:"I'm ___!",o:["dancing","dance"],a:"dancing",p:"💃"},{q:"Look, I'm ___ football!",o:["playing","play"],a:"playing",p:"⚽"}]},
 ]}];
 </script>
 <style>
@@ -410,6 +462,19 @@ const BOOKS=[
 .prompt-pic{min-width:132px;min-height:110px;border-radius:22px;background:var(--card);border:2px solid var(--line);display:grid;place-items:center;padding:10px;box-shadow:var(--shadow)}
 .prompt-pic svg{width:90px;height:90px}
 .gapq .blank{min-width:3.5em}
+.hello{display:flex;gap:12px;align-items:center;margin-top:16px}
+.hello .ele-big{font-size:3.2rem;line-height:1;flex:none;animation:hop 1.4s ease-in-out 1}
+.hello .msg{min-width:0;flex:1}
+.hello b{font-family:var(--f-display);font-size:1.3rem;display:block}
+.lvl{margin-top:6px;font-weight:800;font-size:.85rem;color:var(--ink-soft)}
+.lvlbar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:4px}
+.lvlbar i{display:block;height:100%;background:var(--gold);border-radius:99px}
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin-top:10px}
+.stk{border:2px solid var(--line);border-radius:16px;background:var(--card-2);padding:8px 4px;text-align:center;font-weight:800;font-size:.72rem;line-height:1.2;min-width:0;overflow-wrap:anywhere}
+.stk .se{font-size:2.3rem;display:block;line-height:1.2}
+.stk.lock{opacity:.55}.stk.lock .se{filter:grayscale(1) brightness(.6)}
+.stk.got{background:var(--card);border-color:var(--gold);box-shadow:0 3px 0 var(--gold)}
+.gaphu{display:block;font-size:.9rem;font-weight:700;color:var(--ink-soft);margin-top:4px}
 .famcode{font-family:var(--f-display);font-weight:800;font-size:1.5rem;letter-spacing:.08em;color:var(--accent);user-select:all}
 .bk{border-color:var(--accent);box-shadow:0 4px 0 var(--accent)}
 .bk-h{display:flex;gap:12px;align-items:center;margin-bottom:14px}
@@ -441,13 +506,13 @@ const PRAISE=["Ügyes!","Szuper!","Nagyszerű!","Pompás!","Így tovább!","Teli
 const OOPS=["Majdnem!","Semmi baj, később újra jön.","Ezt még gyakoroljuk."];
 
 /* ---------- pictures ---------- */
-const SHAPES=["circle","square","triangle","rectangle","star","heart","oval","diamond"];
+const SHAPES=["triangle","circle","square","rectangle"];
 const SHAPE_FILL={circle:"#E53935",square:"#1E66F5",triangle:"#2E9E44",rectangle:"#FB8C00",star:"#FDD835",heart:"#D6409F",oval:"#8E44AD",diamond:"#12A4B6"};
 function starPts(){const p=[];for(let i=0;i<10;i++){const r=i%2?19:45,a=-Math.PI/2+i*Math.PI/5;p.push((50+r*Math.cos(a)).toFixed(1)+","+(53+r*Math.sin(a)).toFixed(1))}return p.join(" ")}
 const STAR=starPts();
 function shapeSVG(n,fill){fill=fill||SHAPE_FILL[n]||"#3D6BE0";const d={circle:'<circle cx="50" cy="50" r="40"/>',square:'<rect x="13" y="13" width="74" height="74" rx="3"/>',triangle:'<polygon points="50,10 92,86 8,86"/>',rectangle:'<rect x="5" y="27" width="90" height="46" rx="3"/>',star:'<polygon points="'+STAR+'"/>',heart:'<path d="M50 88C22 68 6 52 6 33 6 19 17 9 30 9c9 0 16 5 20 13 4-8 11-13 20-13 13 0 24 10 24 24 0 19-16 35-44 55z"/>',oval:'<ellipse cx="50" cy="50" rx="45" ry="28"/>',diamond:'<polygon points="50,5 88,50 50,95 12,50"/>'}[n];return '<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="'+fill+'" stroke="rgba(0,0,0,.28)" stroke-width="3" stroke-linejoin="round">'+d+'</g></svg>'}
 function swatchSVG(c){return '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 8c20 0 40 10 42 32 2 18-8 26-6 38 1 9-10 16-24 14-12-2-16-8-30-6C18 88 6 80 8 64c2-12 10-16 8-28C14 18 30 8 50 8z" fill="'+c+'" stroke="rgba(0,0,0,.3)" stroke-width="3"/></svg>'}
-function numPic(n){let dots="";for(let i=0;i<n;i++){const row=i<6?0:1,col=i%6;dots+='<circle cx="'+(20+col*12)+'" cy="'+(78+row*12)+'" r="4.4" fill="#E9A800"/>'}return '<svg viewBox="0 0 100 100" aria-hidden="true"><text x="50" y="'+(n>6?58:62)+'" text-anchor="middle" font-size="56" font-weight="800" font-family="Baloo 2, sans-serif" fill="currentColor">'+n+'</text>'+dots+'</svg>'}
+function numPic(n){let dots="";for(let i=0;i<(n>12?0:n);i++){const row=i<6?0:1,col=i%6;dots+='<circle cx="'+(20+col*12)+'" cy="'+(78+row*12)+'" r="4.4" fill="#E9A800"/>'}return '<svg viewBox="0 0 100 100" aria-hidden="true"><text x="50" y="'+(n>12?68:n>6?58:62)+'" text-anchor="middle" font-size="56" font-weight="800" font-family="Baloo 2, sans-serif" fill="currentColor">'+n+'</text>'+dots+'</svg>'}
 const S2='stroke="rgba(0,0,0,.28)" stroke-width="2"';
 const ICONS={
  rubber:'<svg viewBox="0 0 64 64" aria-hidden="true"><g transform="rotate(-18 32 32)"><rect x="8" y="22" width="48" height="22" rx="5" fill="#F48FB1"/><rect x="34" y="22" width="22" height="22" fill="#5C7CFA"/><rect x="8" y="22" width="48" height="22" rx="5" fill="none" '+S2+'/></g></svg>',
@@ -471,24 +536,34 @@ BOOKS.forEach(b=>b.units.forEach(u=>{u.book=b;u.words=[];u.groups.forEach((g,gi)
  L.push({id:u.id+":mix",kind:"mix",name:"Ismétlés",icon:"🏆",unit:u});u.lessons=L;UNITS.push(u);UNIT[u.id]=u}));
 const LESSON={};UNITS.forEach(u=>u.lessons.forEach(l=>LESSON[l.id]=l));
 const unitLabel=u=>/^\d+$/.test(u.n)?"Unit "+u.n:u.n;
-const COL_HU={};UNIT.w1.groups[0].words.forEach(w=>COL_HU[w.en]=w.hu);
+const COL_HU=COL_HU0;
 
 /* ---------- state ---------- */
 const LS="elli-english-v1",LSUI="elli-english-ui";
 const AVATARS=["🐘","🦒","🦊","🐼","🐯","🐰","🦁","🐧"];
-const newPlayer=(name,av)=>({name,av,xp:0,streak:0,last:"",days:{},goal:30,les:{},w:{},ex:[],best:{speed:0,mem:0}});
+const newPlayer=(name,av)=>({name,av,xp:0,streak:0,last:"",days:{},goal:30,les:{},w:{},ex:[],best:{speed:0,mem:0},perfect:0,stk:[]});
 function defaultState(){const id="p"+Date.now().toString(36);return {v:1,cur:id,updatedAt:0,settings:{sound:true,voice:true,rate:.9},players:{[id]:newPlayer("Tanuló","🐘")}}}
 function loadLocal(){try{const s=JSON.parse(localStorage.getItem(LS)||"null");return s&&s.v===1?s:null}catch(e){return null}}
 function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
 let S=loadLocal()||defaultState();
 function ensureState(){if(!S.settings)S.settings={sound:true,voice:true,rate:.9};if(!S.players||!Object.keys(S.players).length){const d=defaultState();S.players=d.players;S.cur=d.cur}if(!S.players[S.cur])S.cur=Object.keys(S.players)[0];for(const p of Object.values(S.players)){const d=newPlayer(p.name,p.av);for(const k in d)if(p[k]===undefined)p[k]=d[k]}}
 ensureState();
-let UI={sel:{shuffle:"u2",words:"u2",games:"u2"},exp:{w1:1,u1:1,u2:1},bk:{g:"all",n:10,s:1}};
+let UI={sel:{shuffle:"u2",words:"u2",games:"u2",exam:"u2"},exp:{u0:1,u1:1,u2:1},bk:{g:"all",n:10,s:1}};
 try{const u=JSON.parse(localStorage.getItem(LSUI)||"null");if(u&&u.sel&&u.exp)UI=u}catch(e){}
-if(!UI.bk)UI.bk={g:"all",n:10,s:1};if(!UNIT[UI.sel.shuffle])UI.sel.shuffle="u2";
+if(!UI.bk)UI.bk={g:"all",n:10,s:1};for(const k of ["shuffle","words","games","exam"])if(!UNIT[UI.sel[k]])UI.sel[k]="u2";if(UI.bk.g!=="all"&&!UNIT[UI.sel.shuffle].groups[+UI.bk.g])UI.bk.g="all";
 const saveUI=()=>{try{localStorage.setItem(LSUI,JSON.stringify(UI))}catch(e){}};
 const P=()=>S.players[S.cur];
-function commit(){S.updatedAt=Date.now();saveLocal();scheduleCloud();renderHeader()}
+const MILESTONES=[{id:"first",e:"🌟",n:"Első lecke",h:"Fejezz be egy leckét!",ok:p=>Object.keys(p.les).length>0},{id:"perfect",e:"💎",n:"Hibátlan lecke",h:"Csinálj meg egy leckét hiba nélkül!",ok:p=>p.perfect>0},
+ {id:"s3",e:"🔥",n:"3 nap egymás után",h:"Gyakorolj 3 napig egymás után!",ok:p=>p.streak>=3},{id:"s7",e:"🏆",n:"7 nap egymás után",h:"Gyakorolj egy hétig minden nap!",ok:p=>p.streak>=7},
+ {id:"x100",e:"💯",n:"100 XP",h:"Gyűjts 100 XP-t!",ok:p=>p.xp>=100},{id:"x500",e:"🚀",n:"500 XP",h:"Gyűjts 500 XP-t!",ok:p=>p.xp>=500},{id:"x1000",e:"👑",n:"1000 XP",h:"Gyűjts 1000 XP-t!",ok:p=>p.xp>=1000},
+ {id:"test",e:"📝",n:"Első próbadolgozat",h:"Írj egy próbadolgozatot!",ok:p=>p.ex.length>0},{id:"test90",e:"🥇",n:"90% fölött",h:"Írj 90% feletti próbadolgozatot!",ok:p=>p.ex.some(e=>e.pct>=90)},
+ {id:"speed",e:"⚡",n:"Villám",h:"Érj el 15 pontot a Villámkörben!",ok:p=>p.best.speed>=15},{id:"mem",e:"🧠",n:"Memóriabajnok",h:"Nyerj Memóriát 10 lépésből!",ok:p=>p.best.mem>0&&p.best.mem<=10}];
+function stickerList(p=P()){return UNITS.map(u=>{const bk=u.book.id==="sm1"?"SM1":"Starter";return {id:"u:"+u.id,e:u.sticker||u.icon,n:u.title,h:bk+" "+unitLabel(u)+": csináld meg mind a "+u.lessons.length+" leckét!",ok:x=>u.lessons.every(l=>x.les[l.id])}}).concat(MILESTONES).map(t=>Object.assign({},t,{got:t.ok(p)}))}
+function checkStickers(){const p=P();if(!p.stk)p.stk=[];const fresh=stickerList(p).filter(t=>t.got&&!p.stk.includes(t.id));if(!fresh.length)return;fresh.forEach(t=>p.stk.push(t.id));
+ const t=fresh[fresh.length-1];setTimeout(()=>{toast("Új matrica: "+t.e+" "+t.n+"!");confetti()},$("#lesson").hidden?100:900)}
+const LEVEL_NAMES=["Kis felfedező","Szógyűjtő","Betűbajnok","Mondatépítő","Angol hős","Szuper elme","Nyelvzseni"];
+const levelOf=xp=>Math.floor(Math.sqrt(xp/20))+1, levelXP=l=>20*(l-1)*(l-1);
+function commit(){checkStickers();S.updatedAt=Date.now();saveLocal();scheduleCloud();renderHeader()}
 function addXP(n){const p=P(),t=dayKey();p.xp+=n;p.days[t]=(p.days[t]||0)+n;if(p.last!==t){p.streak=(p.last===yesterday()?p.streak:0)+1;p.last=t}const ks=Object.keys(p.days).sort();while(ks.length>60)delete p.days[ks.shift()]}
 const streakNow=(p=P())=>(p.last===dayKey()||p.last===yesterday())?p.streak:0;
 const todayXP=(p=P())=>p.days[dayKey()]||0;
@@ -569,12 +644,12 @@ const SWAP={his:"her",her:"his",His:"Her",Her:"His",in:"on",on:"in",is:"are",are
 function orderSpec(s){const tokens=s[0].split(" ");const sw=tokens.find(t=>SWAP[t]);const extra=sw&&Math.random()<.6?[SWAP[sw]]:[];return {type:"order",tokens,extra,answer:s[0],hu:s[1],sayText:s[0]}}
 function riddleSpecs(u,words,n){if(!u.riddles)return[];const set=new Set(words.map(w=>w.en));return sample(u.riddles.filter(r=>set.has(r[0])),n).map(([en,text])=>{const w=u.words.find(x=>x.en===en);return {type:"riddle",text,w,opts:shuffle([w,...distractors(w,3,x=>x.g===w.g)])}})}
 /* generated sentence items */
-const SIZE_TOYS=[["kite","🪁"],["ball","⚽"],["car","🚗"],["robot","🤖"],["teddy bear","🧸"],["boat","⛵"],["plane","✈️"],["doll","🪆"],["bike","🚲"]];
+const SIZE_TOYS=[["kite","🪁"],["ball","⚽"],["car","🚗"],["monster","👾"],["teddy","🧸"],["plane","✈️"],["doll","🪆"],["bike","🚲"],["train","🚂"]];
 const sizePic=(e,big)=>'<span class="emo" style="font-size:'+(big?3.4:1.35)+'rem">'+e+'</span>';
 const trainPic=long=>'<span class="emo" style="font-size:'+(long?1.15:1.6)+'rem">🚂'+"🚃".repeat(long?4:1)+'</span>';
 const art=w=>/^[aeiou]/i.test(w)?"an":"a";
 const itsA=(adjs,noun)=>"It's "+art(adjs[0]||noun)+" "+adjs.concat(noun).join(" ")+".";
-const PAINT=["red","blue","yellow","green","orange","pink","purple"];
+const PAINT=["blue","orange","pink","yellow","green","purple"];
 function adjItem(kind){
  if(kind==="size"){const [en,e]=pick(SIZE_TOYS),big=Math.random()<.5,other=pick(SIZE_TOYS.filter(t=>t[0]!==en))[0];return {text:itsA([big?"big":"small"],en),right:sizePic(e,big),wrong:sizePic(e,!big),adj:big?"big":"small",opp:big?"small":"big",noun:en,otherNoun:other}}
  if(kind==="train"){const long=Math.random()<.5;return {text:itsA([long?"long":"short"],"train"),right:trainPic(long),wrong:trainPic(!long),adj:long?"long":"short",opp:long?"short":"long",noun:"train",otherNoun:"boat"}}
@@ -587,20 +662,26 @@ function adjSpecs(n){const out=[];const kinds=shuffle(["size","train","colour","
 const COUNT_OBJ=[["pencil","pencils","ceruza","✏️"],["book","books","könyv","📕"],["ruler","rulers","vonalzó","📏"],["crayon","crayons","zsírkréta","🖍️"],["bag","bags","táska","🎒"],["rubber","rubbers","radír","@rubber"]];
 function countSpec(){const n=1+rnd(10),[s,pl,hu,e]=pick(COUNT_OBJ),c=pick(Object.keys(COL_HU));const ans=NUM_EN[n]+" "+c+" "+(n===1?s:pl);
  return {type:"order",tokens:ans.split(" "),extra:[n===1?pl:s],answer:ans,hu:NUM_HU_ATTR[n]+" "+COL_HU[c]+" "+hu,picHTML:'<div class="countpic">'+Array(n).fill(picHTML(e)).join("")+'<span class="cdot">'+swatchSVG(COLORS[c])+'</span></div>',sayText:ans}}
-const VEG=[["carrot","carrots","🥕","répa"],["tomato","tomatoes","🍅","paradicsom"],["potato","potatoes","🥔","krumpli"],["onion","onions","🧅","hagyma"],["pepper","peppers","🫑","paprika"],["cucumber","cucumbers","🥒","uborka"],["pumpkin","pumpkins","🎃","tök"]];
+const VEG=[["pen","pens","🖊️","toll"],["pencil","pencils","✏️","ceruza"],["book","books","📕","könyv"],["cake","cakes","🍰","süti"],["pear","pears","🍐","körte"],["lion","lions","🦁","oroszlán"]];
 function basketSpec(){const n=1+rnd(6),[s,pl,e,hu]=pick(VEG);const ans=n===1?"There's a "+s+".":"There are "+NUM_EN[n]+" "+pl+".";
- return {type:"order",tokens:ans.split(" "),extra:n===1?[pl+"."]:["is",s+"."],answer:ans,hu:n===1?"Van egy "+hu+" a kosárban.":"Van "+NUM_HU_ATTR[n]+" "+hu+" a kosárban.",picHTML:'<div class="countpic">🧺 '+Array(n).fill(e).join("")+'</div>',sayText:ans}}
+ return {type:"order",tokens:ans.split(" "),extra:n===1?[pl+"."]:["is",s+"."],answer:ans,hu:n===1?"Van egy "+hu+".":"Van "+NUM_HU_ATTR[n]+" "+hu+".",picHTML:'<div class="countpic">'+Array(n).fill(e).join("")+'</div>',sayText:ans}}
 
+const ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),DAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+function alphaSpec(){const i=1+rnd(24),after=Math.random()<.5,L=ABC[i],a=after?ABC[i+1]:ABC[i-1];return {type:"gap",q:"What's "+(after?"after":"before")+" '"+L+"'? '___'",o:shuffle([a,after?ABC[i-1]:ABC[i+1],ABC[(i+5)%26]]),a,hu:after?"Melyik betű jön utána?":"Melyik betű van előtte?"}}
+function daySpec(){const i=rnd(6);return {type:"gap",q:DAYS[i]+", ___ …",o:shuffle([DAYS[i+1],DAYS[(i+3)%7],DAYS[(i+5)%7]]),a:DAYS[i+1],hu:"Melyik nap jön utána?"}}
 function wordsLesson(words,u){const ws=shuffle(words);const items=ws.map(recogSpec);const pp=ws.filter(w=>w.p);
  const pairs=pp.length>=4?[{type:"pairs",words:sample(pp,Math.min(5,pp.length)),mode:"pic"}]:ws.length>=4?[{type:"pairs",words:sample(ws,Math.min(5,ws.length)),mode:"hu"}]:[];
  const prod=shuffle(ws).slice(0,Math.ceil(ws.length*.6)).map(prodSpec);const rid=riddleSpecs(u||ws[0].unit,ws,2);return [...items,...pairs,...rid,...prod]}
 function sentsLesson(u){let it=sample(u.sents,u.adj||u.count||u.baskets?4:6).map(orderSpec).concat(sample(u.gaps||[],4).map(g=>Object.assign({type:"gap"},g)));
- if(u.adj)it=it.concat(adjSpecs(4));if(u.count)it=it.concat([countSpec(),countSpec(),countSpec()]);if(u.baskets)it=it.concat([basketSpec(),basketSpec()]);
+ if(u.adj)it=it.concat(adjSpecs(4));if(u.count)it=it.concat([countSpec(),countSpec(),countSpec()]);if(u.baskets)it=it.concat([basketSpec(),basketSpec()]);if(u.alpha)it=it.concat([alphaSpec(),alphaSpec()]);if(u.days)it=it.concat([daySpec(),daySpec()]);
  it=it.concat(riddleSpecs(u,u.words,2));return shuffle(it).slice(0,13)}
 function mixLesson(u){const ws=sample(u.words,10);const items=ws.map(w=>Math.random()<.5?recogSpec(w):prodSpec(w));const pp=u.words.filter(w=>w.p);
  if(pp.length>=4)items.splice(4,0,{type:"pairs",words:sample(pp,5),mode:"pic"});const extra=sample(u.sents||[],2).map(orderSpec).concat(sample(u.gaps||[],1).map(g=>Object.assign({type:"gap"},g)));if(u.adj)extra.push(...adjSpecs(2));return items.concat(extra)}
-function examPractice(){const u=UNIT.u2;const g=u.gaps.slice(0,6);return shuffle([...sample(g,4).map(x=>Object.assign({type:"gap"},x)),...adjSpecs(4),...sample(u.groups[2].words,2).map(w=>({type:"spell",w})),
- orderSpec(["What's her favourite toy?","Mi a kedvenc játéka? (lány)"]),orderSpec(["His name is Max.","A neve Max."]),Object.assign({type:"gap"},pick(UNIT.u1.gaps.slice(0,3)))])}
+function examPractice(uid){const u=UNIT[uid]||UNIT.u2;
+ if(u.id==="u2"){const shapes=u.groups.find(g=>g.t==="Shapes").words;return shuffle([...sample(u.gaps.slice(0,7),4).map(x=>Object.assign({type:"gap"},x)),...adjSpecs(4),...sample(shapes,2).map(w=>({type:"spell",w})),
+  orderSpec(["What's her favourite toy?","Mi a kedvenc játéka? (lány)"]),orderSpec(["His name's Max.","A neve Max."]),Object.assign({type:"gap"},pick(UNIT.u0.gaps.slice(0,4)))])}
+ const extra=u.alpha?[alphaSpec()]:u.days?[daySpec()]:u.baskets?[basketSpec()]:[];
+ return shuffle([...sample(u.words,6).map(w=>Math.random()<.5?recogSpec(w):prodSpec(w)),...sample(u.gaps||[],4).map(g=>Object.assign({type:"gap"},g)),...sample(u.sents,2).map(orderSpec),...extra])}
 function weakWords(){const p=P();return UNITS.flatMap(u=>u.words).filter(w=>p.w[w.key]&&p.w[w.key][1]>0).sort((a,b)=>{const ra=p.w[a.key],rb=p.w[b.key];return (rb[1]*2-rb[0])-(ra[1]*2-ra[0])}).slice(0,8)}
 
 /* =====================================================================
@@ -623,7 +704,7 @@ function renderQ(){const s=Q.spec,t=s.type;
  if(t==="hu2en")return choice("Hogy mondod angolul?",'<div class="prompt"><span class="ele-sm">🐘</span><div class="bubble hu">'+esc(s.w.hu)+'</div></div>',s.opts.map(o=>({html:esc(o.en),say:o.en})),s.opts.indexOf(s.w),s.w);
  if(t==="en2hu"){say(s.w.en);return choice("Mit jelent?",'<div class="prompt"><span class="ele-sm">🐘</span><div class="bubble">'+esc(s.w.en)+spk(s.w.en)+'</div></div>',s.opts.map(o=>({html:esc(o.hu)})),s.opts.indexOf(s.w),s.w)}
  if(t==="riddle")return choice("Mire gondolok?",'<div class="prompt"><span class="ele-sm">🐘</span><div class="bubble">'+esc(s.text)+spk(s.text)+'</div></div>',s.opts.map(o=>({html:(o.p?'<span class="pic" style="height:56px;font-size:2.4rem">'+picHTML(o.p)+'</span>':"")+esc(o.en),say:o.en})),s.opts.indexOf(s.w),s.w);
- if(t==="gap"){const o=shuffle(s.o);const q=esc(s.q).replace("___",'<span class="blank">&nbsp;</span>');Q.full=s.q.replace("___",s.a);return choice("Melyik szó hiányzik?",'<div class="prompt">'+(s.p?'<div class="prompt-pic" style="font-size:3rem">'+picHTML(s.p)+'</div>':'<span class="ele-sm">🐘</span>')+'<div class="bubble gapq">'+q+'</div></div>',o.map(x=>({html:esc(x)})),o.indexOf(s.a),null,Q.full)}
+ if(t==="gap"){const o=shuffle(s.o);const q=esc(s.q).replace("___",'<span class="blank">&nbsp;</span>');Q.full=s.q.replace("___",s.a);return choice("Melyik szó hiányzik?",'<div class="prompt">'+(s.p?'<div class="prompt-pic" style="font-size:3rem">'+picHTML(s.p)+'</div>':'<span class="ele-sm">🐘</span>')+'<div class="bubble gapq">'+q+(s.hu?'<span class="gaphu">'+esc(s.hu)+'</span>':'')+'</div></div>',o.map(x=>({html:esc(x)})),o.indexOf(s.a),null,Q.full)}
  if(t==="pickSent")return choice("Melyik mondat illik a képhez?",'<div class="prompt"><div class="prompt-pic">'+s.html+'</div></div>',s.opts.map(x=>({html:esc(x),say:x})),s.opts.indexOf(s.a),null,s.a,true);
  if(t==="pickPic"){say(s.text);return choice("Melyik képhez illik?",'<div class="prompt"><span class="ele-sm">🐘</span><div class="bubble">'+esc(s.text)+spk(s.text)+'</div></div>',s.opts.map(o=>({html:'<span class="pic">'+o.html+'</span>'})),s.opts.findIndex(o=>o.ok),null,s.text)}
  if(t==="spell")return spellQ(s);if(t==="type")return typeQ(s);if(t==="order")return orderQ(s);if(t==="pairs")return pairsQ(s)}
@@ -673,8 +754,8 @@ function finishLesson(){L.state="end";clearTimeout(L.tk);let xp,html;
  if(L.mode==="speed"){const p=P();const best=L.score>p.best.speed;if(best)p.best.speed=L.score;xp=Math.min(30,L.score);if(xp)addXP(xp);commit();beep("done");if(L.score>=5)confetti();
   html='<div class="result"><div class="ele">🐘</div><h2>Lejárt az idő!</h2><p class="muted">'+(best?"Új csúcs! 🏅":"Legjobb eredményed: "+p.best.speed)+'</p><div class="res-stats"><div class="res-stat"><b>'+L.score+'</b><span>Helyes</span></div><div class="res-stat"><b>+'+xp+'</b><span>XP</span></div><div class="res-stat"><b>'+p.best.speed+'</b><span>Csúcs</span></div></div></div>'}
  else{const acc=Math.round(100*L.firstTry/Math.max(1,L.total));const stars=L.mistakes<=1?3:L.mistakes<=3?2:1;xp=L.xp+(L.mistakes===0?5:0);addXP(xp);
-  if(L.lessonId){const p=P();p.les[L.lessonId]=Math.max(p.les[L.lessonId]||0,stars)}commit();beep("done");confetti();
-  html='<div class="result"><div class="ele">🐘</div><h2>'+(L.mistakes===0?"Hibátlan!":"Lecke kész!")+'</h2><p class="muted">'+esc(L.title)+'</p><div style="font-size:2rem;color:var(--gold)">'+"★".repeat(stars)+'<span style="color:var(--line)">'+"★".repeat(3-stars)+'</span></div><div class="res-stats"><div class="res-stat"><b>+'+xp+'</b><span>XP</span></div><div class="res-stat"><b>'+acc+'%</b><span>Elsőre jó</span></div><div class="res-stat"><b>'+L.best+'</b><span>Leghosszabb sorozat</span></div></div>'+(todayXP()>=P().goal?'<p class="note">🎯 A mai cél teljesítve! A sorozat: '+streakNow()+' nap 🔥</p>':'<p class="muted small">Mai cél: '+todayXP()+' / '+P().goal+' XP</p>')+'</div>'}
+  if(L.lessonId){const p=P();p.les[L.lessonId]=Math.max(p.les[L.lessonId]||0,stars)}if(L.mistakes===0)P().perfect=(P().perfect||0)+1;commit();beep("done");confetti();
+  html='<div class="result"><div class="ele">🐘</div><h2>'+(L.mistakes===0?"Hibátlan! 💎":stars===3?"Szuper vagy! 🎉":stars===2?"Ügyes voltál! 👏":"Kész! Gyakorold még! 💪")+'</h2><p class="muted">'+esc(L.title)+'</p><div style="font-size:2rem;color:var(--gold)">'+"★".repeat(stars)+'<span style="color:var(--line)">'+"★".repeat(3-stars)+'</span></div><div class="res-stats"><div class="res-stat"><b>+'+xp+'</b><span>XP</span></div><div class="res-stat"><b>'+acc+'%</b><span>Elsőre jó</span></div><div class="res-stat"><b>'+L.best+'</b><span>Leghosszabb sorozat</span></div></div>'+(todayXP()>=P().goal?'<p class="note">🎯 A mai cél teljesítve! A sorozat: '+streakNow()+' nap 🔥</p>':'<p class="muted small">Mai cél: '+todayXP()+' / '+P().goal+' XP</p>')+'</div>'}
  body().innerHTML=html;$("#lBtn").hidden=false;foot("end","","Tovább");$("#lBtn").disabled=false;$("#lBar").style.width="100%";$("#lCombo").textContent=""}
 function mainBtn(){if(L.state==="ask")doCheck();else if(L.state==="fb")nextQ();else if(L.state==="end")closeLesson()}
 function quitLesson(){if(L.state==="end")return closeLesson();sheet('<h2>Kilépsz a leckéből?</h2><p class="muted">A most megkezdett lecke nem számít bele a haladásba.</p><div class="row"><button class="btn bad" data-act="quitYes">Kilépek</button><button class="btn primary" data-act="closeSheet">Folytatom</button></div>')}
@@ -693,23 +774,27 @@ function render(){$("#view").innerHTML=VIEWS[view]();$$(".tab").forEach(b=>b.set
 function go(v){if(!VIEWS[v])v="path";view=v;if(location.hash!=="#"+v)location.hash=v;render();window.scrollTo(0,0)}
 addEventListener("hashchange",()=>{const v=location.hash.slice(1);if(VIEWS[v]&&v!==view){view=v;render();window.scrollTo(0,0)}});
 const starStr=n=>'★'.repeat(n)+'<span class="off">'+'★'.repeat(3-n)+'</span>';
-function nextLessonId(){const p=P();for(const id of ["u2","u1","w1","s0","s1","s2","s3","s4","s5","s6","s7","s8","s9"]){const l=UNIT[id].lessons.find(l=>!p.les[l.id]);if(l)return l.id}return null}
+function nextLessonId(){const p=P();for(const u of UNITS){const l=u.lessons.find(l=>!p.les[l.id]);if(l)return l.id}return null}
+function helloHTML(){const p=P(),lv=levelOf(p.xp),a=levelXP(lv),b=levelXP(lv+1),t=todayXP(),st=streakNow(),noName=p.name==="Tanuló";
+ const msg=t>=p.goal?"Ma már teljesítetted a célt! 🎉 Jöhet még egy kör?":st?"🔥 "+st+" napos sorozat! Ma még "+(p.goal-t)+" XP kell a célhoz.":t?"Ma még "+(p.goal-t)+" XP, és meglesz a napi cél!":"Kezdjük! Ma "+p.goal+" XP a cél – gyerünk! 💪";
+ return '<div class="card hello"><span class="ele-big" aria-hidden="true">🐘</span><div class="msg"><b>Szia, '+esc(noName?"te ott":p.name)+'! '+p.av+'</b><span>'+msg+'</span>'+(noName?'<div style="margin-top:8px"><button class="btn sm" data-act="players">✏️ Add meg a neved</button></div>':'')+
+ '<div class="lvl">Szint '+lv+' · '+LEVEL_NAMES[Math.min(lv-1,LEVEL_NAMES.length-1)]+' · '+p.xp+' / '+b+' XP<div class="lvlbar"><i style="width:'+Math.round(100*(p.xp-a)/Math.max(1,b-a))+'%"></i></div></div></div></div>'}
 function viewPath(){const p=P(),nx=nextLessonId();
- let h='<div class="wrap"><div class="banner"><span class="ele" aria-hidden="true">🐘</span><div class="eyebrow" style="color:inherit;opacity:.85">Super Minds 1 · Unit 2</div><h2>Jövő héten témazáró!</h2><p>Bemutatkozás, his / her, alakzatok, és melléknév + játék mondatok (pl. <i>It\'s a big kite.</i>)</p><div class="row"><button class="btn sm" data-go="exam">📝 Próbadolgozat</button><button class="btn sm" data-act="examPractice">⚡ Gyors gyakorlás</button></div></div>';
+ const eu=UNIT[UI.sel.exam]||UNIT.u2;let h='<div class="wrap">'+helloHTML()+'<div class="banner"><span class="ele" aria-hidden="true">🐘</span><div class="eyebrow" style="color:inherit;opacity:.85">Témazáróra készülsz?</div><h2>Írj próbadolgozatot!</h2><p>Bármelyik fejezetből: szavak, helyesírás, nyelvtan és mondatok – a végén megmutatom, mennyire megy.</p><div class="row"><button class="btn sm" data-go="exam">📝 Próbadolgozat</button><button class="btn sm" data-act="examPractice">⚡ Gyors gyakorlás · '+esc(unitLabel(eu))+'</button></div></div>';
  for(const b of BOOKS){h+='<section class="book"><div class="book-h"><div class="book-cover" style="background:'+b.cover+'">SM<br>'+(b.id==="sm1"?"1":"St")+'</div><div><h2>'+esc(b.title)+'</h2><div class="muted small">'+esc(b.sub)+'</div></div></div>';
   for(const u of b.units){const done=u.lessons.filter(l=>p.les[l.id]).length,open=!!UI.exp[u.id];
    h+='<div class="unit" style="--u:'+u.color+';--u-ink:'+(u.ink||"#fff")+'"><button class="unit-band" style="width:100%;border:0;text-align:left" data-act="toggleUnit" data-u="'+u.id+'" aria-expanded="'+open+'"><span style="min-width:0;display:block"><span class="un" style="display:block">'+esc(unitLabel(u))+(u.exam?'<span class="tag">Témazáró</span>':'')+'</span><span class="h3">'+esc(u.title)+' · '+esc(u.hu)+'</span><span class="small" style="opacity:.92;display:block">'+done+' / '+u.lessons.length+' lecke kész '+(open?"▴":"▾")+'</span></span><span class="ui">'+u.icon+'</span></button>';
    if(open){h+='<div class="trail">';u.lessons.forEach((l,i)=>{const st=p.les[l.id]||0,isN=l.id===nx;h+='<div class="node-wrap" style="--dx:'+Math.round(Math.sin(i*1.15)*62)+'px">'+(isN?'<span class="start-tip">Kezdd itt!</span>':'')+'<button class="node'+(st?" done":"")+(isN?" next":"")+'" data-lesson="'+l.id+'" aria-label="'+esc(l.name)+'">'+l.icon+'</button><span class="stars">'+starStr(st)+'</span><span class="lbl">'+esc(l.name)+'</span></div>'});
     if(u.note)h+='<p class="note" style="margin-top:8px">'+esc(u.note)+'</p>';h+='</div>'}
    h+='</div>'}h+='</section>'}
- return h+'<p class="muted small" style="margin-top:28px">Nem hivatalos gyakorló oldal a Super Minds könyvek témáihoz. A szólisták a tanári e-mailek és a tavalyi könyv szöveggyűjteménye alapján készültek.</p><p class="sync" data-sync></p></div>'}
-function unitPicker(forView){const cur=UI.sel[forView];return '<div class="picker" role="group" aria-label="Fejezet">'+UNITS.map(u=>'<button class="pchip" style="--u:'+u.color+';--u-ink:'+(u.ink||"#fff")+'" data-act="selUnit" data-for="'+forView+'" data-u="'+u.id+'" aria-pressed="'+(u.id===cur)+'">'+(u.book.id==="sm1"?"SM1 · ":"Starter · ")+esc(unitLabel(u))+' '+esc(u.title)+'</button>').join("")+'</div>'}
+ return h+'<p class="muted small" style="margin-top:28px">Nem hivatalos gyakorló oldal a Super Minds Second Edition (Starter és Level 1) könyvek fejezeteihez.</p><p class="sync" data-sync></p></div>'}
+function unitPicker(forView){return '<div class="field" style="margin-bottom:12px"><label for="selU-'+forView+'">Fejezet</label>'+unitSelect("selU-"+forView,UI.sel[forView])+'</div>'}
 function scramble(word){return word.split(" ").map(part=>{const ch=[...part];if(ch.length<3)return ch.reverse().join("");let s=ch;for(let k=0;k<8&&s.join("")===part;k++)s=shuffle(ch);return s.join("")}).join("  ")}
 function unitSelect(id,cur){return '<select id="'+id+'">'+BOOKS.map(b=>'<optgroup label="'+esc(b.title)+'">'+b.units.map(u=>'<option value="'+u.id+'"'+(u.id===cur?" selected":"")+'>'+esc(unitLabel(u))+' · '+esc(u.title)+' ('+esc(u.hu)+')</option>').join("")+'</optgroup>').join("")+'</select>'}
 function bkGroups(u){const g=UI.bk.g;return g==="all"||!u.groups[+g]?u.groups:[u.groups[+g]]}
 function viewShuffle(){const u=UNIT[UI.sel.shuffle],bk=UI.bk,gs=bkGroups(u),nw=gs.reduce((a,g)=>a+g.words.length,0),best=P().les["bk:"+u.id]||0;
- let h='<div class="wrap"><div class="section-h"><h1>Szókeverő</h1><span class="eyebrow">'+esc(unitLabel(u))+' · '+esc(u.title)+'</span></div>'+
- '<div class="card bk"><div class="bk-h"><span class="gi">🔤</span><div><h2>Betűkirakó</h2><div class="muted small">Rakd ki a szavakat az összekevert betűkből! Válassz fejezetet, és indulhat.</div></div></div>'+
+ let h='<div class="wrap"><div class="section-h"><h1>Betűkirakó</h1><span class="eyebrow">'+esc(unitLabel(u))+' · '+esc(u.title)+'</span></div>'+
+ '<div class="card bk"><div class="bk-h"><span class="gi">🔤</span><div><h2>Rakd ki a szót!</h2><div class="muted small">Rakd ki a szavakat az összekevert betűkből! Válassz fejezetet, és indulhat.</div></div></div>'+
  '<div class="bk-grid"><div class="field"><label for="bkUnit">Fejezet</label>'+unitSelect("bkUnit",u.id)+'</div>'+
  '<div class="field"><label for="bkGroup">Szavak</label><select id="bkGroup"><option value="all">Minden szó ('+u.words.length+')</option>'+u.groups.map((g,i)=>'<option value="'+i+'"'+(String(i)===String(bk.g)?" selected":"")+'>'+esc(g.hu)+' ('+g.words.length+')</option>').join("")+'</select></div>'+
  '<div class="field"><label for="bkN">Hány szó?</label><select id="bkN">'+[6,10,15,0].map(n=>'<option value="'+n+'"'+(n===bk.n?" selected":"")+'>'+(n?n+" szó":"Mind ("+nw+")")+'</option>').join("")+'</select></div></div>'+
@@ -739,71 +824,86 @@ function viewGames(){const p=P(),u=UNIT[UI.sel.games],ww=weakWords();
  '<div class="card game-card"><span class="gi">⚡</span><div class="gt"><h3>Villámkör</h3><div class="muted small">60 másodperc: hány képet ismersz fel? Csúcs: '+p.best.speed+'</div></div><button class="btn sm primary" data-act="speed">Indítás</button></div>'+
  '<div class="card game-card"><span class="gi">🃏</span><div class="gt"><h3>Memória</h3><div class="muted small">Keresd meg a kép és az angol szó párját!</div></div><button class="btn sm primary" data-act="memory">'+(MEM?"Új játék":"Indítás")+'</button></div>'+
  '<div class="card game-card"><span class="gi">🩹</span><div class="gt"><h3>Gyenge szavak</h3><div class="muted small">'+(ww.length>=3?esc(ww.slice(0,5).map(w=>w.en).join(", "))+"…":"Itt jelennek meg a szavak, amiket eltévesztettél.")+'</div></div><button class="btn sm primary" data-act="weak"'+(ww.length>=3?"":" disabled")+'>Gyakorlás</button></div>'+
- '<div class="card game-card"><span class="gi">🔤</span><div class="gt"><h3>Betűkirakó</h3><div class="muted small">A fejezet szavai összekevert betűkből – a Szókeverőben.</div></div><button class="btn sm primary" data-act="openBk">Megnyitás</button></div>'+
- '</div>'+memHTML()+'</div>'}
+ '<div class="card game-card"><span class="gi">🔤</span><div class="gt"><h3>Betűkirakó</h3><div class="muted small">A fejezet szavai összekevert betűkből.</div></div><button class="btn sm primary" data-act="openBk">Megnyitás</button></div>'+
+ '</div>'+memHTML()+albumHTML()+'</div>'}
+function albumHTML(){const L=stickerList(),n=L.filter(t=>t.got).length;return '<div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3 style="font-size:1.25rem">🏅 Matricaalbum</h3><span class="eyebrow">'+n+' / '+L.length+'</span></div><p class="muted small" style="margin:4px 0 0">Minden befejezett fejezetért és nagy teljesítményért matrica jár. Gyűjtsd össze mind!</p><div class="album">'+L.map(t=>'<div class="stk '+(t.got?"got":"lock")+'" title="'+esc(t.got?t.n:t.h)+'"><span class="se">'+(t.got?t.e:"❔")+'</span>'+esc(t.got?t.n:t.h)+'</div>').join("")+'</div></div>'}
 
 /* =====================================================================
    Unit 2 mock test (témazáró próbadolgozat)
    ===================================================================== */
 let EX=null;
-const BOYS=["Tom","Ben","Max","Leo","Sam","Jack"],GIRLS=["Lily","Anna","Emma","Mia","Kate","Sophie"];
-function makeExam(){const toys=UNIT.u2.groups[0].words.filter(t=>!/\s/.test(t.en)&&t.en.length<=7);const [t1,t2]=sample(toys,2);const age=pick(["seven","eight"]);
- const boy={n:pick(BOYS),t:t1,face:"👦",pr:"his",Pr:"His"},girl={n:pick(GIRLS),t:t2,face:"👧",pr:"her",Pr:"Her"};const [k1,k2]=Math.random()<.5?[boy,girl]:[girl,boy];const bName=pick(GIRLS.concat(BOYS).filter(x=>x!==boy.n&&x!==girl.n));
- const items=[];const A=(id,o)=>items.push(Object.assign({id,sec:"A"},o)),B=(id,o)=>items.push(Object.assign({id,sec:"B"},o)),C=(id,o)=>items.push(Object.assign({id,sec:"C"},o)),D=(id,o)=>items.push(Object.assign({id,sec:"D"},o));
- const ansA=["name","is","old",age,"meet","too"];ansA.forEach((a,i)=>A("a"+i,{kind:"blank",a}));
- const dlg=[["A",["Hello! What's your ",0,"?"]],["B",["Hi! My name ",1," "+bName+"."]],["A",["How ",2," are you?"]],["B",["I'm ",3,"."]],["A",["Nice to ",4," you!"]],["B",["Nice to meet you, ",5,"!"]]];
- B("b1",{kind:"seg",kid:k1,pre:"What's",post:"name?",o:["his","her"],a:k1.pr});
- B("b2",{kind:"seg",kid:k1,pre:"",post:"name is "+k1.n+".",o:["His","Her"],a:k1.Pr});
- B("b3",{kind:"seg",kid:k2,pre:"What's",post:"favourite toy?",o:["his","her"],a:k2.pr});
- B("b4",{kind:"seg",kid:k2,pre:"",post:"favourite toy is "+k2.pr+" "+k2.t.en+".",o:["His","Her"],a:k2.Pr});
- B("b5",{kind:"type",kid:k1,q:"What's "+k1.pr+" favourite toy?",pre:k1.Pr+" favourite toy is "+k1.pr,post:".",a:k1.t.en});
- B("b6",{kind:"type",kid:k2,q:"What's "+k2.pr+" name?",pre:k2.Pr+" name is",post:".",a:k2.n});
- B("b7",{kind:"order",q:"Kérdezd meg, mi a kedvenc játéka! ("+(k2.pr==="his"?"fiú":"lány")+")",answer:"What's "+k2.pr+" favourite toy?",extra:[k2.pr==="his"?"her":"his"]});
- B("b8",{kind:"order",q:"Válaszolj: mi "+(k1.pr==="his"?"a fiú":"a lány")+" neve?",answer:k1.Pr+" name is "+k1.n+".",extra:[k1.pr==="his"?"Her":"His"]});
- const shp=sample(SHAPES,6);shp.slice(0,3).forEach((s,i)=>C("c"+i,{kind:"choice",html:shapeSVG(s),o:shuffle([s,...sample(SHAPES.filter(x=>x!==s),2)]),a:s}));shp.slice(3).forEach((s,i)=>C("c"+(i+3),{kind:"type",html:shapeSVG(s),a:s}));
- shuffle(["size","train","colour","shape"]).forEach((k,i)=>{const it=adjItem(k);D("d"+i,{kind:"pickpic",text:it.text,o:shuffle([{h:it.right,ok:1},{h:it.wrong}]),a:0})});
- items.filter(x=>x.kind==="pickpic").forEach(x=>x.a=x.o.findIndex(o=>o.ok));
- ["size","colour"].forEach((k,i)=>{const it=adjItem(k);D("d"+(4+i),{kind:"order",html:it.right,q:"Írd le, mit látsz! Rakd sorba a szavakat.",answer:it.text,extra:[it.opp]})});
- ["size","shape"].forEach((k,i)=>{const it=adjItem(k);D("d"+(6+i),{kind:"choice",html:it.right,o:shuffle([it.text,itsA([it.opp],it.noun),itsA([it.adj],it.otherNoun)]),a:it.text,sent:true})});
- items.filter(x=>x.kind==="order").forEach(x=>x.toks=shuffle(x.answer.split(" ").concat(x.extra||[])));
- return {items,dlg,bank:shuffle(ansA.concat(["his","big"])),boy,girl,k1,k2,ans:{},active:"a0",graded:false,score:null}}
+const BOYS=["Ben","Mike","Alex","Mark","Nathan","Sam"],GIRLS=["Kate","Sophie","Olivia","Ruby","Jane","Mia"];
+const EX_INFO={u2:["Bemutatkozás: párbeszéd kiegészítése","his / her kérdések és válaszok (név, kedvenc játék)","Alakzatok: triangle, circle, square, rectangle","Melléknév + játék a mondatban, pl. It's a big kite."]};
+function hintOf(en){return en.split(/([\s\-])/).map(x=>/[\s\-]/.test(x)?(x==="-"?" - ":"   "):Array(x.length).fill("_").join(" ")).join("")}
+function makeExam(uid){const u=UNIT[uid]||UNIT.u2;return u.id==="u2"?makeU2Exam(u):makeGenericExam(u)}
+function finishExam(E){E.items.filter(x=>x.kind==="order").forEach(x=>x.toks=shuffle(x.answer.split(" ").concat(x.extra||[])));E.items.filter(x=>x.kind==="pickpic").forEach(x=>x.a=x.o.findIndex(o=>o.ok));
+ return Object.assign(E,{ans:{},active:(E.items.find(i=>i.kind==="blank")||{}).id||null,graded:false,score:null})}
+function makeGenericExam(u){const items=[],add=(sec,o)=>items.push(Object.assign({id:sec.toLowerCase()+items.filter(x=>x.sec===sec).length,sec},o));
+ const A=sample(u.words,5);A.forEach(w=>{const ds=distractors(w,2,x=>w.p?(x.p&&x.p!==w.p):x.hu!==w.hu);add("A",{kind:"choice",label:w.p?"Mi ez angolul?":"Hogy mondod angolul: „"+w.hu+"”?",html:w.p?picHTML(w.p):"",o:shuffle([w.en,...ds.map(d=>d.en)]),a:w.en})});
+ let pool=u.words.filter(w=>!A.includes(w)&&w.en.replace(/[\s\-]/g,"").length<=11);if(pool.length<4)pool=u.words.filter(w=>w.en.replace(/[\s\-]/g,"").length<=11);
+ sample(pool,4).forEach(w=>add("B",{kind:"type",label:"Írd le angolul!",html:w.p?picHTML(w.p):"",q:w.p?"":"„"+w.hu+"”",hint:hintOf(w.en),a:w.en}));
+ let gaps=sample(u.gaps||[],4).map(g=>({q:g.q,o:g.o,a:g.a,p:g.p,hu:g.hu}));if(u.alpha)gaps[gaps.length-1]=alphaSpec();if(u.days)gaps[gaps.length-1]=daySpec();
+ gaps.forEach(g=>add("C",{kind:"choice",label:"Melyik szó hiányzik?"+(g.hu?" ("+g.hu+")":""),html:g.p?picHTML(g.p):"",text:g.q,o:shuffle(g.o),a:g.a}));
+ sample(u.sents.filter(x=>{const n=x[0].split(" ").length;return n>=3&&n<=9}),3).forEach(x=>{const sw=x[0].split(" ").find(t=>SWAP[t]);add("D",{kind:"order",label:"Rakd sorba: „"+x[1]+"”",answer:x[0],extra:sw?[SWAP[sw]]:[]})});
+ return finishExam({unit:u.id,items,secs:[{k:"A",t:"Szavak",h:"Válaszd ki a helyes szót!"},{k:"B",t:"Helyesírás",h:"Írd le pontosan, betűről betűre!"},{k:"C",t:"Nyelvtan",h:"Melyik szó illik a mondatba?"},{k:"D",t:"Mondatok",h:"Koppints a szavakra a helyes sorrendben!"}]})}
+function makeU2Exam(u){const toys=u.groups[0].words.filter(t=>!/[\s\-]/.test(t.en)&&t.en.length<=7);const [t1,t2]=sample(toys,2);const age=pick(["six","seven","eight"]);
+ const boy={n:pick(BOYS),t:t1,face:"👦",pr:"his",Pr:"His"},girl={n:pick(GIRLS),t:t2,face:"👧",pr:"her",Pr:"Her"};const [k1,k2]=Math.random()<.5?[boy,girl]:[girl,boy];
+ const aName=pick(["Whisper","Misty","Flash","Thunder"]),bName=pick(GIRLS.concat(BOYS).filter(x=>x!==boy.n&&x!==girl.n));
+ const items=[],add=(sec,id,o)=>items.push(Object.assign({id,sec},o));
+ const ansA=["name","I'm","nice","old",age,"you"];ansA.forEach((a,i)=>add("A","bl"+i,{kind:"blank",a}));
+ const dlg=[["A",["Hi, I'm "+aName+". What's your ",0,"?"]],["B",[1," "+bName+"."]],["A",["What a ",2," name! How ",3," are you?"]],["B",["I'm ",4,". And how old are ",5,"?"]]];
+ add("B","b1",{kind:"seg",kid:k1,pre:"What's",post:"name?",o:["his","her"],a:k1.pr});
+ add("B","b2",{kind:"seg",kid:k1,pre:"",post:"name's "+k1.n+".",o:["His","Her"],a:k1.Pr});
+ add("B","b3",{kind:"seg",kid:k2,pre:"What's",post:"favourite toy?",o:["his","her"],a:k2.pr});
+ add("B","b4",{kind:"seg",kid:k2,pre:"",post:"favourite toy's "+k2.pr+" "+k2.t.en+".",o:["His","Her"],a:k2.Pr});
+ add("B","b5",{kind:"type",kid:k1,q:"What's "+k1.pr+" favourite toy?",pre:k1.Pr+" favourite toy's "+k1.pr,post:".",a:k1.t.en,hint:hintOf(k1.t.en)});
+ add("B","b6",{kind:"type",kid:k2,q:"What's "+k2.pr+" name?",pre:k2.Pr+" name's",post:".",a:k2.n});
+ add("B","b7",{kind:"order",label:"Kérdezd meg, mi a kedvenc játéka! ("+(k2.pr==="his"?"fiú":"lány")+")",answer:"What's "+k2.pr+" favourite toy?",extra:[k2.pr==="his"?"her":"his"]});
+ add("B","b8",{kind:"order",label:"Válaszolj: mi "+(k1.pr==="his"?"a fiú":"a lány")+" neve?",answer:k1.Pr+" name's "+k1.n+".",extra:[k1.pr==="his"?"Her":"His"]});
+ const shp=shuffle(SHAPES);shp.slice(0,2).forEach((x,i)=>add("C","c"+i,{kind:"choice",label:"Mi a neve?",html:shapeSVG(x),o:shuffle(SHAPES.slice()).slice(0,3).includes(x)?shuffle([x,...sample(SHAPES.filter(y=>y!==x),2)]):shuffle([x,...sample(SHAPES.filter(y=>y!==x),2)]),a:x}));
+ shp.slice(2).forEach((x,i)=>add("C","c"+(i+2),{kind:"type",label:"Írd le a nevét!",html:shapeSVG(x),hint:hintOf(x),a:x}));
+ shuffle(["size","train","colour","shape"]).forEach((k,i)=>{const it=adjItem(k);add("D","d"+i,{kind:"pickpic",text:it.text,o:shuffle([{h:it.right,ok:1},{h:it.wrong}])})});
+ ["size","colour"].forEach((k,i)=>{const it=adjItem(k);add("D","d"+(4+i),{kind:"order",html:it.right,label:"Írd le, mit látsz! Rakd sorba a szavakat.",answer:it.text,extra:[it.opp]})});
+ ["size","shape"].forEach((k,i)=>{const it=adjItem(k);add("D","d"+(6+i),{kind:"choice",label:"Melyik mondat illik a képhez?",html:it.right,o:shuffle([it.text,itsA([it.opp],it.noun),itsA([it.adj],it.otherNoun)]),a:it.text,sent:true})});
+ return finishExam({unit:u.id,items,dlg,bank:shuffle(ansA.concat(["his","big"])),boy,girl,secs:[{k:"A",t:"Bemutatkozás",h:"Egészítsd ki a párbeszédet! Koppints egy üres helyre, aztán a szóra.",dialogue:true},{k:"B",t:"His / her",h:"",kids:true},{k:"C",t:"Alakzatok",h:""},{k:"D",t:"Melléknevek és játékok",h:""}]})}
 const exItem=id=>EX.items.find(x=>x.id===id);
-function exOk(it){const v=EX.ans[it.id];if(v==null||v==="")return false;if(it.kind==="type")return norm(v)===norm(it.a);if(it.kind==="order")return normSent(v.map(i=>it.toks[i]).join(" "))===normSent(it.answer);if(it.kind==="pickpic")return v===it.a;return v===it.a}
-function gradeExam(){EX.graded=true;const secs={A:[0,0],B:[0,0],C:[0,0],D:[0,0]};EX.items.forEach(it=>{const ok=exOk(it);it.ok=ok;secs[it.sec][1]++;if(ok)secs[it.sec][0]++});
- const pts=Object.values(secs).reduce((a,s)=>a+s[0],0),max=EX.items.length,pct=Math.round(100*pts/max);EX.score={pts,max,pct,secs};
- const p=P();p.ex.push({t:Date.now(),pct,pts,max,secs});while(p.ex.length>20)p.ex.shift();addXP(20);commit();beep("done");if(pct>=75)confetti();render();setTimeout(()=>{const e=$("#exScore");e&&e.scrollIntoView({behavior:"smooth",block:"start"})},50)}
+function exOk(it){const v=EX.ans[it.id];if(v==null||v==="")return false;if(it.kind==="type")return norm(v)===norm(it.a);if(it.kind==="order")return normSent(v.map(i=>it.toks[i]).join(" "))===normSent(it.answer);return v===it.a}
+function gradeExam(){EX.graded=true;const secs={};EX.secs.forEach(x=>secs[x.k]=[0,0]);EX.items.forEach(it=>{const ok=exOk(it);it.ok=ok;secs[it.sec][1]++;if(ok)secs[it.sec][0]++});
+ const pts=Object.values(secs).reduce((a,x)=>a+x[0],0),max=EX.items.length,pct=Math.round(100*pts/max);EX.score={pts,max,pct,secs};
+ const p=P();p.ex.push({u:EX.unit,t:Date.now(),pct,pts,max});while(p.ex.length>40)p.ex.shift();addXP(20);commit();beep("done");if(pct>=75)confetti();render();setTimeout(()=>{const e=$("#exScore");e&&e.scrollIntoView({behavior:"smooth",block:"start"})},50)}
 const gradeOf=pct=>pct>=90?["5","jeles"]:pct>=75?["4","jó"]:pct>=60?["3","közepes"]:pct>=45?["2","elégséges"]:["1","elégtelen"];
-function mark(it){if(!EX.graded)return"";return it.ok?'<span class="fix">✓</span>':'<span class="fix bad">✗ Helyesen: '+esc(it.kind==="order"?it.answer:it.kind==="pickpic"?"a "+(it.a+1)+". kép":it.a)+'</span>'}
-function viewExam(){if(!EX)EX=makeExam();const g=EX.graded,p=P();
- const blank=i=>{const it=exItem("a"+i),v=EX.ans[it.id];const cls=g?(it.ok?" right":" wrong"):(EX.active===it.id?" active":"");return '<button class="blank'+cls+'" data-act="exBlank" data-id="'+it.id+'"'+(g?" disabled":"")+'>'+(v?esc(v):"&nbsp;")+'</button>'};
- const used=new Set(Object.entries(EX.ans).filter(([k])=>k[0]==="a").map(([,v])=>v));
- const seg=it=>'<span class="seg'+(g?(it.ok?" right":" wrong"):"")+'">'+it.o.map(o=>'<button data-act="exSeg" data-id="'+it.id+'" data-v="'+o+'" aria-pressed="'+(EX.ans[it.id]===o)+'"'+(g?" disabled":"")+'>'+o+'</button>').join("")+'</span>';
- const order=it=>{const pl=EX.ans[it.id]||[];return '<div class="answer-line'+(g?(it.ok?" ok":" bad"):"")+'" style="min-height:52px;margin-bottom:8px">'+pl.map((i,k)=>'<button class="tile" data-act="exUntok" data-id="'+it.id+'" data-k="'+k+'"'+(g?" disabled":"")+'>'+esc(it.toks[i])+'</button>').join("")+'</div><div class="bank" style="justify-content:flex-start">'+it.toks.map((t,i)=>'<button class="tile'+(pl.includes(i)?" used":"")+'" data-act="exTok" data-id="'+it.id+'" data-i="'+i+'"'+(g?" disabled":"")+'>'+esc(t)+'</button>').join("")+'</div>'};
- const inp=(it,w)=>'<input class="ex-inp'+(g?(it.ok?" right":" wrong"):"")+'" id="ex-'+it.id+'" data-ex="'+it.id+'" value="'+esc(EX.ans[it.id]||"")+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Válasz"'+(w?' style="width:'+w+'"':"")+(g?" readonly":"")+'>';
- const kidTag=k=>'<span title="'+(k.pr==="his"?"fiú":"lány")+'">'+k.face+'</span>';
- let h='<div class="wrap"><div class="section-h"><h1>Unit 2 próbadolgozat</h1><span class="eyebrow">'+EX.items.length+' pont</span></div>'+
- '<div class="card"><b>Mi lesz a témazáróban?</b><ul class="topics"><li>Bemutatkozó mondatok, pl. párbeszéd kiegészítése</li><li><i>his / her</i> kérdések és válaszok: név, kedvenc játék</li><li>Alakzatok nevei</li><li>Melléknév + játék olvasása és használata mondatban, pl. <i>It\'s a big kite.</i></li></ul><p class="muted small" style="margin:8px 0 0">A nov. 17-i tanári e-mail szerint a témazáró jövő héten lesz (nov. 23–27.), a pontos nap még nem ismert.</p>'+
- (p.ex.length?'<div class="hist" aria-label="Korábbi eredmények">'+p.ex.slice(-8).map(e=>'<span>'+new Date(e.t).toLocaleDateString("hu-HU",{month:"short",day:"numeric"})+' · '+e.pct+'%</span>').join("")+'</div>':"")+
+const cheerOf=pct=>pct>=90?"Fantasztikus! Készen állsz! 🏆":pct>=75?"Nagyon ügyes! Még egy kicsit, és tökéletes! 🌟":pct>=50?"Jó úton jársz! Nézd meg a hibákat, és próbáld újra! 💪":"Semmi baj! Gyakorolj a leckékkel, aztán írd meg újra! 🐘";
+function mark(it){if(!EX.graded)return"";return it.ok?'<span class="fix">✓ Helyes!</span>':'<span class="fix bad">✗ Helyesen: '+esc(it.kind==="order"?it.answer:it.kind==="pickpic"?"a zöld keretes kép":it.a)+'</span>'}
+function exItemHTML(it,n){const g=EX.graded;
+ const seg='<span class="seg'+(g?(it.ok?" right":" wrong"):"")+'">'+(it.o||[]).map(o=>'<button data-act="exSeg" data-id="'+it.id+'" data-v="'+esc(o)+'" aria-pressed="'+(EX.ans[it.id]===o)+'"'+(g?" disabled":"")+'>'+esc(o)+'</button>').join("")+'</span>';
+ const inp='<input class="ex-inp'+(g?(it.ok?" right":" wrong"):"")+'" id="ex-'+it.id+'" data-ex="'+it.id+'" value="'+esc(EX.ans[it.id]||"")+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Válasz"'+(g?" readonly":"")+'>';
+ const pic=it.html?'<span class="prompt-pic" style="min-width:96px;min-height:84px;padding:6px;font-size:3rem">'+it.html+'</span>':"";
+ const kid=it.kid?'<span title="'+(it.kid.pr==="his"?"fiú":"lány")+'">'+it.kid.face+'</span> ':"";
+ let h='<div class="ex-item"><span class="qn">'+(n+1)+'. '+esc(it.label||(it.kind==="seg"?"Válaszd ki: his vagy her?":it.kind==="type"?"Válaszolj a kérdésre!":it.kind==="pickpic"?"Melyik kép illik a mondathoz?":""))+'</span>';
+ if(it.kind==="seg")h+='<div style="font-size:1.15rem;font-weight:700">'+kid+esc(it.pre)+' '+seg+' '+esc(it.post)+'</div>';
+ else if(it.kind==="type")h+=(it.q?'<div style="font-size:1.1rem;font-weight:700">'+kid+esc(it.q)+'</div>':"")+'<div class="row">'+pic+'<span>'+(it.hint?'<span class="hintline">'+it.hint+'</span><br>':"")+'<span style="font-size:1.1rem;font-weight:700">'+esc(it.pre||"")+' '+inp+esc(it.post||"")+'</span></span></div>';
+ else if(it.kind==="order"){const pl=EX.ans[it.id]||[];h+=pic+'<div class="answer-line'+(g?(it.ok?" ok":" bad"):"")+'" style="min-height:52px;margin-bottom:8px">'+pl.map((i,k)=>'<button class="tile" data-act="exUntok" data-id="'+it.id+'" data-k="'+k+'"'+(g?" disabled":"")+'>'+esc(it.toks[i])+'</button>').join("")+'</div><div class="bank" style="justify-content:flex-start">'+it.toks.map((t,i)=>'<button class="tile'+(pl.includes(i)?" used":"")+'" data-act="exTok" data-id="'+it.id+'" data-i="'+i+'"'+(g?" disabled":"")+'>'+esc(t)+'</button>').join("")+'</div>'}
+ else if(it.kind==="pickpic")h+='<div style="font-weight:800;font-size:1.1rem"><i>'+esc(it.text)+'</i> '+spk(it.text)+'</div><div class="picopts">'+it.o.map((o,i)=>'<button class="picopt'+(g?(i===it.a?" right":EX.ans[it.id]===i?" wrong":""):"")+'" data-act="exPic" data-id="'+it.id+'" data-v="'+i+'" aria-pressed="'+(EX.ans[it.id]===i)+'" aria-label="'+(i+1)+'. kép"'+(g?" disabled":"")+'>'+o.h+'</button>').join("")+'</div>';
+ else{const txt=it.text?'<div class="bubble gapq" style="display:inline-block">'+esc(it.text).replace("___",'<span class="blank">&nbsp;</span>')+'</div>':"";
+  h+=(pic||txt?'<div class="row">'+pic+txt+'</div>':"")+(it.sent?'<div class="stack" style="gap:8px">'+it.o.map(o=>'<button class="opt" style="text-align:left;font-size:1.05rem;padding:10px 12px;min-height:0" data-act="exPick" data-id="'+it.id+'" data-v="'+esc(o)+'" aria-pressed="'+(EX.ans[it.id]===o)+'"'+(g?" disabled":"")+'>'+esc(o)+'</button>').join("")+'</div>'
+  :'<div class="row">'+it.o.map(o=>'<button class="tile"'+(EX.ans[it.id]===o?' style="border-color:var(--accent);box-shadow:0 3px 0 var(--accent)"':'')+' data-act="exPick" data-id="'+it.id+'" data-v="'+esc(o)+'"'+(g?" disabled":"")+'>'+esc(o)+'</button>').join("")+'</div>')}
+ return h+(it.kind==="pickpic"&&g?(it.ok?'<span class="fix">✓ Helyes!</span>':'<span class="fix bad">✗ A zöld keretes kép a helyes.</span>'):mark(it))+'</div>'}
+function viewExam(){if(!EX||EX.unit!==UI.sel.exam)EX=makeExam(UI.sel.exam);const g=EX.graded,p=P(),u=UNIT[EX.unit];
+ const hist=p.ex.filter(e=>(e.u||"u2")===EX.unit).slice(-8);
+ let h='<div class="wrap"><div class="section-h"><h1>Témazáró</h1><span class="eyebrow">'+EX.items.length+' pont</span></div>'+unitPicker("exam")+
+ '<div class="card"><b>📝 '+esc(unitLabel(u))+' · '+esc(u.title)+' – próbadolgozat</b><ul class="topics">'+(EX_INFO[u.id]||["Szavak: mi ez angolul?","Helyesírás: írd le a szavakat","Nyelvtan: melyik szó hiányzik?","Mondatok: rakd sorba a szavakat"]).map(t=>'<li>'+esc(t)+'</li>').join("")+'</ul>'+
+ (hist.length?'<div class="hist" aria-label="Korábbi eredmények">'+hist.map(e=>'<span>'+new Date(e.t).toLocaleDateString("hu-HU",{month:"short",day:"numeric"})+' · '+e.pct+'%</span>').join("")+'</div>':'<p class="muted small" style="margin:8px 0 0">Minden alkalommal új feladatlapot kapsz. Írd meg többször!</p>')+
  '<div class="row" style="margin-top:12px"><button class="btn sm" data-act="exNew">🔄 Új feladatlap</button><button class="btn sm" data-act="exPrint">⬇ Nyomtatható változat</button><button class="btn sm" data-act="examPractice">⚡ Gyors gyakorlás</button></div></div>';
- if(g){const s=EX.score,gr=gradeOf(s.pct);h+='<div class="card" id="exScore" style="margin-top:14px"><div class="score"><span class="pct">'+s.pct+'%</span><div><div><b>'+s.pts+' / '+s.max+' pont</b></div><span class="grade">Becsült jegy: '+gr[0]+' ('+gr[1]+')</span></div></div><div class="parts">'+[["A","Bemutatkozás"],["B","His / her"],["C","Alakzatok"],["D","Melléknevek"]].map(([k,n])=>'<div class="part">'+k+') '+n+'<br><b>'+s.secs[k][0]+' / '+s.secs[k][1]+'</b></div>').join("")+'</div><p class="muted small" style="margin:10px 0 0">A jegy csak becslés (90% felett 5-ös). A hibás feladatoknál zölddel ott a helyes válasz.</p><div class="row" style="margin-top:10px"><button class="btn sm primary" data-act="exNew">🔄 Új feladatlap</button></div></div>'}
- h+='<div class="card ex-sec"><h3>A) Bemutatkozás <span class="pts">6 pont</span></h3><p class="muted small" style="margin:4px 0 10px">Egészítsd ki a párbeszédet! Koppints egy üres helyre, aztán a szóra.</p><div class="dlg">'+EX.dlg.map(([who,parts])=>'<span class="who">'+who+'</span><span class="ln">'+parts.map(x=>typeof x==="number"?blank(x):esc(x)).join("")+'</span>').join("")+'</div>'+
-  '<div class="wordbank">'+EX.bank.map(w=>'<button class="tile'+(used.has(w)?" spent":"")+'" data-act="exBank" data-v="'+esc(w)+'"'+(g?" disabled":"")+'>'+esc(w)+'</button>').join("")+'</div>'+(g?'<div style="margin-top:8px">'+EX.items.filter(i=>i.sec==="A"&&!i.ok).map(i=>'<span class="fix bad">'+(+i.id.slice(1)+1)+'. hely: '+esc(i.a)+'</span>').join(" · ")+'</div>':"")+'</div>';
- h+='<div class="card ex-sec"><h3>B) His / her <span class="pts">8 pont</span></h3><div class="kidcards" style="margin:8px 0 6px">'+[EX.boy,EX.girl].map(k=>'<div class="kid"><div class="face">'+k.face+'</div><b>'+esc(k.n)+'</b><div class="tp">'+picHTML(k.t.p)+'</div><div class="muted small">kedvenc játéka</div></div>').join("")+'</div>';
- EX.items.filter(i=>i.sec==="B").forEach((it,n)=>{h+='<div class="ex-item"><span class="qn">'+(n+1)+'. '+(it.kind==="seg"?"Válaszd ki: his vagy her?":it.kind==="type"?"Válaszolj a kérdésre!":esc(it.q))+'</span>';
-  if(it.kind==="seg")h+='<div style="font-size:1.15rem;font-weight:700">'+kidTag(it.kid)+' '+esc(it.pre)+' '+seg(it)+' '+esc(it.post)+'</div>';
-  else if(it.kind==="type")h+='<div style="font-size:1.1rem;font-weight:700">'+kidTag(it.kid)+' '+esc(it.q)+'</div><div style="font-size:1.1rem;font-weight:700">'+esc(it.pre)+' '+inp(it,"8em")+esc(it.post)+'</div>';
-  else h+=order(it);h+=mark(it)+'</div>'});h+='</div>';
- h+='<div class="card ex-sec"><h3>C) Alakzatok <span class="pts">6 pont</span></h3>';
- EX.items.filter(i=>i.sec==="C").forEach((it,n)=>{h+='<div class="ex-item"><span class="qn">'+(n+1)+'. '+(it.kind==="choice"?"Mi a neve?":"Írd le a nevét!")+'</span><div class="row"><span class="prompt-pic" style="min-width:90px;min-height:80px;padding:6px">'+it.html+'</span>';
-  h+=it.kind==="choice"?'<span class="row">'+it.o.map(o=>'<button class="tile'+(EX.ans[it.id]===o?'" style="border-color:var(--accent);box-shadow:0 3px 0 var(--accent)':'')+'" data-act="exPick" data-id="'+it.id+'" data-v="'+o+'"'+(g?" disabled":"")+'>'+o+'</button>').join("")+'</span>':'<span><span class="hintline">'+Array(it.a.length).fill("_").join(" ")+'</span><br>'+inp(it)+'</span>';h+='</div>'+mark(it)+'</div>'});h+='</div>';
- h+='<div class="card ex-sec"><h3>D) Melléknevek és játékok <span class="pts">8 pont</span></h3>';
- EX.items.filter(i=>i.sec==="D").forEach((it,n)=>{h+='<div class="ex-item">';
-  if(it.kind==="pickpic")h+='<span class="qn">'+(n+1)+'. Melyik kép illik a mondathoz? <i>'+esc(it.text)+'</i> '+spk(it.text)+'</span><div class="picopts">'+it.o.map((o,i)=>'<button class="picopt'+(g?(i===it.a?" right":EX.ans[it.id]===i?" wrong":""):"")+'" data-act="exPic" data-id="'+it.id+'" data-v="'+i+'" aria-pressed="'+(EX.ans[it.id]===i)+'" aria-label="'+(i+1)+'. kép"'+(g?" disabled":"")+'>'+o.h+'</button>').join("")+'</div>';
-  else if(it.kind==="order")h+='<span class="qn">'+(n+1)+'. '+esc(it.q)+'</span><span class="prompt-pic" style="min-height:90px">'+it.html+'</span>'+order(it);
-  else h+='<span class="qn">'+(n+1)+'. Melyik mondat illik a képhez?</span><span class="prompt-pic" style="min-height:90px">'+it.html+'</span><div class="stack" style="gap:8px">'+it.o.map(o=>'<button class="opt" style="text-align:left;font-size:1.05rem;padding:10px 12px;min-height:0" data-act="exPick" data-id="'+it.id+'" data-v="'+esc(o)+'" aria-pressed="'+(EX.ans[it.id]===o)+'"'+(g?" disabled":"")+'>'+esc(o)+'</button>').join("")+'</div>';
-  h+=(it.kind==="pickpic"&&g?(it.ok?'<span class="fix">✓</span>':'<span class="fix bad">✗ A zöld keretes kép a helyes.</span>'):mark(it))+'</div>'});h+='</div>';
+ if(g){const s=EX.score,gr=gradeOf(s.pct);h+='<div class="card" id="exScore" style="margin-top:14px"><div class="score"><span class="pct">'+s.pct+'%</span><div><div><b>'+s.pts+' / '+s.max+' pont</b></div><span class="grade">Becsült jegy: '+gr[0]+' ('+gr[1]+')</span></div></div><p style="font-weight:800;margin:10px 0 0">'+cheerOf(s.pct)+'</p><div class="parts">'+EX.secs.map(x=>'<div class="part">'+x.k+') '+esc(x.t)+'<br><b>'+s.secs[x.k][0]+' / '+s.secs[x.k][1]+'</b></div>').join("")+'</div><p class="muted small" style="margin:10px 0 0">A jegy csak becslés (90%-tól 5-ös). A hibás feladatoknál ott a helyes válasz.</p><div class="row" style="margin-top:10px"><button class="btn sm primary" data-act="exNew">🔄 Új feladatlap</button></div></div>'}
+ const used=new Set(Object.entries(EX.ans).filter(([k])=>k.startsWith("bl")).map(([,v])=>v));
+ for(const sec of EX.secs){const its=EX.items.filter(i=>i.sec===sec.k);h+='<div class="card ex-sec"><h3>'+sec.k+') '+esc(sec.t)+' <span class="pts">'+its.length+' pont</span></h3>'+(sec.h?'<p class="muted small" style="margin:4px 0 10px">'+esc(sec.h)+'</p>':"");
+  if(sec.dialogue){const blank=i=>{const it=exItem("bl"+i),v=EX.ans[it.id];const cls=g?(it.ok?" right":" wrong"):(EX.active===it.id?" active":"");return '<button class="blank'+cls+'" data-act="exBlank" data-id="'+it.id+'"'+(g?" disabled":"")+'>'+(v?esc(v):"&nbsp;")+'</button>'};
+   h+='<div class="dlg">'+EX.dlg.map(([who,parts])=>'<span class="who">'+who+'</span><span class="ln">'+parts.map(x=>typeof x==="number"?blank(x):esc(x)).join("")+'</span>').join("")+'</div><div class="wordbank">'+EX.bank.map(w=>'<button class="tile'+(used.has(w)?" spent":"")+'" data-act="exBank" data-v="'+esc(w)+'"'+(g?" disabled":"")+'>'+esc(w)+'</button>').join("")+'</div>'+
+   (g?'<div style="margin-top:8px">'+its.filter(i=>!i.ok).map(i=>'<span class="fix bad">'+(+i.id.slice(2)+1)+'. hely: '+esc(i.a)+'</span>').join(" · ")+(its.every(i=>i.ok)?'<span class="fix">✓ Minden helyes!</span>':'')+'</div>':"");h+='</div>';continue}
+  if(sec.kids)h+='<div class="kidcards" style="margin:8px 0 6px">'+[EX.boy,EX.girl].map(k=>'<div class="kid"><div class="face">'+k.face+'</div><b>'+esc(k.n)+'</b><div class="tp">'+picHTML(k.t.p)+'</div><div class="muted small">kedvenc játéka</div></div>').join("")+'</div>';
+  its.forEach((it,n)=>h+=exItemHTML(it,n));h+='</div>'}
  const left=EX.items.filter(it=>{const v=EX.ans[it.id];return v==null||v===""||(Array.isArray(v)&&!v.length)}).length;
- if(!g)h+='<div class="card" style="margin-top:14px;text-align:center"><p class="muted" style="margin:0 0 10px">'+(left?left+" feladat még üres.":"Minden feladat kész!")+'</p><button class="btn primary wide" data-act="exGrade">✅ Javítás</button></div>';
+ if(!g)h+='<div class="card" style="margin-top:14px;text-align:center"><p class="muted" style="margin:0 0 10px">'+(left?left+" feladat még üres.":"Minden feladat kész! 🎉")+'</p><button class="btn primary wide" data-act="exGrade">✅ Javítás</button></div>';
  return h+'</div>'}
 
 /* printable worksheets (downloaded as .html) */
@@ -815,17 +915,21 @@ function shuffleSheet(u){const rows=u.words.map((w,i)=>({w,scr:scramble(w.en)}))
  h+='<div class="key"><h1>Megoldókulcs</h1><h2>1.</h2><p>'+rows.map((r,i)=>(i+1)+". "+esc(r.w.en)).join(" · ")+'</p>'+(sents.length?'<h2>2.</h2><p>'+sents.map((x,i)=>(i+1)+". "+esc(x.s[0])).join("<br>")+'</p>':"")+'</div>';
  const txt="Szókeverő – "+unitLabel(u)+": "+u.title+"\n\n"+rows.map((r,i)=>(i+1)+". "+r.scr+"   ("+r.w.hu+")   ________").join("\n")+(sents.length?"\n\nMondatok:\n"+sents.map((x,i)=>(i+1)+". "+x.scr+"  ("+x.s[1]+")").join("\n"):"")+"\n\nMegoldás: "+rows.map(r=>r.w.en).join(", ");
  return {html:docHTML("Szókeverő "+u.title,h),txt}}
-function examSheet(E){const sec=s=>E.items.filter(i=>i.sec===s);
- let h='<h1>Unit 2 – próbadolgozat (Toys)</h1><div class="small">Név: ____________________ &nbsp; Dátum: ____________ &nbsp; Pont: ____ / '+E.items.length+'</div>';
- h+='<h2>A) Egészítsd ki a párbeszédet! (6 pont)</h2><div class="box"><b>Szókészlet:</b> '+E.bank.map(esc).join(" · ")+'</div>'+E.dlg.map(([who,parts])=>'<p><b>'+who+':</b> '+parts.map(x=>typeof x==="number"?'<span class="ln" style="min-width:90px"></span>':esc(x)).join("")+'</p>').join("");
- h+='<h2>B) His / her (8 pont)</h2><table><tr>'+[E.boy,E.girl].map(k=>'<td style="text-align:center"><span style="font-size:34px">'+k.face+'</span><br><b>'+esc(k.n)+'</b><br><span style="font-size:30px">'+picHTML(k.t.p)+'</span><br><span class="small">kedvenc játéka</span></td>').join("")+'</tr></table>';
- sec("B").forEach((it,n)=>{h+='<p><b>'+(n+1)+'.</b> ';if(it.kind==="seg")h+=it.kid.face+' '+esc(it.pre)+' <b>'+it.o.join(" / ")+'</b> '+esc(it.post)+' <span class="small">(húzd alá a jót)</span>';else if(it.kind==="type")h+=it.kid.face+' '+esc(it.q)+'<br>'+esc(it.pre)+' <span class="ln" style="min-width:110px"></span>'+esc(it.post);else h+=esc(it.q)+'<br><span style="font-size:16px;font-weight:700">'+esc(it.toks.join("  /  "))+'</span><br><span class="ln" style="min-width:90%"></span>';h+='</p>'});
- h+='<h2>C) Alakzatok – írd le a nevüket! (6 pont)</h2><table><tr>'+sec("C").map((it,n)=>'<td style="text-align:center"><b>'+(n+1)+'.</b><div class="svgp">'+it.html+'</div><span class="ln" style="min-width:80px"></span></td>').join("")+'</tr></table>';
- h+='<h2>D) Melléknevek és játékok (8 pont)</h2>';sec("D").forEach((it,n)=>{h+='<div class="box"><b>'+(n+1)+'.</b> ';if(it.kind==="pickpic")h+='Karikázd be a mondathoz illő képet: <i>'+esc(it.text)+'</i><br>'+it.o.map((o,i)=>'<span style="display:inline-block;margin:6px 16px 0 0;vertical-align:middle" class="svgp">'+(i+1)+') '+o.h+'</span>').join("");
-  else if(it.kind==="order")h+='Írd le, mit látsz! <span class="svgp">'+it.html+'</span><br><span class="small">Segítség: '+esc(it.toks.join(" / "))+'</span><br><span class="ln" style="min-width:90%"></span>';else h+='Karikázd be a képhez illő mondatot! <span class="svgp">'+it.html+'</span><br>'+it.o.map(esc).join("<br>");h+='</div>'});
- h+='<div class="key"><h1>Megoldókulcs</h1><p><b>A)</b> '+sec("A").map(i=>esc(i.a)).join(", ")+'</p><p><b>B)</b> '+sec("B").map((i,n)=>(n+1)+". "+esc(i.kind==="order"?i.answer:i.a)).join(" · ")+'</p><p><b>C)</b> '+sec("C").map((i,n)=>(n+1)+". "+i.a).join(" · ")+'</p><p><b>D)</b> '+sec("D").map((i,n)=>(n+1)+". "+esc(i.kind==="pickpic"?(i.a+1)+". kép":i.kind==="order"?i.answer:i.a)).join(" · ")+'</p><p class="small">Pontozás: minden feladat 1 pont. Becsült jegy: 90%-tól 5, 75%-tól 4, 60%-tól 3, 45%-tól 2.</p></div>';
- const txt="Unit 2 próbadolgozat – megoldókulcs\nA) "+sec("A").map(i=>i.a).join(", ")+"\nB) "+sec("B").map(i=>i.kind==="order"?i.answer:i.a).join(" | ")+"\nC) "+sec("C").map(i=>i.a).join(", ")+"\nD) "+sec("D").map(i=>i.kind==="pickpic"?(i.a+1)+". kép":i.kind==="order"?i.answer:i.a).join(" | ");
- return {html:docHTML("Unit 2 próbadolgozat",h),txt}}
+function examSheet(E){const u=UNIT[E.unit];let h='<h1>'+esc(unitLabel(u))+' · '+esc(u.title)+' – próbadolgozat</h1><div class="small">Név: ____________________ &nbsp; Dátum: ____________ &nbsp; Pont: ____ / '+E.items.length+'</div>';
+ for(const sec of E.secs){const its=E.items.filter(i=>i.sec===sec.k);h+='<h2>'+sec.k+') '+esc(sec.t)+' ('+its.length+' pont)</h2>';
+  if(sec.dialogue){h+='<div class="box"><b>Szókészlet:</b> '+E.bank.map(esc).join(" · ")+'</div>'+E.dlg.map(([who,parts])=>'<p><b>'+who+':</b> '+parts.map(x=>typeof x==="number"?'<span class="ln" style="min-width:90px"></span>':esc(x)).join("")+'</p>').join("");continue}
+  if(sec.kids)h+='<table><tr>'+[E.boy,E.girl].map(k=>'<td style="text-align:center"><span style="font-size:34px">'+k.face+'</span><br><b>'+esc(k.n)+'</b><br><span style="font-size:30px">'+picHTML(k.t.p)+'</span><br><span class="small">kedvenc játéka</span></td>').join("")+'</tr></table>';
+  its.forEach((it,n)=>{const pic=it.html?'<span class="svgp" style="font-size:36px">'+it.html+'</span> ':"";h+='<div class="box"><b>'+(n+1)+'.</b> ';
+   if(it.kind==="seg")h+=it.kid.face+' '+esc(it.pre)+' <b>'+it.o.join(" / ")+'</b> '+esc(it.post)+' <span class="small">(húzd alá a jót)</span>';
+   else if(it.kind==="type")h+=esc(it.label||"")+' '+(it.q?(it.kid?it.kid.face+" ":"")+esc(it.q)+'<br>':"")+pic+esc(it.pre||"")+' <span class="ln" style="min-width:130px"></span>'+esc(it.post||"");
+   else if(it.kind==="order")h+=esc(it.label||"")+' '+pic+'<br><span style="font-size:16px;font-weight:700">'+esc(it.toks.join("  /  "))+'</span><br><br><span class="ln" style="min-width:90%"></span>';
+   else if(it.kind==="pickpic")h+='Karikázd be a mondathoz illő képet: <i>'+esc(it.text)+'</i><br>'+it.o.map((o,i)=>'<span style="display:inline-block;margin:6px 16px 0 0;vertical-align:middle" class="svgp">'+(i+1)+') '+o.h+'</span>').join("");
+   else h+=esc(it.label||"")+' '+pic+(it.text?'<b>'+esc(it.text)+'</b>':"")+'<br>'+(it.sent?it.o.map(esc).join("<br>"):'Karikázd be: '+it.o.map(esc).join(" · "));
+   h+='</div>'})}
+ const ans=it=>it.kind==="order"?it.answer:it.kind==="pickpic"?(it.a+1)+". kép":it.a;
+ h+='<div class="key"><h1>Megoldókulcs</h1>'+E.secs.map(sec=>'<p><b>'+sec.k+')</b> '+E.items.filter(i=>i.sec===sec.k).map((i,n)=>(n+1)+". "+esc(ans(i))).join(" · ")+'</p>').join("")+'<p class="small">Pontozás: minden feladat 1 pont. Becsült jegy: 90%-tól 5, 75%-tól 4, 60%-tól 3, 45%-tól 2.</p></div>';
+ const txt=unitLabel(u)+" "+u.title+" – próbadolgozat, megoldókulcs\n"+E.secs.map(sec=>sec.k+") "+E.items.filter(i=>i.sec===sec.k).map(ans).join(" | ")).join("\n");
+ return {html:docHTML("Próbadolgozat "+u.title,h),txt}}
 async function offerFile(name,{html,txt}){if(dl){try{await dl.save({filename:name,data:html});toast("Elmentve: "+name);return}catch(e){const c=e&&e.code;if(c==="declined")return;if(c==="rate_limited"){toast("Már nyitva van egy mentési ablak.");return}}}
  if(!window.claude){try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=name;document.body.appendChild(a);a.click();a.remove();return}catch(e){}}
  sheet('<h2>Feladatlap szövege</h2><p class="muted small">A letöltés itt nem érhető el. Másold ki a szöveget, és illeszd be egy dokumentumba nyomtatáshoz.</p><textarea class="copybox" id="copyBox" readonly>'+esc(txt)+'</textarea><div class="row" style="margin-top:10px"><button class="btn primary" data-act="copyTxt">Másolás</button><button class="btn" data-act="closeSheet">Bezárás</button></div>')}
@@ -877,12 +981,12 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-act],[data
  case"speed":{const u=UNIT[UI.sel.games];if(u.words.filter(w=>w.p).length<4){toast("Ebben a fejezetben kevés a képes szó – válassz másikat!");return}startLesson({items:speedItems([u]),title:"Villámkör",mode:"speed"});break}
  case"memory":newMemory();break;case"mem":tapMem(+t.dataset.i);break;
  case"weak":{const ws=weakWords();if(ws.length<3){toast("Még nincs elég eltévesztett szó. Gyakorolj előbb!");return}startLesson({items:wordsLesson(ws),title:"Gyenge szavak",xp:12});break}
- case"examPractice":startLesson({items:examPractice(),title:"Unit 2 · gyors gyakorlás",xp:12});break;
- case"exNew":EX=makeExam();render();window.scrollTo(0,0);break;
- case"exPrint":offerFile("unit2-probadolgozat.html",examSheet(EX));break;
+ case"examPractice":{const u=UNIT[UI.sel.exam]||UNIT.u2;startLesson({items:examPractice(u.id),title:unitLabel(u)+" · gyors gyakorlás",xp:12});break}
+ case"exNew":EX=makeExam(UI.sel.exam);render();window.scrollTo(0,0);break;
+ case"exPrint":offerFile("probadolgozat-"+EX.unit+".html",examSheet(EX));break;
  case"exBlank":if(EX.graded)return;if(EX.ans[id]){delete EX.ans[id]}EX.active=id;render();break;
- case"exBank":{if(EX.graded)return;const v=t.dataset.v;const tgt=EX.active&&!EX.ans[EX.active]?EX.active:EX.items.find(i=>i.sec==="A"&&!EX.ans[i.id]);const tid=typeof tgt==="string"?tgt:tgt&&tgt.id;if(!tid)return;
-  for(const k in EX.ans)if(k[0]==="a"&&EX.ans[k]===v)delete EX.ans[k];EX.ans[tid]=v;const nx=EX.items.find(i=>i.sec==="A"&&!EX.ans[i.id]);EX.active=nx?nx.id:null;beep("tap");render();break}
+ case"exBank":{if(EX.graded)return;const v=t.dataset.v;const tgt=EX.active&&!EX.ans[EX.active]?EX.active:EX.items.find(i=>i.kind==="blank"&&!EX.ans[i.id]);const tid=typeof tgt==="string"?tgt:tgt&&tgt.id;if(!tid)return;
+  for(const k in EX.ans)if(k.startsWith("bl")&&EX.ans[k]===v)delete EX.ans[k];EX.ans[tid]=v;const nx=EX.items.find(i=>i.kind==="blank"&&!EX.ans[i.id]);EX.active=nx?nx.id:null;beep("tap");render();break}
  case"exSeg":case"exPick":if(EX.graded)return;EX.ans[id]=t.dataset.v;beep("tap");render();break;
  case"exPic":if(EX.graded)return;EX.ans[id]=+t.dataset.v;beep("tap");render();break;
  case"exTok":{if(EX.graded)return;const arr=EX.ans[id]||(EX.ans[id]=[]);const i=+t.dataset.i;if(!arr.includes(i))arr.push(i);beep("tap");render();break}
@@ -892,7 +996,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-act],[data
  case"makeCode":S.updatedAt=Date.now();saveLocal();cloud.pending=true;flushSupa().then(()=>{if(cloud.code)openPlayers();else toast("Most nincs kapcsolat. Próbáld újra később!")});break;
  case"joinCode":joinFamily($("#joinCode").value);break;
  }});
-document.addEventListener("change",e=>{const t=e.target;if(t.id==="bkUnit"){UI.sel.shuffle=t.value;UI.bk.g="all";saveUI();render()}else if(t.id==="bkGroup"){UI.bk.g=t.value;saveUI();render()}else if(t.id==="bkN"){UI.bk.n=+t.value;saveUI()}else if(t.id==="bkS"){UI.bk.s=t.checked?1:0;saveUI()}});
+document.addEventListener("change",e=>{const t=e.target;if(t.id&&t.id.startsWith("selU-")){const v=t.id.slice(5);UI.sel[v]=t.value;if(v==="games")MEM=null;if(v==="exam")EX=null;saveUI();render();return}if(t.id==="bkUnit"){UI.sel.shuffle=t.value;UI.bk.g="all";saveUI();render()}else if(t.id==="bkGroup"){UI.bk.g=t.value;saveUI();render()}else if(t.id==="bkN"){UI.bk.n=+t.value;saveUI()}else if(t.id==="bkS"){UI.bk.s=t.checked?1:0;saveUI()}});
 document.addEventListener("input",e=>{const id=e.target.dataset&&e.target.dataset.ex;if(id&&EX&&!EX.graded)EX.ans[id]=e.target.value});
 $("#lBtn").addEventListener("click",mainBtn);
 document.addEventListener("keydown",e=>{

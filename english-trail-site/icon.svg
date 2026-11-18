@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4766F0"/><stop offset="1" stop-color="#2238B8"/></linearGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse"><path d="M64 0H0V64" fill="none" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="3"/></pattern>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D9E0EE"/><stop offset="1" stop-color="#B7C2D8"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#grid)"/>
+  <!-- ears -->
+  <ellipse cx="270" cy="470" rx="190" ry="215" fill="url(#skin)" stroke="#1B2A6B" stroke-width="14"/>
+  <ellipse cx="290" cy="480" rx="120" ry="145" fill="#F6B3C7"/>
+  <ellipse cx="754" cy="470" rx="190" ry="215" fill="url(#skin)" stroke="#1B2A6B" stroke-width="14"/>
+  <ellipse cx="734" cy="480" rx="120" ry="145" fill="#F6B3C7"/>
+  <!-- trunk -->
+  <path d="M452 600 C440 720 430 800 500 850 C560 892 650 860 660 800 C666 762 630 748 610 770 C596 786 600 812 576 820 C540 832 530 790 540 740 C550 690 560 640 572 600 Z" fill="url(#skin)" stroke="#1B2A6B" stroke-width="14" stroke-linejoin="round"/>
+  <!-- head -->
+  <circle cx="512" cy="450" r="250" fill="url(#skin)" stroke="#1B2A6B" stroke-width="14"/>
+  <path d="M470 640 C480 700 470 760 520 800" fill="none" stroke="url(#skin)" stroke-width="80" stroke-linecap="round"/>
+  <path d="M452 640 C452 700 446 740 470 790" fill="none" stroke="#1B2A6B" stroke-width="12" stroke-linecap="round" opacity=".0"/>
+  <!-- trunk lines -->
+  <path d="M520 700 q22 8 44 0 M520 752 q22 8 42 0" fill="none" stroke="#8F9BB6" stroke-width="10" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="425" cy="440" rx="40" ry="50" fill="#1B2A6B"/><circle cx="438" cy="424" r="15" fill="#fff"/>
+  <ellipse cx="599" cy="440" rx="40" ry="50" fill="#1B2A6B"/><circle cx="612" cy="424" r="15" fill="#fff"/>
+  <!-- cheeks -->
+  <ellipse cx="365" cy="530" rx="42" ry="26" fill="#F48FB1" opacity=".75"/>
+  <ellipse cx="659" cy="530" rx="42" ry="26" fill="#F48FB1" opacity=".75"/>
+  <!-- school cap of letters: a little "ABC" book on top -->
+  <g transform="rotate(-8 512 215)">
+    <rect x="392" y="170" width="240" height="96" rx="14" fill="#E5484D" stroke="#1B2A6B" stroke-width="12"/>
+    <text x="512" y="243" text-anchor="middle" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="900" font-size="72" fill="#fff" letter-spacing="4">ABC</text>
+  </g>
+  <!-- sparkle -->
+  <path d="M842 210 l22 58 58 22 -58 22 -22 58 -22 -58 -58 -22 58 -22z" fill="#FFD23F" stroke="#1B2A6B" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M176 790 l14 36 36 14 -36 14 -14 36 -14 -36 -36 -14 36 -14z" fill="#FFD23F"/>
+</svg>

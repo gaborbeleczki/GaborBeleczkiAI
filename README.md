@@ -28,8 +28,9 @@ randomized Unit 2 mock test. It has no build step and no dependencies: Vite copi
 served at `/english-trail/` (locally: `npm run dev`, then open http://localhost:3000/english-trail/).
 It is unofficial practice material and is not affiliated with Cambridge University Press.
 
-Live: https://elli-english-trail.vercel.app (Vercel project `elli-english-trail`, deployed as a
-single static file). Progress for all children in a family is saved in Supabase under a family code
+Live: https://elli-english-trail.vercel.app (Vercel project `elli-english-trail`). The deployed files,
+including the home-screen icon and web manifest, are in `english-trail-site/` (static, no build step).
+Content follows the units of Super Minds Second Edition Starter and Level 1 (all 20 units). Progress for all children in a family is saved in Supabase under a family code
 (`XXXXX-XXXXX`) that is created after the first finished lesson; entering the code on another device
 (name chip → Családi kód) loads the same progress. Without a connection it keeps working from
 localStorage and saves later. Database setup: `supabase/migrations/20261118_english_trail_family_progress.sql`
