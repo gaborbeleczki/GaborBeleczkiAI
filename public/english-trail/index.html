@@ -410,6 +410,18 @@ const BOOKS=[
 .prompt-pic{min-width:132px;min-height:110px;border-radius:22px;background:var(--card);border:2px solid var(--line);display:grid;place-items:center;padding:10px;box-shadow:var(--shadow)}
 .prompt-pic svg{width:90px;height:90px}
 .gapq .blank{min-width:3.5em}
+.bk{border-color:var(--accent);box-shadow:0 4px 0 var(--accent)}
+.bk-h{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.bk-h h2{font-size:1.45rem}
+.bk-h .gi{font-size:2.1rem;width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--card-2);flex:none}
+.bk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.bk-grid .field select{width:100%;min-width:0}
+.bk-grid .field:first-child{grid-column:1/-1}
+.chk{display:flex;gap:8px;align-items:center;font-weight:700;margin-top:12px}
+.chk input{width:20px;height:20px;accent-color:var(--accent)}
+.bk-go{font-size:1.25rem;padding:14px 30px}
+.stars-lg{font-size:1.4rem;color:var(--gold);letter-spacing:2px}
+.stars-lg .off{color:var(--line)}
 </style>
 <script>
 (()=>{"use strict";
@@ -470,8 +482,9 @@ function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
 let S=loadLocal()||defaultState();
 function ensureState(){if(!S.settings)S.settings={sound:true,voice:true,rate:.9};if(!S.players||!Object.keys(S.players).length){const d=defaultState();S.players=d.players;S.cur=d.cur}if(!S.players[S.cur])S.cur=Object.keys(S.players)[0];for(const p of Object.values(S.players)){const d=newPlayer(p.name,p.av);for(const k in d)if(p[k]===undefined)p[k]=d[k]}}
 ensureState();
-let UI={sel:{shuffle:"u2",words:"u2",games:"u2"},exp:{w1:1,u1:1,u2:1}};
+let UI={sel:{shuffle:"u2",words:"u2",games:"u2"},exp:{w1:1,u1:1,u2:1},bk:{g:"all",n:10,s:1}};
 try{const u=JSON.parse(localStorage.getItem(LSUI)||"null");if(u&&u.sel&&u.exp)UI=u}catch(e){}
+if(!UI.bk)UI.bk={g:"all",n:10,s:1};if(!UNIT[UI.sel.shuffle])UI.sel.shuffle="u2";
 const saveUI=()=>{try{localStorage.setItem(LSUI,JSON.stringify(UI))}catch(e){}};
 const P=()=>S.players[S.cur];
 function commit(){S.updatedAt=Date.now();saveLocal();scheduleCloud();renderHeader()}
@@ -671,11 +684,20 @@ function viewPath(){const p=P(),nx=nextLessonId();
  return h+'<p class="muted small" style="margin-top:28px">Nem hivatalos gyakorló oldal a Super Minds könyvek témáihoz. A szólisták a tanári e-mailek és a tavalyi könyv szöveggyűjteménye alapján készültek.</p><p class="sync" data-sync></p></div>'}
 function unitPicker(forView){const cur=UI.sel[forView];return '<div class="picker" role="group" aria-label="Fejezet">'+UNITS.map(u=>'<button class="pchip" style="--u:'+u.color+';--u-ink:'+(u.ink||"#fff")+'" data-act="selUnit" data-for="'+forView+'" data-u="'+u.id+'" aria-pressed="'+(u.id===cur)+'">'+(u.book.id==="sm1"?"SM1 · ":"Starter · ")+esc(unitLabel(u))+' '+esc(u.title)+'</button>').join("")+'</div>'}
 function scramble(word){return word.split(" ").map(part=>{const ch=[...part];if(ch.length<3)return ch.reverse().join("");let s=ch;for(let k=0;k<8&&s.join("")===part;k++)s=shuffle(ch);return s.join("")}).join("  ")}
-function viewShuffle(){const u=UNIT[UI.sel.shuffle];
- let h='<div class="wrap"><div class="section-h"><h1>Szókeverő</h1><span class="eyebrow">'+esc(unitLabel(u))+' · '+esc(u.title)+'</span></div><p class="muted" style="margin-top:0">Összekevert betűk és szavak. Találd ki a szót, aztán koppints a kártyára a megoldásért!</p>'+unitPicker("shuffle")+
- '<div class="row" style="margin-bottom:14px"><button class="btn sm primary" data-act="shufflePlay">▶ Betűkirakó játék</button><button class="btn sm" data-act="reshuffle">🔀 Újrakeverés</button><button class="btn sm" data-act="sheet">⬇ Nyomtatható feladatlap</button></div>';
- u.groups.forEach(g=>{h+='<h3 style="margin:14px 0 8px">'+esc(g.hu)+'</h3><div class="grid-cards">'+g.words.map(w=>'<button class="scard" data-act="reveal" data-say="'+esc(w.en)+'">'+(w.p?'<span class="hint">'+picHTML(w.p)+'</span>':'<span class="hint txt">'+esc(w.hu)+'</span>')+'<span class="scramble">'+esc(scramble(w.en))+'</span><span class="reveal hide">'+esc(w.en)+'</span></button>').join("")+'</div>'});
- if(u.sents&&u.sents.length)h+='<h3 style="margin:20px 0 8px">Összekevert mondatok</h3><ul class="slist">'+u.sents.map(s=>'<li><span class="scr">'+esc(shuffle(s[0].split(" ")).join("  /  "))+'</span><span class="muted small">'+esc(s[1])+'</span><button class="btn sm" style="align-self:flex-start;margin-top:4px" data-act="revealSent" data-say="'+esc(s[0])+'">Megoldás</button></li>').join("")+'</ul>';
+function unitSelect(id,cur){return '<select id="'+id+'">'+BOOKS.map(b=>'<optgroup label="'+esc(b.title)+'">'+b.units.map(u=>'<option value="'+u.id+'"'+(u.id===cur?" selected":"")+'>'+esc(unitLabel(u))+' · '+esc(u.title)+' ('+esc(u.hu)+')</option>').join("")+'</optgroup>').join("")+'</select>'}
+function bkGroups(u){const g=UI.bk.g;return g==="all"||!u.groups[+g]?u.groups:[u.groups[+g]]}
+function viewShuffle(){const u=UNIT[UI.sel.shuffle],bk=UI.bk,gs=bkGroups(u),nw=gs.reduce((a,g)=>a+g.words.length,0),best=P().les["bk:"+u.id]||0;
+ let h='<div class="wrap"><div class="section-h"><h1>Szókeverő</h1><span class="eyebrow">'+esc(unitLabel(u))+' · '+esc(u.title)+'</span></div>'+
+ '<div class="card bk"><div class="bk-h"><span class="gi">🔤</span><div><h2>Betűkirakó</h2><div class="muted small">Rakd ki a szavakat az összekevert betűkből! Válassz fejezetet, és indulhat.</div></div></div>'+
+ '<div class="bk-grid"><div class="field"><label for="bkUnit">Fejezet</label>'+unitSelect("bkUnit",u.id)+'</div>'+
+ '<div class="field"><label for="bkGroup">Szavak</label><select id="bkGroup"><option value="all">Minden szó ('+u.words.length+')</option>'+u.groups.map((g,i)=>'<option value="'+i+'"'+(String(i)===String(bk.g)?" selected":"")+'>'+esc(g.hu)+' ('+g.words.length+')</option>').join("")+'</select></div>'+
+ '<div class="field"><label for="bkN">Hány szó?</label><select id="bkN">'+[6,10,15,0].map(n=>'<option value="'+n+'"'+(n===bk.n?" selected":"")+'>'+(n?n+" szó":"Mind ("+nw+")")+'</option>').join("")+'</select></div></div>'+
+ (u.sents&&u.sents.length?'<label class="chk"><input type="checkbox" id="bkS"'+(bk.s?" checked":"")+'> Mondatok is (3 mondat szórendje)</label>':'')+
+ '<div class="row" style="margin-top:14px"><button class="btn primary bk-go" data-act="shufflePlay">▶ Indítás</button><span class="stars-lg" aria-label="Legjobb eredmény ebben a fejezetben">'+starStr(best)+'</span></div></div>'+
+ '<div class="section-h"><h2>Kártyák</h2><span class="eyebrow">'+nw+' szó</span></div><p class="muted" style="margin-top:0">Találd ki a szót, aztán koppints a kártyára a megoldásért!</p>'+
+ '<div class="row" style="margin-bottom:14px"><button class="btn sm" data-act="reshuffle">🔀 Újrakeverés</button><button class="btn sm" data-act="sheet">⬇ Nyomtatható feladatlap</button></div>';
+ gs.forEach(g=>{h+='<h3 style="margin:14px 0 8px">'+esc(g.hu)+'</h3><div class="grid-cards">'+g.words.map(w=>'<button class="scard" data-act="reveal" data-say="'+esc(w.en)+'">'+(w.p?'<span class="hint">'+picHTML(w.p)+'</span>':'<span class="hint txt">'+esc(w.hu)+'</span>')+'<span class="scramble">'+esc(scramble(w.en))+'</span><span class="reveal hide">'+esc(w.en)+'</span></button>').join("")+'</div>'});
+ if(u.sents&&u.sents.length&&UI.bk.g==="all")h+='<h3 style="margin:20px 0 8px">Összekevert mondatok</h3><ul class="slist">'+u.sents.map(s=>'<li><span class="scr">'+esc(shuffle(s[0].split(" ")).join("  /  "))+'</span><span class="muted small">'+esc(s[1])+'</span><button class="btn sm" style="align-self:flex-start;margin-top:4px" data-act="revealSent" data-say="'+esc(s[0])+'">Megoldás</button></li>').join("")+'</ul>';
  return h+'</div>'}
 function viewWords(){const u=UNIT[UI.sel.words],ww=weakWords();
  let h='<div class="wrap"><div class="section-h"><h1>Szótár</h1><span class="eyebrow">'+u.words.length+' szó</span></div>'+unitPicker("words")+
@@ -696,7 +718,7 @@ function viewGames(){const p=P(),u=UNIT[UI.sel.games],ww=weakWords();
  '<div class="card game-card"><span class="gi">⚡</span><div class="gt"><h3>Villámkör</h3><div class="muted small">60 másodperc: hány képet ismersz fel? Csúcs: '+p.best.speed+'</div></div><button class="btn sm primary" data-act="speed">Indítás</button></div>'+
  '<div class="card game-card"><span class="gi">🃏</span><div class="gt"><h3>Memória</h3><div class="muted small">Keresd meg a kép és az angol szó párját!</div></div><button class="btn sm primary" data-act="memory">'+(MEM?"Új játék":"Indítás")+'</button></div>'+
  '<div class="card game-card"><span class="gi">🩹</span><div class="gt"><h3>Gyenge szavak</h3><div class="muted small">'+(ww.length>=3?esc(ww.slice(0,5).map(w=>w.en).join(", "))+"…":"Itt jelennek meg a szavak, amiket eltévesztettél.")+'</div></div><button class="btn sm primary" data-act="weak"'+(ww.length>=3?"":" disabled")+'>Gyakorlás</button></div>'+
- '<div class="card game-card"><span class="gi">🔤</span><div class="gt"><h3>Betűkirakó</h3><div class="muted small">A fejezet szavai összekevert betűkből.</div></div><button class="btn sm primary" data-act="shufflePlay">Indítás</button></div>'+
+ '<div class="card game-card"><span class="gi">🔤</span><div class="gt"><h3>Betűkirakó</h3><div class="muted small">A fejezet szavai összekevert betűkből – a Szókeverőben.</div></div><button class="btn sm primary" data-act="openBk">Megnyitás</button></div>'+
  '</div>'+memHTML()+'</div>'}
 
 /* =====================================================================
@@ -822,7 +844,10 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-act],[data
  case"reshuffle":render();break;
  case"reveal":{const r=t.querySelector(".reveal");r.classList.toggle("hide");if(!r.classList.contains("hide"))say(t.dataset.say);break}
  case"revealSent":t.textContent=t.dataset.say;t.disabled=true;say(t.dataset.say);break;
- case"shufflePlay":{const u=UNIT[UI.sel[view==="games"?"games":"shuffle"]];const ws=sample(u.words.filter(w=>w.en.replace(/[\s\-]/g,"").length<=12),10);const items=ws.map(w=>/\s/.test(w.en)&&w.en.length>11?prodSpec(w):{type:"spell",w}).concat(sample(u.sents||[],3).map(orderSpec));startLesson({items,title:"Betűkirakó · "+u.title,xp:10});break}
+ case"shufflePlay":{const u=UNIT[UI.sel.shuffle];let ws=shuffle(bkGroups(u).flatMap(g=>g.words));if(UI.bk.n)ws=ws.slice(0,UI.bk.n);
+  const items=ws.map(w=>/\s/.test(w.en)&&w.en.replace(/[\s\-]/g,"").length>10?prodSpec(w):{type:"spell",w});if(UI.bk.s&&u.sents&&u.sents.length)items.push(...sample(u.sents,3).map(orderSpec));
+  startLesson({items,title:"Betűkirakó · "+unitLabel(u)+" "+u.title,lessonId:"bk:"+u.id,xp:10});break}
+ case"openBk":UI.sel.shuffle=UI.sel.games;UI.bk.g="all";saveUI();go("shuffle");break;
  case"sheet":{const u=UNIT[UI.sel.shuffle];offerFile("szokevero-"+u.title.toLowerCase().replace(/[^a-z0-9]+/g,"-")+".html",shuffleSheet(u));break}
  case"copyTxt":{const box=$("#copyBox");const done=()=>toast("Kimásolva!");try{navigator.clipboard.writeText(box.value).then(done,()=>{box.select()})}catch(err){box.select()}break}
  case"speed":{const u=UNIT[UI.sel.games];if(u.words.filter(w=>w.p).length<4){toast("Ebben a fejezetben kevés a képes szó – válassz másikat!");return}startLesson({items:speedItems([u]),title:"Villámkör",mode:"speed"});break}
@@ -840,6 +865,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-act],[data
  case"exUntok":if(EX.graded)return;(EX.ans[id]||[]).splice(+t.dataset.k,1);render();break;
  case"exGrade":gradeExam();break;
  }});
+document.addEventListener("change",e=>{const t=e.target;if(t.id==="bkUnit"){UI.sel.shuffle=t.value;UI.bk.g="all";saveUI();render()}else if(t.id==="bkGroup"){UI.bk.g=t.value;saveUI();render()}else if(t.id==="bkN"){UI.bk.n=+t.value;saveUI()}else if(t.id==="bkS"){UI.bk.s=t.checked?1:0;saveUI()}});
 document.addEventListener("input",e=>{const id=e.target.dataset&&e.target.dataset.ex;if(id&&EX&&!EX.graded)EX.ans[id]=e.target.value});
 $("#lBtn").addEventListener("click",mainBtn);
 document.addEventListener("keydown",e=>{
