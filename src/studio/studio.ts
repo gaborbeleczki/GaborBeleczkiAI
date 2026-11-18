@@ -845,7 +845,7 @@ export class Studio {
     if (this.focus !== 'desk') this.setFocus('desk');
     this.hud.showCaption(null);
     this.music.hush(true);
-    this.hud.setHint('The Legend of the AI Program Manager · <kbd>Esc</kbd> to skip');
+    this.hud.setHint('The Quest · <kbd>Esc</kbd> to skip');
     const how = await this.screen.playIntro();
     this.music.hush(false);
     this.legendBusy = false;
@@ -1088,7 +1088,7 @@ export class Studio {
         return this.setFocus(this.focus === 'board' ? 'quests' : 'board');
       case 'poster':
         if (this.focus !== 'quests' && this.focus !== 'board') this.setFocus('quests');
-        return this.hud.showCaption({ ...captions.poster, actions: [{ label: 'Watch the legend', act: 'legend' }] });
+        return this.hud.showCaption({ ...captions.poster, actions: [{ label: 'Watch the film', act: 'legend' }] });
       case 'kettlebell':
       case 'padel':
       case 'bench':

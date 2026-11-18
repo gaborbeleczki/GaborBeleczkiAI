@@ -1,15 +1,262 @@
 {
-  "passed": 1,
-  "total": 1,
+  "passed": 19,
+  "total": 19,
   "checks": [
+    {
+      "name": "no WebGL → the original page",
+      "pass": true,
+      "detail": {
+        "at": "/page/?reason=unsupported"
+      },
+      "errors": []
+    },
+    {
+      "name": "no WebGL + ?studio → the original page with a note",
+      "pass": true,
+      "detail": {
+        "at": "/page/?reason=studio-error",
+        "note": "The 3D studio could not start on this device, so here is the page."
+      },
+      "errors": []
+    },
+    {
+      "name": "prefers-reduced-motion → the original page",
+      "pass": true,
+      "detail": {
+        "at": "/page/?reason=unsupported"
+      },
+      "errors": []
+    },
+    {
+      "name": "software WebGL → the original page",
+      "pass": true,
+      "detail": {
+        "at": "/page/?reason=unsupported"
+      },
+      "errors": []
+    },
+    {
+      "name": "studio.glb missing → the original page",
+      "pass": true,
+      "detail": {
+        "at": "/page/?reason=studio-error"
+      },
+      "errors": []
+    },
+    {
+      "name": "rapid input: keys 0-7, Escape, resizes",
+      "pass": true,
+      "detail": {
+        "held": {
+          "id": "career",
+          "open": 0.9998600426616401,
+          "travel": 0.9998459808057721,
+          "left": 0,
+          "right": 1,
+          "total": 4
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "WebGL context lost → the original page",
+      "pass": true,
+      "detail": {
+        "at": "/page/?reason=studio-error"
+      },
+      "errors": []
+    },
+    {
+      "name": "keyboard: skip link + focus order on the static page",
+      "pass": true,
+      "detail": {
+        "tabStops": [
+          "Skip to content",
+          "GB\n      Gábor Béleczki",
+          "Approach",
+          "Role",
+          "Work",
+          "Career"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "keyboard: chapters menu opens a dossier",
+      "pass": true,
+      "detail": {
+        "id": "career",
+        "open": 0.9999978846443521,
+        "travel": 0.9999905002604134,
+        "left": 0,
+        "right": 1,
+        "total": 4
+      },
+      "errors": []
+    },
+    {
+      "name": "dossier: opens, turns pages, goes back",
+      "pass": true,
+      "detail": {
+        "opened": {
+          "id": "work",
+          "open": 0.9999978846443521,
+          "travel": 0.9999905002604134,
+          "left": 0,
+          "right": 1,
+          "total": 12
+        },
+        "turned": {
+          "id": "work",
+          "open": 1,
+          "travel": 0.9999999999999872,
+          "left": 4,
+          "right": 5,
+          "total": 12
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "desk: cards, phone, CV, notebook; hotspots",
+      "pass": true,
+      "detail": {
+        "homeSpots": [
+          "Dossiers · one per chapter",
+          "Record player",
+          "Sit at the desk",
+          "On the desk",
+          "Training log · Sub-2:55",
+          "The runner’s corner",
+          "Turn around · Side quests"
+        ],
+        "deskSpots": [
+          "Business cards",
+          "Phone",
+          "CV",
+          "Notebook · build notes",
+          "Global network",
+          "Coffee?",
+          "Music",
+          "Turn around · Side quests"
+        ],
+        "caption": "Coffee in Budapest?"
+      },
+      "errors": []
+    },
+    {
+      "name": "game: plays with keys, pauses when you leave the desk",
+      "pass": true,
+      "detail": {
+        "playing": {
+          "phase": "playing",
+          "x": 504.25000000000193
+        },
+        "left": {
+          "phase": "paused",
+          "x": 504.25000000000193
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "music: 16 s offline render, no clipping, not silent",
+      "pass": true,
+      "detail": {
+        "peak": 0.554,
+        "rms": 0.105
+      },
+      "errors": []
+    },
+    {
+      "name": "page: seven animated case figures",
+      "pass": true,
+      "detail": {
+        "animationsPerFigure": [
+          10,
+          59,
+          28,
+          105,
+          294,
+          120,
+          14
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "page view: the original portfolio in a frame, a way back to the studio",
+      "pass": true,
+      "detail": {
+        "title": "Gábor Béleczki · Applied AI in Finance"
+      },
+      "errors": []
+    },
     {
       "name": "side quests: wall, board, a card, the training log",
       "pass": true,
       "detail": {
-        "wall": 5,
-        "board": 10,
+        "wall": 6,
+        "board": 11,
         "card": "Home repairs",
-        "log": 7
+        "parts": 5,
+        "log": 4
+      },
+      "errors": []
+    },
+    {
+      "name": "legend: plays on the display, Escape skips it",
+      "pass": true,
+      "detail": {
+        "playing": {
+          "intro": true,
+          "focus": "desk"
+        },
+        "after": {
+          "intro": false,
+          "focus": "desk"
+        },
+        "bytes": 0
+      },
+      "errors": []
+    },
+    {
+      "name": "adoption: counted once, remembered",
+      "pass": true,
+      "detail": {
+        "percent": 25,
+        "done": [
+          "lights",
+          "sphere",
+          "window"
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "routes: pages, original, CVs, feeds, assets",
+      "pass": true,
+      "detail": {
+        "/": 200,
+        "/cv/": 200,
+        "/notes/": 200,
+        "/notes/building-the-studio/": 200,
+        "/notes/side-quests-and-a-legend/": 200,
+        "/rss.xml": 200,
+        "/sitemap.xml": 200,
+        "/robots.txt": 200,
+        "/models/studio.json": 200,
+        "/page/": 200,
+        "/page/original/": 200,
+        "/page/cv/": 200,
+        "/page/cv-long/": 200,
+        "/models/vehicles.json": 200,
+        "/textures/vehicles_day.webp": 200,
+        "/textures/cv_page.webp": 200,
+        "/textures/quests_albedo.webp": 200,
+        "/media/legend.mp4": 200,
+        "/media/legend-poster.jpg": 200,
+        "/media/legend.vtt": 200
       },
       "errors": []
     }

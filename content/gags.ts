@@ -198,7 +198,7 @@ export const achievements: Achievement[] = [
   { id: 'desk', title: 'Stakeholder seated', line: 'You sat down at the desk.', hint: 'Sit at the desk.' },
   { id: 'dossier', title: 'Voluntary reading', line: 'You opened a dossier without being asked.', hint: 'Take a dossier from the shelf.' },
   { id: 'finisher', title: 'Read to the end', line: 'You reached the last page of something. Rare.', hint: 'Turn to the last page of a dossier.' },
-  { id: 'legend', title: 'Heard the legend', line: 'You watched the film on the display.', hint: 'Watch the film on the display.' },
+  { id: 'legend', title: 'Saw the quest', line: 'You watched the film on the display.', hint: 'Watch the film on the display.' },
   { id: 'window', title: 'Touched grass, visually', line: 'You looked out at Budapest.', hint: 'Look out of the window.' },
   { id: 'lights', title: 'Changed the weather', line: 'You switched between day and evening.', hint: 'Switch the light.' },
   { id: 'music', title: 'Focus time', line: 'You put a record on.', hint: 'Put a record on.' },
