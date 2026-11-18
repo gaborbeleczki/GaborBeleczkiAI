@@ -18,3 +18,13 @@ View your app in AI Studio: https://ai.studio/apps/drive/1a3Ue7ds4CtXj_EAtbMK09r
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Elli's English Trail (`/english-trail/`)
+
+`public/english-trail/index.html` is a standalone, gamified English practice page for primary-school
+learners using the Super Minds Starter and Super Minds 1 books: a unit-by-unit lesson path with XP,
+daily goals and streaks; word and sentence shuffles with printable worksheets; mini-games; and a
+randomized Unit 2 mock test. It has no build step and no dependencies: Vite copies it as-is, so it is
+served at `/english-trail/` (locally: `npm run dev`, then open http://localhost:3000/english-trail/).
+Progress is kept in the browser's localStorage. It is unofficial practice material and is not
+affiliated with Cambridge University Press.
