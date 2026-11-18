@@ -410,6 +410,7 @@ const BOOKS=[
 .prompt-pic{min-width:132px;min-height:110px;border-radius:22px;background:var(--card);border:2px solid var(--line);display:grid;place-items:center;padding:10px;box-shadow:var(--shadow)}
 .prompt-pic svg{width:90px;height:90px}
 .gapq .blank{min-width:3.5em}
+.famcode{font-family:var(--f-display);font-weight:800;font-size:1.5rem;letter-spacing:.08em;color:var(--accent);user-select:all}
 .bk{border-color:var(--accent);box-shadow:0 4px 0 var(--accent)}
 .bk-h{display:flex;gap:12px;align-items:center;margin-bottom:14px}
 .bk-h h2{font-size:1.45rem}
@@ -495,7 +496,27 @@ function markWord(w,ok){if(!w||!w.key)return;const p=P(),r=p.w[w.key]||[0,0];r[o
 function mastery(w){const r=P().w[w.key];if(!r)return 0;return Math.max(0,Math.min(5,Math.round(r[0]-r[1]*1.5)))}
 
 /* ---------- cloud sync (db capability, private per viewer) ---------- */
-const cloud={ref:null,status:"local",writing:false,pending:false,timer:0};
+const cloud={kind:"claude",ref:null,code:null,status:"local",writing:false,pending:false,timer:0};
+/* Supabase family-code sync, used when the page runs outside claude.ai (e.g. on Vercel) */
+const SUPA={url:"https://isyklohdzymraedrzbhd.supabase.co",key:"sb_publishable_ECYCGXzw73BNsizzp1hujQ_Tw3OSVFA"},LSCODE="elli-english-family";
+const loadCode=()=>{try{return localStorage.getItem(LSCODE)}catch(e){return null}};
+const saveCode=()=>{try{cloud.code?localStorage.setItem(LSCODE,cloud.code):localStorage.removeItem(LSCODE)}catch(e){}};
+async function rpc(fn,args){const r=await fetch(SUPA.url+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:SUPA.key,"Content-Type":"application/json"},body:JSON.stringify(args||{})});const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch(e){}
+ if(!r.ok){const err=new Error((j&&j.message)||("HTTP "+r.status));err.code=j&&j.message;throw err}return j}
+async function initSupa(){cloud.kind="supa";cloud.code=loadCode();if(!cloud.code){cloud.status="local";renderSync();if(S.updatedAt>0){cloud.pending=true;scheduleCloud()}return}
+ cloud.status="loading";renderSync();
+ try{const r=await rpc("english_load",{p_code:cloud.code});cloud.status="ok";const d=r&&r.data;
+  if(d&&d.v===1&&(d.updatedAt||0)>(S.updatedAt||0)){S=d;ensureState();saveLocal();renderHeader();if($("#lesson").hidden)render()}
+  else if((S.updatedAt||0)>((d&&d.updatedAt)||0)){cloud.pending=true;scheduleCloud()}}
+ catch(e){if(e.code==="unknown_code"){cloud.code=null;saveCode();cloud.status="local"}else cloud.status="offline"}renderSync()}
+async function flushSupa(){if(cloud.writing||!cloud.pending)return;cloud.writing=true;cloud.pending=false;let again=false;
+ try{if(!cloud.code){cloud.code=await rpc("english_create_household");saveCode()}await rpc("english_save",{p_code:cloud.code,p_data:JSON.parse(JSON.stringify(S))});cloud.status="ok"}
+ catch(e){cloud.pending=true;if(e.code==="unknown_code"){cloud.code=null;saveCode();again=true}else cloud.status="offline"}
+ cloud.writing=false;renderSync();if(again||(cloud.pending&&cloud.status==="ok"))scheduleCloud()}
+async function joinFamily(raw){const k=String(raw||"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(k.length!==10){toast("A családi kód 10 karakter, pl. ABCDE-FGH23");return}const code=k.slice(0,5)+"-"+k.slice(5);
+ try{const r=await rpc("english_load",{p_code:code});const d=r&&r.data;if(d&&d.v===1){const local=S;S=d;ensureState();for(const [id,p] of Object.entries(local.players))if(!S.players[id]&&p.xp>0)S.players[id]=p}
+  cloud.code=code;saveCode();cloud.status="ok";commit();closeSheet();render();toast("Összekapcsolva: "+code)}
+ catch(e){toast(e.code==="unknown_code"?"Nincs ilyen családi kód.":"Nem sikerült kapcsolódni. Próbáld újra!")}}
 let dl=null,cloudTts=null,ttsOff=false;
 async function initCloud(c){try{const [db,user]=await Promise.all([c.use("db"),c.use("user")]);if(!db||!user)return;const uid=await user.id();if(!uid)return;
  const ref=db.doc("data/users/"+uid+"/progress");cloud.status="loading";renderSync();
@@ -503,11 +524,11 @@ async function initCloud(c){try{const [db,user]=await Promise.all([c.use("db"),c
  const snap=await ref.get();clearTimeout(to);cloud.ref=ref;cloud.status="ok";
  if(snap.exists){const r=snap.data();if(r&&r.v===1&&(r.updatedAt||0)>(S.updatedAt||0)){S=JSON.parse(JSON.stringify(r));ensureState();saveLocal();renderHeader();if($("#lesson").hidden)render()}else if((S.updatedAt||0)>((r&&r.updatedAt)||0))cloud.pending=true}
  else if(S.updatedAt>0)cloud.pending=true;renderSync()}catch(e){cloud.status="local";renderSync()}}
-function scheduleCloud(){if(!cloud.ref)return;cloud.pending=true;clearTimeout(cloud.timer);cloud.timer=setTimeout(flushCloud,1500)}
+function scheduleCloud(){if(cloud.kind==='supa'){cloud.pending=true;clearTimeout(cloud.timer);cloud.timer=setTimeout(flushSupa,1500);return}if(!cloud.ref)return;cloud.pending=true;clearTimeout(cloud.timer);cloud.timer=setTimeout(flushCloud,1500)}
 async function flushCloud(){if(!cloud.ref||cloud.writing||!cloud.pending)return;cloud.writing=true;cloud.pending=false;
  try{await cloud.ref.set(JSON.parse(JSON.stringify(S)));cloud.status="ok"}catch(e){const c=e&&e.code;if(c==="invalid_argument"||c==="revoked"||c==="not_granted"){cloud.ref=null;cloud.status="local"}else if(c==="unavailable"){cloud.pending=true}else cloud.status="error"}
  cloud.writing=false;renderSync();if(cloud.pending)scheduleCloud()}
-function syncText(){return {ok:"☁️ Mentve a fiókodba – más eszközön is megvan.",loading:"☁️ Betöltés…",offline:"☁️ A mentés most nem érhető el, ezen az eszközön tárolom.",error:"☁️ A mentés nem sikerült, ezen az eszközön tárolom.",local:"💾 Ezen az eszközön tárolva."}[cloud.status]}
+function syncText(){if(cloud.kind==="supa")return {ok:"☁️ Mentve a családi kódhoz: "+cloud.code+" – más eszközön is megvan.",loading:"☁️ Betöltés…",offline:"☁️ Most nincs kapcsolat – ezen az eszközön tárolom, és később mentem.",local:"💾 Az első befejezett lecke után családi kódot kapsz, amivel minden eszközön megvan a haladás."}[cloud.status]||"";return {ok:"☁️ Mentve a fiókodba – más eszközön is megvan.",loading:"☁️ Betöltés…",offline:"☁️ A mentés most nem érhető el, ezen az eszközön tárolom.",error:"☁️ A mentés nem sikerült, ezen az eszközön tárolom.",local:"💾 Ezen az eszközön tárolva."}[cloud.status]}
 function renderSync(){$$("[data-sync]").forEach(e=>e.textContent=syncText())}
 
 /* ---------- sound & voice ---------- */
@@ -816,7 +837,10 @@ function openPlayers(){const p=P();sheet('<h2>Ki tanul most?</h2><div class="pli
  '<h3 style="margin:18px 0 8px">Beállítások – '+esc(p.name)+'</h3><div class="stack" style="gap:10px"><div class="field"><label for="rnName">Név</label><input id="rnName" maxlength="20" value="'+esc(p.name)+'"></div>'+
  '<div class="field"><label for="goalSel">Napi cél</label><select id="goalSel">'+[10,20,30,50].map(g=>'<option value="'+g+'"'+(g===p.goal?" selected":"")+'>'+g+' XP – '+({10:"laza",20:"normál",30:"komoly",50:"bajnok"})[g]+'</option>').join("")+'</select></div>'+
  '<div class="field"><label for="rateSel">Felolvasás</label><select id="rateSel"><option value="off"'+(!S.settings.voice?" selected":"")+'>Kikapcsolva</option>'+[[.75,"Lassú"],[.9,"Normál"],[1.05,"Gyors"]].map(([r,n])=>'<option value="'+r+'"'+(S.settings.voice&&Math.abs(S.settings.rate-r)<.01?" selected":"")+'>'+n+'</option>').join("")+'</select></div>'+
- '<p class="sync" data-sync></p><button class="btn primary" data-act="saveSettings">Kész</button></div>')}
+ '<p class="sync" data-sync></p><button class="btn primary" data-act="saveSettings">Kész</button></div>'+famHTML())}
+function famHTML(){if(cloud.kind!=="supa")return"";return '<h3 style="margin:22px 0 6px">Családi kód</h3><p class="muted small" style="margin:0 0 8px">Ezzel a kóddal minden gyerek haladása megvan telefonon, tableten és gépen is. Írd fel valahová!</p>'+
+ (cloud.code?'<div class="row"><span class="famcode">'+esc(cloud.code)+'</span><button class="btn sm" data-act="copyCode">Másolás</button></div>':'<div class="row"><button class="btn sm" data-act="makeCode">Kód létrehozása most</button></div>')+
+ '<div class="stack" style="gap:8px;margin-top:12px"><div class="field"><label for="joinCode">Már van kódod egy másik eszközről?</label><input id="joinCode" placeholder="ABCDE-FGH23" autocapitalize="characters" autocomplete="off" maxlength="12"></div><button class="btn" data-act="joinCode">Csatlakozás</button><p class="muted small" style="margin:0">Csatlakozáskor a kódhoz mentett haladás töltődik be; az itteni, már gyakorló tanulók is megmaradnak.</p></div>'}
 
 /* =====================================================================
    Events
@@ -864,6 +888,9 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-act],[data
  case"exTok":{if(EX.graded)return;const arr=EX.ans[id]||(EX.ans[id]=[]);const i=+t.dataset.i;if(!arr.includes(i))arr.push(i);beep("tap");render();break}
  case"exUntok":if(EX.graded)return;(EX.ans[id]||[]).splice(+t.dataset.k,1);render();break;
  case"exGrade":gradeExam();break;
+ case"copyCode":{const done=()=>toast("Kimásolva: "+cloud.code);try{navigator.clipboard.writeText(cloud.code).then(done,()=>toast(cloud.code))}catch(err){toast(cloud.code)}break}
+ case"makeCode":S.updatedAt=Date.now();saveLocal();cloud.pending=true;flushSupa().then(()=>{if(cloud.code)openPlayers();else toast("Most nincs kapcsolat. Próbáld újra később!")});break;
+ case"joinCode":joinFamily($("#joinCode").value);break;
  }});
 document.addEventListener("change",e=>{const t=e.target;if(t.id==="bkUnit"){UI.sel.shuffle=t.value;UI.bk.g="all";saveUI();render()}else if(t.id==="bkGroup"){UI.bk.g=t.value;saveUI();render()}else if(t.id==="bkN"){UI.bk.n=+t.value;saveUI()}else if(t.id==="bkS"){UI.bk.s=t.checked?1:0;saveUI()}});
 document.addEventListener("input",e=>{const id=e.target.dataset&&e.target.dataset.ex;if(id&&EX&&!EX.graded)EX.ans[id]=e.target.value});
@@ -881,6 +908,7 @@ if(synth&&synth.addEventListener)synth.addEventListener("voiceschanged",()=>{});
 /* boot */
 renderHeader();view=VIEWS[location.hash.slice(1)]?location.hash.slice(1):"path";render();
 const C=window.claude;
+if(!(C&&typeof C.use==="function"))initSupa();
 if(C&&typeof C.use==="function"){C.use("tts").then(t=>{if(t){cloudTts=t;refreshSpeakers()}}).catch(()=>{});C.use("downloads").then(d=>{dl=d}).catch(()=>{});initCloud(C)}
 })();
 </script>
