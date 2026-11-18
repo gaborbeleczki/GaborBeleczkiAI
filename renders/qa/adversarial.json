@@ -163,8 +163,8 @@
       "name": "music: 16 s offline render, no clipping, not silent",
       "pass": true,
       "detail": {
-        "peak": 0.554,
-        "rms": 0.105
+        "peak": 0.549,
+        "rms": 0.103
       },
       "errors": []
     },

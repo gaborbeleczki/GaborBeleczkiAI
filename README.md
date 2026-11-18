@@ -3,13 +3,13 @@
 A personal site in two layers:
 
 - **The studio** — a small, cozy Nordic study in Budapest, modeled in Blender with Python, lit and baked with Cycles, and rendered live in the browser with Three.js. Chapter dossiers on the shelf come to lie open on the desk as typeset A4 pages, read from above and turned like a book's pages; the desk display shows the chapters as interactive modules; the things on the desk (business cards, the printed CV, a phone, the notebook, a brass armillary sphere, coffee) are ways into the portfolio, each marked with a dot; the window looks out on real photographs of Budapest rebuilt in depth, with tram 2 and the river boats, modelled in Blender, moving slowly through them; lamps and fairy lights switch between day and evening; a record player plays generated lounge deep house.
-- **The lighter layer** — the first time you sit at the desk, the display plays a one-minute film, *The Quest*. Behind you is a cork board of side quests (press Q, or *Side quests* in the toolbar): each card opens with a sketch of the project's screen, what it does and what is in it, and the same button takes you back to the desk; under the window, a runner's corner with a training log (*Project Sub-2:55*) that opens like the dossiers; every dossier has a sticky note in it; and a small meter in the toolbar counts the studio's own adoption. The jokes live in `content/gags.ts` and follow one rule: kind, true to the work, nothing about colleagues or an employer.
+- **The lighter layer** — the first time you sit at the desk, the display plays a one-minute film, *The Legend of the AI Program Manager*. Behind you is a cork board of side quests (press Q, or *Side quests* in the toolbar): each card opens with a sketch of the project's screen, what it does and what is in it, and the same button takes you back to the desk; under the window, a runner's corner with a training log (*Project Sub-2:55*) that opens like the dossiers; every dossier has a sticky note in it; and a small meter in the toolbar counts the studio's own adoption. The jokes live in `content/gags.ts` and follow one rule: kind, true to the work, nothing about colleagues or an employer.
 - **The page** — the original portfolio, served untouched at `/page/` (with the original one-page and long CVs at `/page/cv/` and `/page/cv-long/`). Phones, reduced-motion users, browsers without WebGL 2 and anyone who presses *Page* get it. Crawlers and no-JS visitors read a static HTML version of the same content at `/` (also at `/?static`).
 
 ```
 content/            profile.ts (single source of content) · gags.ts (captions, sticky notes, achievements)
                     running.ts (the training log's numbers) · notes/*.md (blog posts)
-media/legend/       the intro film's master (the-quest.mp4), and the first, narrated cut's sources: stills, clips, prompts, narration, word timings
+media/legend/       sources of the intro film: stills, video clips and their prompts, narration, word timings
 src/site/           static page: build-time HTML, styles, mode switching
 src/studio/         Three.js studio
   core/             baked materials, window shader + traffic + rain, camera rig, dossiers (book.ts, shelf.ts),
@@ -71,18 +71,10 @@ Light that spills: lamps, fairy lights, the candle and the brightest city lights
 ## The intro film
 
 ```bash
-python3 scripts/the-quest.py        # -> public/media/legend.mp4, legend-poster.jpg, legend.vtt, legend.json
+python3 scripts/legend-video.py     # -> public/media/legend.mp4, legend-poster.jpg, legend.vtt
 ```
 
-*The Quest* is a finished master, `media/legend/the-quest.mp4` (62 s, 1280×720, H.264 and AAC, its own sound mix at −16 LUFS, no dialogue), made in Higgsfield from a reference sheet of the hero so that one hero carries every shot. The script publishes it bit for bit (the file already streams: its index is at the front), takes the poster from a frame of the hilltop shot, and writes a captions track of its sounds and scenes.
-
-The first, narrated cut, *The Legend of the AI Program Manager*, is kept with its sources:
-
-```bash
-python3 scripts/legend-video.py     # -> renders/legend-narrated/ (LEGEND_OUT=public/media to publish it instead)
-```
-
-Needs `numpy`, `Pillow` and `ffmpeg`. That cut is assembled from snippets, the way footage is edited: a quick dissolve between scenes, hard cuts to a closer framing within one. Every scene is a live-action video clip (`media/legend/NN_name.mp4`, made with an image-to-video model from the still of the same name; the prompts and settings are in `media/legend/clips.json`); a closer shot within a scene is a gentle punch-in on the same take. Without a clip a scene falls back to its still, with a slow camera move and punch-in cuts. Nothing is painted on that changes from frame to frame (no candle flicker, dust or rain: on the display it read as flicker). The last shot is the studio's own recording (`public/media/studio-loop.mp4`), so run `node scripts/qa/video.mjs` first when the room has changed. The script sets the captions from the narration's word timings (`words.json`, from a forced alignment), synthesises a small score, and pipes the frames into FFmpeg.
+Needs `numpy`, `Pillow` and `ffmpeg`. The film is cut from snippets, the way footage is edited: a quick dissolve between scenes, hard cuts to a closer framing within one. Every scene is a live-action video clip (`media/legend/NN_name.mp4`, made with an image-to-video model from the still of the same name; the prompts and settings are in `media/legend/clips.json`); a closer shot within a scene is a gentle punch-in on the same take. Without a clip a scene falls back to its still, with a slow camera move and punch-in cuts. Nothing is painted on that changes from frame to frame (no candle flicker, dust or rain: on the display it read as flicker). The last shot is the studio's own recording (`public/media/studio-loop.mp4`), so run `node scripts/qa/video.mjs` first when the room has changed. The script sets the captions from the narration's word timings (`words.json`, from a forced alignment), synthesises a small score, and pipes the frames into FFmpeg.
 
 ## Content
 
@@ -105,13 +97,12 @@ Vercel builds it as a Vite static site (`vercel.json`): `npm run build`, output 
 
 ## Credits
 
-The room's geometry, its procedural materials, the print, the record sleeves, the cards on the cork board and the vehicles outside are generated by the scripts in `blender/`. The printed CV on the desk and the page view are the author's original portfolio. The soundtrack ("Budapest sessions", lounge deep house) is synthesised live with the Web Audio API: no samples, no recordings.
+The room's geometry, its procedural materials, the print, the record sleeves, the cards on the cork board and the vehicles outside are generated by the scripts in `blender/`. The printed CV on the desk and the page view are the author's original portfolio. The soundtrack ("Budapest sessions", lounge deep house) is synthesised live with the Web Audio API, and the film's score with numpy: no samples, no recordings.
 
 Made with generative models (through Higgsfield), and labelled as such on the site:
-- **The film, *The Quest*:** a reference sheet of the hero, then every shot generated from it with a video model (`media/legend/the-quest.mp4`).
-- **Image model (GPT Image):** the eight stills of the film's first cut (`media/legend/`; one of them, cropped, is the portrait in the Hello dossier), the poster of the dragon, the crayon drawing, the two photo prints on the cork board, the knit, boucle and rug textures (`blender/assets/gen/`), and the restyled weather in the two window photos (`blender/assets/looks/`).
-- **Video model (Seedance 2.5, image-to-video):** the first cut's eight scenes, as hyper-realistic live action (`media/legend/NN_name.mp4`, 720p), each from its still; prompts and settings in `media/legend/clips.json`.
-- **Text-to-speech (a preset voice):** the first cut's narration (`media/legend/narration.mp3`). The script is the author's.
+- **Image model (GPT Image):** the film's eight stills (`media/legend/`; one of them, cropped, is the portrait in the Hello dossier), the poster of the dragon, the crayon drawing, the two photo prints on the cork board, the knit, boucle and rug textures (`blender/assets/gen/`), and the restyled weather in the two window photos (`blender/assets/looks/`).
+- **Video model (Seedance 2.5, image-to-video):** all eight scenes of the film, as hyper-realistic live action (`media/legend/NN_name.mp4`, 720p), each from its still; prompts and settings in `media/legend/clips.json`.
+- **Text-to-speech (a preset voice):** the film's narration (`media/legend/narration.mp3`). The script is the author's.
 
 Window photos, via Wikimedia Commons:
 - [Széchenyi Chain Bridge in Budapest at night](https://commons.wikimedia.org/wiki/File:Sz%C3%A9chenyi_Chain_Bridge_in_Budapest_at_night.jpg) by Wilfredor — CC0 1.0. Weather and light restyled with an image model (a misty evening after rain).

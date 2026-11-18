@@ -1,61 +1,99 @@
 {
- "title": "The Quest",
- "duration": 62.04,
+ "duration": 68.81,
  "size": [
-  1280,
-  720
+  1600,
+  900
  ],
- "dialogue": false,
  "cues": [
   {
-   "t0": 0.4,
-   "t1": 7.8,
-   "text": "[Low strings and drums. A window bangs open; the wind tears a page from an old tome.]"
+   "t0": 2.08,
+   "t1": 5.54,
+   "text": "Gather round, travellers… and mind the cables."
   },
   {
-   "t0": 8.2,
-   "t1": 12.5,
-   "text": "[The page sails into a scriptorium as a tower of scrolls collapses.]"
+   "t0": 5.91,
+   "t1": 9.18,
+   "text": "Long ago, in the year twenty twenty-five,"
   },
   {
-   "t0": 12.7,
-   "t1": 17.4,
-   "text": "[A hooded hero strides through the falling paper and catches the page.]"
+   "t0": 9.32,
+   "t1": 12.73,
+   "text": "the kingdom of Finance was ruled by spreadsheets."
   },
   {
-   "t0": 17.8,
-   "t1": 23.4,
-   "text": "[He wakes a sleeping council by slamming the page on the table. It is a map.]"
+   "t0": 12.88,
+   "t1": 16.39,
+   "text": "Mighty ones! With tabs beyond counting."
   },
   {
-   "t0": 24.0,
-   "t1": 31.6,
-   "text": "[Dawn. Map in hand, he heads down a hilltop towards Budapest.]"
+   "t0": 16.85,
+   "t1": 20.9,
+   "text": "Then, from Budapest, came a program manager."
   },
   {
-   "t0": 32.2,
-   "t1": 39.0,
-   "text": "[He plants a flag, and a mountain of scrolls sorts itself into ordered stacks.]"
+   "t0": 21.25,
+   "t1": 25.38,
+   "text": "He carried no sword. He carried… a roadmap."
   },
   {
-   "t0": 39.6,
-   "t1": 44.8,
-   "text": "[Before rows of students, he lights three rings over the stage.]"
+   "t0": 25.79,
+   "t1": 28.77,
+   "text": "And he asked what no one had dared to ask:"
   },
   {
-   "t0": 45.2,
-   "t1": 51.9,
-   "text": "[The dragon seals the deal with a wax stamp, in a burst of sparks.]"
+   "t0": 29.29,
+   "t1": 32.07,
+   "text": "could this meeting… have been a prompt?"
   },
   {
-   "t0": 52.5,
-   "t1": 55.8,
-   "text": "[Night by the Danube. He drops the cloak.]"
+   "t0": 32.49,
+   "t1": 35.26,
+   "text": "A thousand use cases rose before him."
   },
   {
-   "t0": 56.0,
-   "t1": 61.5,
-   "text": "[Footsteps on wet stone: he runs in black kit, the Chain Bridge behind him.]"
+   "t0": 35.54,
+   "t1": 37.96,
+   "text": "He prioritised every single one."
+  },
+  {
+   "t0": 38.35,
+   "t1": 41.53,
+   "text": "He trained two and a half thousand brave souls…"
+  },
+  {
+   "t0": 41.65,
+   "t1": 45.52,
+   "text": "and taught the dragon of Risk to love a good governance framework."
+  },
+  {
+   "t0": 45.92,
+   "t1": 48.64,
+   "text": "And when the work was done, did he rest?"
+  },
+  {
+   "t0": 48.87,
+   "t1": 51.04,
+   "text": "No! He ran."
+  },
+  {
+   "t0": 51.26,
+   "t1": 54.69,
+   "text": "Thirty kilometres. At night. On purpose."
+  },
+  {
+   "t0": 55.09,
+   "t1": 58.1,
+   "text": "His study stands by the Danube to this day."
+  },
+  {
+   "t0": 58.51,
+   "t1": 62.01,
+   "text": "So sit down, traveller. Open a dossier."
+  },
+  {
+   "t0": 62.09,
+   "t1": 65.29,
+   "text": "The legend… is open to new quests."
   }
  ]
 }

@@ -400,7 +400,7 @@ export async function adversarial(base) {
     await ctx.close();
     if (auto) throw new Error('the film started by itself in a capture');
     if (!playing.intro || playing.focus !== 'desk') throw new Error(`while playing: ${JSON.stringify(playing)}`);
-    if (!/Quest/.test(hint)) throw new Error(`hint: ${hint}`);
+    if (!/Legend/.test(hint)) throw new Error(`hint: ${hint}`);
     if (after.intro || after.focus !== 'desk') throw new Error(`after Escape: ${JSON.stringify(after)}`);
     if (head.status !== 200) throw new Error(`legend.mp4 → ${head.status}`);
     return { playing, after, bytes: Number(head.headers.get('content-length') || 0) };

@@ -214,7 +214,7 @@ export class Screen {
         intro.muted = true;
         video.play().catch(() => intro.done('failed'));
       });
-      this.host.announce('A one-minute film with music and no dialogue is playing on the display: The Quest. A hooded hero carries a page torn from an old tome through a scriptorium, a sleeping council, a mountain of scrolls, a hall of students and a dragon’s seal, then runs by the Danube at night. Press Escape to skip it.');
+      this.host.announce('A one-minute film is playing on the display: The Legend of the AI Program Manager. Press Escape to skip it.');
     });
   }
 
@@ -250,9 +250,9 @@ export class Screen {
     g.font = font(20, 500, MONO);
     g.fillStyle = 'rgba(245,245,247,0.62)';
     g.textAlign = 'left';
-    g.fillText('THE QUEST', 28, H - 25);
-    const left = v.duration ? Math.max(0, Math.ceil(v.duration - v.currentTime)) : 62;
-    g.fillText(`${left}s`, 28 + g.measureText('THE QUEST').width + 26, H - 25);
+    g.fillText('THE LEGEND OF THE AI PROGRAM MANAGER', 28, H - 25);
+    const left = v.duration ? Math.max(0, Math.ceil(v.duration - v.currentTime)) : 69;
+    g.fillText(`${left}s`, 28 + g.measureText('THE LEGEND OF THE AI PROGRAM MANAGER').width + 26, H - 25);
     // skip (and the sound, if the browser held it back): in the foot bar, clear of the room's own controls
     const pill = (id: string, label: string, x: number, w: number, onClick: () => void) => {
       const hov = this.hoverId === id;
@@ -518,7 +518,7 @@ export class Screen {
         g.lineWidth = 3;
         g.stroke();
         g.font = font(20, 500);
-        const label = 'The Quest · 1 min film';
+        const label = 'The legend · 1 min film';
         const lw = g.measureText(label).width + 28;
         const lx = Math.min(x + size / 2 - lw / 2, W - lw - 24);
         rr(g, lx, y - 48, lw, 36, 10);
@@ -529,7 +529,7 @@ export class Screen {
         g.fillText(label, lx + 14, y - 30);
         g.textBaseline = 'top';
       }
-      this.regions.add({ id, rect: { x: x - 4, y: y0 + 6, w: size + 8, h: size + 20 }, label: 'The Quest, a one-minute film', onClick: () => this.host.onLegend() });
+      this.regions.add({ id, rect: { x: x - 4, y: y0 + 6, w: size + 8, h: size + 20 }, label: 'The legend, a one-minute film', onClick: () => this.host.onLegend() });
     }
   }
 

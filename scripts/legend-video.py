@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-"""Assemble the first, narrated cut of the intro film, "The Legend of the AI Program Manager".
+"""Assemble the intro film, "The Legend of the AI Program Manager".
 
-  python3 scripts/legend-video.py            ->  renders/legend-narrated/legend.mp4 (+ poster, captions)
-
-The site now shows "The Quest" instead (scripts/the-quest.py); this cut is kept, with its sources,
-and LEGEND_OUT=public/media would publish it again.
+  python3 scripts/legend-video.py            ->  public/media/legend.mp4 (+ poster, captions)
 
 The film is cut together from snippets, the way footage is edited: a quick dissolve between
 scenes, hard cuts to a closer framing within one. A snippet's source is a video clip when there
@@ -42,7 +39,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 SRC = os.path.join(ROOT, 'media', 'legend')
-OUT = os.environ.get('LEGEND_OUT') or os.path.join(ROOT, 'renders', 'legend-narrated')   # LEGEND_OUT=public/media to publish
+OUT = os.environ.get('LEGEND_OUT') or os.path.join(ROOT, 'public', 'media')   # LEGEND_OUT for a preview
 TMP = os.path.join(ROOT, 'renders', 'legend')
 
 W, H, FPS = 1600, 900, 24

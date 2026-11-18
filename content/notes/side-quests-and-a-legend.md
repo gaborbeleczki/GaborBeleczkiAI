@@ -1,7 +1,7 @@
 ---
 title: Side quests and a legend
 date: 2026-11-16
-summary: The studio got warmer and less serious — a throw draped by a cloth simulation, rain on the window, a cork board of side quests, a marathon plan run like a programme, and a one-minute film about a quest.
+summary: The studio got warmer and less serious — a throw draped by a cloth simulation, rain on the window, a cork board of side quests, a marathon plan run like a programme, and a one-minute film told by a wise old storyteller.
 ---
 
 The first version of the studio was tidy. Tidy is not the same as lived in, so this round was about the things a real desk collects: a blanket, bad weather, a child's drawing, running shoes, and a few jokes.
@@ -38,22 +38,23 @@ The marathon gets its own corner: racing shoes under the window, a race number t
 
 ## The legend
 
-Sit at the desk for the first time and the display plays a one-minute film, *The Quest*. A gust of wind tears a page from an old tome. It sails into a scriptorium just as a tower of scrolls collapses, and the hero catches it. He wakes a sleeping council by slamming it on the table, where it turns out to be a map; heads down from a hilltop at dawn towards Budapest; plants a flag that sorts a mountain of scrolls into ordered stacks; lights three rings over a hall of students; and watches a dragon seal the deal with a wax stamp, in a burst of sparks. At night by the Danube he drops the cloak and runs, in black kit, the Chain Bridge behind him.
+Sit at the desk for the first time and the display tells a story: *The Legend of the AI Program Manager*, one minute, narrated by a wise old storyteller who has clearly sat through a few steering committees.
 
 <video controls preload="none" poster="/media/legend-poster.jpg" style="width:100%;height:auto;border-radius:14px;background:#000">
   <source src="/media/legend.mp4" type="video/mp4">
-  <track kind="captions" src="/media/legend.vtt" srclang="en" label="Sounds and scenes">
+  <track kind="captions" src="/media/legend.vtt" srclang="en" label="English" default>
 </video>
 
-It has no dialogue: wind, paper, fire and footsteps over a low string-and-drum score, levelled to −16 LUFS. One hero carries it from the first shot to the last: a reference sheet of him came first, and every shot was made from it, so his face, cloak and staff stay the same. Things happen in every shot, and the shots flow into each other: the page carries from scene to scene, and the map on the council table dissolves into the map on the hilltop. The site plays the master as it is, without re-encoding it. (An earlier cut, narrated by a wise old storyteller over eight separate scenes, is kept in the repository with the script that assembled it.)
+The script is mine. The voice is a preset text-to-speech voice; the eight pictures were made with an image model; the last shot is the studio itself. Everything else is assembled by a script, which cuts the film like footage rather than a slideshow: every scene is a live-action video clip, made with an image-to-video model from its still, with a punch-in on the line that needs it, and the last shot is a recording of this room. The captions are timed from a forced alignment of the narration, and a small score (a drone, four chords and a plucked string) is synthesised with numpy.
 
 ## What was generated, and by what
 
 Worth being exact about, on a site about applied AI:
 
-- **The film**, *The Quest* (through Higgsfield): a reference sheet of the hero, then every shot generated from it with a video model.
-- **Image model** (GPT Image, through Higgsfield): eight stills for the film's first cut (one of them, cropped, is the portrait in the Hello dossier), the poster on the wall, the crayon drawing, two photo prints on the cork board, three fabric and rug textures, and the restyled weather in the two window photos.
-- **Code**: everything else. The room, the cloth, the light, the rain, the pages, the music in the room, and the jokes.
+- **Image model** (GPT Image, through Higgsfield): the film's eight stills (one of them, cropped, is the portrait in the Hello dossier), the poster on the wall, the crayon drawing, two photo prints on the cork board, three fabric and rug textures, and the restyled weather in the two window photos.
+- **Video model** (Seedance 2.5, through Higgsfield): all eight scenes of the film, as hyper-realistic live action, each from its still.
+- **Text-to-speech** (a preset voice, through Higgsfield): the film's narration.
+- **Code**: everything else. The room, the cloth, the light, the rain, the pages, the score, and the jokes.
 
 ## Adoption
 
