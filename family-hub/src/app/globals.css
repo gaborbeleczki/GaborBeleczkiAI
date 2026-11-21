@@ -1,0 +1,132 @@
+@import "tailwindcss";
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/fraunces";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --paper: #f6f3ec;
+  --surface: #ffffff;
+  --surface-2: #fbf9f4;
+  --ink: #1d2130;
+  --ink-2: #464b5a;
+  --muted: #7a7f8c;
+  --line: #e8e2d6;
+  --line-2: #f0ebe1;
+  --accent: #c2553d;
+  --accent-soft: #fbe9e2;
+  --ring: #d9a38f;
+  --shadow: 0 1px 2px rgb(29 33 48 / 0.04), 0 4px 16px -6px rgb(29 33 48 / 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #13151b;
+    --surface: #1b1e26;
+    --surface-2: #20242d;
+    --ink: #eceae4;
+    --ink-2: #c4c3be;
+    --muted: #8e93a0;
+    --line: #2c303b;
+    --line-2: #252933;
+    --accent: #e7866c;
+    --accent-soft: #3a2621;
+    --ring: #a8644f;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px -8px rgb(0 0 0 / 0.5);
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces Variable", ui-serif, Georgia, serif;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.01em;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.soft-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.paper-grain {
+  background-image: radial-gradient(rgb(29 33 48 / 0.035) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+dialog::backdrop {
+  background: rgb(19 21 27 / 0.45);
+  backdrop-filter: blur(2px);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}
+
+/* Grids without explicit columns get one shrinkable column, and grid children may shrink
+   below their content width (prevents horizontal overflow on phones). Layered as "base" so
+   any grid-cols-* / min-w-* utility still wins. */
+@layer base {
+  main .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  main .grid > * {
+    min-width: 0;
+  }
+}

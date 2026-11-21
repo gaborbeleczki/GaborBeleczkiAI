@@ -18,3 +18,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1a3Ue7ds4CtXj_EAtbMK09r
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Családi Hub (family organiser)
+
+The `family-hub/` folder contains a separate, private Next.js app (Hungarian UI) that turns school, Kréta, SZMK and billing emails into todos, calendar time-blocks and payment trackers. See [family-hub/README.md](family-hub/README.md) for setup and Vercel deployment (Root Directory: `family-hub`).

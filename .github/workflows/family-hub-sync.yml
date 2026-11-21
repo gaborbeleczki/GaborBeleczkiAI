@@ -1,0 +1,26 @@
+# Optional: more frequent Family Hub mail sync than Vercel Hobby's daily cron allows.
+# Add repository secrets FAMILY_HUB_URL (e.g. https://family-hub.vercel.app) and FAMILY_HUB_CRON_SECRET (= CRON_SECRET).
+# Without them every run exits immediately. Only an HTTP status code is logged – never mail content.
+name: Family Hub sync
+
+on:
+  schedule:
+    - cron: "*/30 4-20 * * *" # every 30 min, ~05:00–22:00 Budapest
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Trigger sync
+        env:
+          URL: ${{ secrets.FAMILY_HUB_URL }}
+          SECRET: ${{ secrets.FAMILY_HUB_CRON_SECRET }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$SECRET" ]; then echo "Secrets not configured – skipping."; exit 0; fi
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 320 -H "Authorization: Bearer $SECRET" "$URL/api/cron/sync")
+          echo "HTTP $code"
+          [ "$code" = "200" ]

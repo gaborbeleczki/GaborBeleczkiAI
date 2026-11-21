@@ -1,0 +1,338 @@
+{
+ "family": {
+  "familyName": "Minta család",
+  "parents": [
+   {
+    "name": "Minta Anna",
+    "email": "anna@example.com"
+   }
+  ],
+  "kids": [
+   {
+    "id": "bence",
+    "name": "Bence",
+    "fullName": "Minta Bence",
+    "className": "3.a",
+    "school": "Példa Általános Iskola",
+    "color": "sky",
+    "classGroupEmails": [
+     "harmadik-a@googlegroups.com"
+    ]
+   },
+   {
+    "id": "lili",
+    "name": "Lili",
+    "fullName": "Minta Lili",
+    "className": "2.b",
+    "school": "Példa Általános Iskola",
+    "color": "rose",
+    "classGroupEmails": [
+     "masodik-b@googlegroups.com"
+    ]
+   }
+  ],
+  "contacts": [
+   {
+    "name": "Kovács Éva",
+    "emails": [
+     "kovacs.eva@example.com"
+    ],
+    "role": "class_teacher",
+    "kidIds": [
+     "bence"
+    ]
+   },
+   {
+    "name": "Szabó Judit",
+    "emails": [
+     "szabo.judit@example.com"
+    ],
+    "role": "class_teacher",
+    "kidIds": [
+     "lili"
+    ]
+   },
+   {
+    "name": "Nagy Péter",
+    "emails": [
+     "nagy.peter@example.com"
+    ],
+    "role": "subject_teacher",
+    "subject": "Angol",
+    "kidIds": [
+     "bence",
+     "lili"
+    ],
+    "note": "Lilinek közvetlenül ír, Bencének Éva néni továbbítja."
+   }
+  ],
+  "sources": {
+   "kreta": [
+    "e-kreta.hu",
+    "ekreta.hu"
+   ],
+   "szmk": [
+    "[pelda-szmk]"
+   ],
+   "menza": [],
+   "billers": [
+    "example-energia.hu"
+   ],
+   "newsletters": [
+    "substack.com"
+   ],
+   "ignore": []
+  },
+  "aiNotes": "Pénzkérést gyerekenként külön tételként vegyél fel."
+ },
+ "prefs": {},
+ "items": [
+  {
+   "key": "b-temazaro",
+   "type": "assessment",
+   "kidIds": [
+    "bence"
+   ],
+   "subject": "Matematika",
+   "assessmentKind": "temazaro",
+   "title": "Matematika témazáró – szorzótábla",
+   "topics": "Szorzás, bennfoglalás 1–10, szöveges feladatok",
+   "date": "+4",
+   "sourceContact": "Kovács Éva",
+   "onCalendar": true,
+   "prepBlocks": 3,
+   "priority": "high"
+  },
+  {
+   "type": "assessment",
+   "kidIds": [
+    "lili"
+   ],
+   "subject": "Angol",
+   "assessmentKind": "dolgozat",
+   "title": "Angol dolgozat – Unit 3",
+   "topics": "Colours, numbers 1–20",
+   "date": "+2",
+   "endDate": "+6",
+   "datePrecision": "week",
+   "needsReview": true,
+   "confidence": 0.6,
+   "sourceContact": "Nagy Péter",
+   "sourceQuote": "A jövő héten írunk dolgozatot, a pontos napot még jelzem."
+  },
+  {
+   "type": "assessment",
+   "kidIds": [
+    "bence"
+   ],
+   "subject": "Olvasás",
+   "assessmentKind": "felmeres",
+   "title": "Olvasás felmérés",
+   "date": "+1",
+   "onCalendar": true,
+   "prepBlocks": 1
+  },
+  {
+   "type": "task",
+   "category": "bring",
+   "kidIds": [
+    "lili"
+   ],
+   "title": "Tornacucc és váltócipő",
+   "date": "+1",
+   "onCalendar": true
+  },
+  {
+   "type": "task",
+   "category": "bring",
+   "kidIds": [
+    "bence"
+   ],
+   "title": "Farsangi jelmez",
+   "date": "+3",
+   "onCalendar": true
+  },
+  {
+   "type": "task",
+   "category": "sign",
+   "kidIds": [
+    "bence"
+   ],
+   "title": "Kirándulási nyilatkozat aláírása",
+   "date": "+2",
+   "onCalendar": true
+  },
+  {
+   "type": "event",
+   "kidIds": [
+    "lili"
+   ],
+   "title": "Szülői értekezlet",
+   "date": "+5",
+   "time": "17:30",
+   "endTime": "18:30",
+   "onCalendar": true
+  },
+  {
+   "type": "payment",
+   "category": "trip",
+   "kidIds": [
+    "bence"
+   ],
+   "title": "Osztálykirándulás",
+   "amount": 6500,
+   "payee": "Kovács Éva (osztálypénz)",
+   "date": "+6",
+   "paymentInfo": {
+    "account": "12345678-12345678-12345678",
+    "reference": "Minta Bence 3.a kirándulás"
+   },
+   "key": "b-trip"
+  },
+  {
+   "type": "payment",
+   "category": "class_fund",
+   "kidIds": [
+    "lili"
+   ],
+   "title": "Osztálypénz – havi",
+   "amount": 2000,
+   "payee": "Osztálypénztár",
+   "date": "+3"
+  },
+  {
+   "type": "payment",
+   "category": "menza",
+   "kidIds": [
+    "lili"
+   ],
+   "title": "Menza – következő hónap",
+   "amount": 7100,
+   "payee": "Önkormányzat",
+   "date": "-2",
+   "status": "done",
+   "paidAt": "-2"
+  },
+  {
+   "type": "bill",
+   "category": "utility",
+   "area": "finance",
+   "title": "Villanyszámla",
+   "amount": 14820,
+   "payee": "Példa Energia",
+   "date": "+8"
+  },
+  {
+   "type": "bill",
+   "category": "telecom",
+   "area": "finance",
+   "title": "Internet + TV",
+   "amount": 8990,
+   "payee": "Példa Telekom",
+   "date": "-3",
+   "status": "done",
+   "paidAt": "-4"
+  },
+  {
+   "type": "task",
+   "area": "home",
+   "category": "buy",
+   "title": "Születésnapi ajándék Bence osztálytársának",
+   "date": "+2",
+   "onCalendar": true
+  },
+  {
+   "type": "reminder",
+   "area": "home",
+   "title": "Autó műszaki vizsga lejár",
+   "date": "+20"
+  },
+  {
+   "type": "task",
+   "area": "home",
+   "title": "Mosógép szerviz – visszahívásra várunk",
+   "status": "waiting"
+  },
+  {
+   "key": "r1",
+   "type": "reading",
+   "area": "media",
+   "title": "Hogyan tervezz családi hetet 15 perc alatt?",
+   "url": "https://example.com/heti-terv",
+   "sourceContact": "Példa hírlevél",
+   "confidence": 0.82,
+   "date": "+0",
+   "meta": {
+    "why": "Gyakorlati sablon a vasárnapi heti tervezéshez – pont ilyen ritmust épít a Family Hub is.",
+    "minutes": 6
+   }
+  },
+  {
+   "key": "p1",
+   "type": "podcast",
+   "area": "media",
+   "title": "Szülőként dolgozni AI-korszakban",
+   "sourceContact": "Példa Podcast",
+   "confidence": 0.8,
+   "date": "+0",
+   "meta": {
+    "show": "Példa Podcast",
+    "why": "Rövid, jól strukturált beszélgetés a munka–család egyensúlyról.",
+    "worthy": true,
+    "spotifyQuery": "Példa Podcast szülőként dolgozni",
+    "minutes": 42
+   }
+  }
+ ],
+ "emails": [
+  {
+   "id": "demo-1",
+   "fromName": "Kovács Éva",
+   "fromEmail": "kovacs.eva@example.com",
+   "subject": "Jövő heti tudnivalók",
+   "receivedAt": "-1 18:20",
+   "category": "school",
+   "kidIds": [
+    "bence"
+   ],
+   "summary": "Csütörtökön matek témazáró (szorzótábla), szerdán farsangi jelmez kell, kirándulási nyilatkozatot péntekig kérik."
+  },
+  {
+   "id": "demo-2",
+   "fromName": "Nagy Péter",
+   "fromEmail": "nagy.peter@example.com",
+   "subject": "Unit 3 dolgozat",
+   "receivedAt": "-2 20:05",
+   "category": "school",
+   "kidIds": [
+    "lili"
+   ],
+   "summary": "Jövő héten angol dolgozat (Unit 3), a pontos napot még jelzi."
+  }
+ ],
+ "digest": {
+  "headline": "Csütörtökön Bence matek témazárót ír – a gyakorló sávok már a naptárban vannak.",
+  "focus": [
+   "Holnap Lilinek tornacucc és váltócipő kell.",
+   "Bence csütörtöki matek témazárójára három rövid gyakorlás van betervezve.",
+   "Péntekig alá kell írni a kirándulási nyilatkozatot."
+  ],
+  "suggested_actions": [
+   {
+    "title": "Kirándulás befizetése (6 500 Ft)",
+    "why": "Hat nap múlva lejár a határidő, a számlaszám és a közlemény a Befizetések oldalon másolható.",
+    "kind": "pay",
+    "urgency": "this_week",
+    "item_key": "b-trip"
+   }
+  ],
+  "reading_pick_keys": [
+   "r1"
+  ],
+  "podcast_pick_keys": [
+   "p1"
+  ],
+  "week_ahead": "Bence: felmérés, farsang, témazáró. Lili: angol dolgozat (nap még nem ismert), szülői értekezlet.",
+  "family_tip": "Csütörtök este 10 perc: nézzétek át együtt a következő hét Számonkérések oldalát."
+ }
+}
