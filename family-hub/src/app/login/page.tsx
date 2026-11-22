@@ -71,6 +71,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <p className="mt-6 flex items-center justify-center gap-1.5 text-[11px] text-muted">
           <Lock className="h-3 w-3" /> Privát alkalmazás · csak engedélyezett fiókok
         </p>
+        <p className="mt-2 text-center text-[11px]">
+          <a href="/adatvedelem" className="text-muted underline">
+            Adatvédelem
+          </a>
+        </p>
       </div>
     </main>
   );

@@ -7,7 +7,7 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/token";
  * Public exceptions: the login page, the OAuth endpoints, cron endpoints (they check
  * their own Bearer secret) and static assets.
  */
-const PUBLIC_PREFIXES = ["/login", "/api/auth/", "/api/cron/", "/api/health"];
+const PUBLIC_PREFIXES = ["/login", "/adatvedelem", "/api/auth/", "/api/cron/", "/api/health"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

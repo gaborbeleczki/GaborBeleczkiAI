@@ -1,12 +1,13 @@
 import "server-only";
 import path from "node:path";
-import { drizzle as drizzlePostgres, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { migrate as migratePostgres } from "drizzle-orm/postgres-js/migrator";
-import postgres from "postgres";
+import { attachDatabasePool } from "@vercel/functions";
+import { drizzle as drizzlePg, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import { migrate as migratePg } from "drizzle-orm/node-postgres/migrator";
+import { Pool } from "pg";
 import * as schema from "./schema";
 import { env, isProd } from "../env";
 
-export type DB = PostgresJsDatabase<typeof schema>;
+export type DB = NodePgDatabase<typeof schema>;
 
 const MIGRATIONS = path.join(process.cwd(), "drizzle");
 
@@ -19,17 +20,28 @@ async function init(): Promise<DB> {
     // Drop provider-specific query params (sslmode, supa, pgbouncer …); TLS is configured below.
     const url = new URL(env.databaseUrl);
     url.search = "";
-    const client = postgres(url.toString(), {
+    const local = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    const pool = new Pool({
+      connectionString: url.toString(),
       max: isProd ? 3 : 5,
-      prepare: false, // required for Supabase/Neon transaction poolers
-      idle_timeout: 20,
-      ssl: env.databaseUrl.includes("localhost") ? false : "require",
+      ssl: local ? false : { rejectUnauthorized: false },
+      // Serverless instances get frozen between requests: keep idle sockets short-lived and
+      // fail fast instead of hanging on a dead connection.
+      idleTimeoutMillis: 5_000,
+      connectionTimeoutMillis: 10_000,
+      query_timeout: 25_000,
+      keepAlive: true,
     });
-    const db = drizzlePostgres(client, { schema });
+    pool.on("error", () => {
+      // idle client errors (e.g. pooler restarts) must not crash the function
+    });
+    // Lets Vercel Fluid compute close idle connections before the instance is suspended.
+    if (process.env.VERCEL) attachDatabasePool(pool);
+    const db = drizzlePg(pool, { schema });
     // DATABASE_SCHEMA: keep everything (incl. the migrations journal) inside one schema when the
     // database is shared with another app; the login role's search_path points at it.
     const dbSchema = process.env.DATABASE_SCHEMA?.trim();
-    await migratePostgres(db, { migrationsFolder: MIGRATIONS, ...(dbSchema ? { migrationsSchema: dbSchema } : {}) });
+    await migratePg(db, { migrationsFolder: MIGRATIONS, ...(dbSchema ? { migrationsSchema: dbSchema } : {}) });
     return db;
   }
   if (isProd && dbMode() !== "ephemeral") {
