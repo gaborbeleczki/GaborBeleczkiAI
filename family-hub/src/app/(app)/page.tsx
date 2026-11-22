@@ -95,7 +95,7 @@ export default async function TodayPage() {
         subtitle={digest?.headline ?? `${dueToday.length} tétel ma, ${assessments.length} közelgő számonkérés.`}
         actions={
           <>
-            <SyncButton />
+            {google.hasGmail && <SyncButton />}
             <NewItemButton kids={kids} />
           </>
         }

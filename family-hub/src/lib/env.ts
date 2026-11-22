@@ -17,14 +17,19 @@ export const env = {
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   anthropicKey: process.env.ANTHROPIC_API_KEY ?? "",
   anthropicModel: process.env.ANTHROPIC_MODEL || "claude-opus-5-5",
-  databaseUrl: process.env.DATABASE_URL ?? "",
+  // DATABASE_URL, or POSTGRES_URL as injected by the Vercel ↔ Supabase/Neon integrations
+  databaseUrl: process.env.DATABASE_URL || process.env.POSTGRES_URL || "",
   cronSecret: process.env.CRON_SECRET ?? "",
   appUrl: (process.env.APP_URL ?? "").replace(/\/$/, ""),
   spotifyClientId: process.env.SPOTIFY_CLIENT_ID ?? "",
   spotifyClientSecret: process.env.SPOTIFY_CLIENT_SECRET ?? "",
   familyConfigJson: process.env.FAMILY_CONFIG_JSON ?? "",
   devLogin: !isProd && process.env.DEV_LOGIN === "1",
+  /** Optional shared family password (testing phase / fallback when Google sign-in is not set up). */
+  appPassword: (process.env.APP_PASSWORD ?? "").length >= 12 ? (process.env.APP_PASSWORD as string) : "",
 };
+
+export const googleLoginConfigured = () => Boolean(env.googleClientId && env.googleClientSecret);
 
 export function assertAppSecret() {
   if (!env.appSecret || env.appSecret.length < 32) {

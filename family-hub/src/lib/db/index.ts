@@ -16,7 +16,10 @@ const holder: Holder = (g.__familyHubDb ??= {});
 
 async function init(): Promise<DB> {
   if (env.databaseUrl) {
-    const client = postgres(env.databaseUrl, {
+    // Drop provider-specific query params (sslmode, supa, pgbouncer …); TLS is configured below.
+    const url = new URL(env.databaseUrl);
+    url.search = "";
+    const client = postgres(url.toString(), {
       max: isProd ? 3 : 5,
       prepare: false, // required for Supabase/Neon transaction poolers
       idle_timeout: 20,

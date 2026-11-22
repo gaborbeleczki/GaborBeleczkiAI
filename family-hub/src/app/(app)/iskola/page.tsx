@@ -71,7 +71,7 @@ export default async function SchoolPage({ searchParams }: { searchParams: Promi
         subtitle="A tanítók leveleiből, a Krétából és az SZMK-tól kinyert teendők, gyerekenként és naponként."
         actions={
           <>
-            <SyncButton />
+            {ctx.google.hasGmail && <SyncButton />}
             <NewItemButton kids={kids} defaults={{ area: "school", type: "task" }} />
           </>
         }

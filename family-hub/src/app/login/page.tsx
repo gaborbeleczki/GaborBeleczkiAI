@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Lock } from "lucide-react";
 import { getSessionUser } from "@/lib/auth/session";
+import { env, googleLoginConfigured } from "@/lib/env";
 
 export const metadata = { title: "Bejelentkezés" };
 
@@ -10,12 +11,18 @@ const ERRORS: Record<string, string> = {
   invalid_state: "A bejelentkezés lejárt, próbáld újra.",
   oauth_failed: "Nem sikerült a Google-bejelentkezés.",
   google_not_configured: "A Google OAuth nincs beállítva (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).",
+  bad_password: "Hibás jelszó.",
+  locked: "Túl sok sikertelen próbálkozás – próbáld újra 15 perc múlva.",
+  password_disabled: "A jelszavas belépés nincs bekapcsolva.",
+  no_allowlist: "Az ALLOWED_EMAILS nincs beállítva.",
 };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (await getSessionUser()) redirect("/");
   const { error } = await searchParams;
   const devLogin = process.env.NODE_ENV !== "production" && process.env.DEV_LOGIN === "1";
+  const google = googleLoginConfigured();
+  const password = Boolean(env.appPassword);
   return (
     <main className="paper-grain grid min-h-dvh place-items-center px-4">
       <div className="card rise w-full max-w-sm p-8 text-center">
@@ -25,6 +32,24 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </h1>
         <p className="mt-2 text-sm text-muted">Iskola, teendők, befizetések és számlák – egy helyen, csak a családnak.</p>
         {error && <p className="mt-5 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950/50 dark:text-red-200">{ERRORS[error] ?? "Hiba történt."}</p>}
+        {password && (
+          <form action="/api/auth/password" method="post" className="mt-6 space-y-3 text-left">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted" htmlFor="password">
+              Családi jelszó
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className="w-full rounded-full border border-line bg-surface-2 px-4 py-3 text-sm text-ink outline-none focus:border-ink-2/40"
+            />
+            <button className="w-full rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90">Belépés</button>
+          </form>
+        )}
+        {password && google && <p className="mt-5 text-[11px] uppercase tracking-wider text-muted">vagy</p>}
+        {(google || !password) && (
         <a
           href="/api/auth/google/start"
           className="mt-6 flex w-full items-center justify-center gap-3 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-surface shadow-sm transition hover:opacity-90"
@@ -37,6 +62,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </svg>
           Bejelentkezés Google-fiókkal
         </a>
+        )}
         {devLogin && (
           <a href="/api/auth/dev" className="mt-3 block text-xs text-muted underline">
             Fejlesztői belépés (csak helyben)

@@ -48,6 +48,8 @@ Gmail ──► rule pre-classifier ──► Claude (structured output) ──�
 
 * Every page and API route requires a signed session (`proxy.ts`); only Google accounts in
   `ALLOWED_EMAILS` can sign in (Gmail dot/`+tag` variants are normalised).
+* Optional **family password** (`APP_PASSWORD`, ≥ 12 chars) for the testing phase or as a fallback: constant-time check,
+  8 failed attempts per IP per 15 minutes lock the form.
 * Gmail access is **read-only**; the calendar scope is used only to write Family Hub events.
 * OAuth refresh tokens are AES-256-GCM encrypted at rest; sessions are HS256 JWTs (keys derived from `APP_SECRET`).
 * Cron endpoints require `Authorization: Bearer $CRON_SECRET` and return counts only.
@@ -73,7 +75,8 @@ Gmail ──► rule pre-classifier ──► Claude (structured output) ──�
    | `MAILBOX_OWNER_EMAIL` | the account whose Gmail/Calendar is synced |
    | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | from step 2 |
    | `ANTHROPIC_API_KEY` | from step 3 (`ANTHROPIC_MODEL` optional, default `claude-opus-5-5`) |
-   | `DATABASE_URL` | from step 1 |
+   | `DATABASE_URL` | from step 1 (or connect a Vercel Supabase/Neon store – its `POSTGRES_URL` is picked up automatically) |
+   | `APP_PASSWORD` | optional family password; Google sign-in is hidden until `GOOGLE_CLIENT_ID` is set |
    | `CRON_SECRET` | `openssl rand -hex 32` |
    | `APP_URL` | `https://<your-domain>` |
    | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | optional, redirect URI `https://<your-domain>/api/spotify/callback` |

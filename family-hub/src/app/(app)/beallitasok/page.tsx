@@ -8,7 +8,7 @@ import { savePreferencesForm } from "@/lib/actions";
 import { aiConfigured } from "@/lib/ai/client";
 import { listCalendars, type CalendarListEntry } from "@/lib/google/calendar";
 import { getDb, schema } from "@/lib/db";
-import { env } from "@/lib/env";
+import { env, googleLoginConfigured } from "@/lib/env";
 import { spotifyStatus } from "@/lib/spotify";
 import { lastSyncInfo } from "@/lib/sync/run";
 import { parseAllowlist } from "@/lib/auth/allowlist";
@@ -84,9 +84,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <p className="text-sm text-muted">
                 Csak olvasási jogot kérünk a Gmailhez; a naptárba a Family Hub saját, megjelölt eseményeket ír. {env.mailboxOwner && <>Fiók: <b>{env.mailboxOwner}</b></>}
               </p>
-              <a href="/api/auth/google/start?mode=connect" className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-surface">
-                Gmail és Naptár összekapcsolása
-              </a>
+              {googleLoginConfigured() ? (
+                <a href="/api/auth/google/start?mode=connect" className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-surface">
+                  Gmail és Naptár összekapcsolása
+                </a>
+              ) : (
+                <Pill tone="amber">Előbb állítsd be a GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET változókat</Pill>
+              )}
             </div>
           )}
         </Card>
@@ -145,6 +149,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               </li>
             ))}
           </ul>
+          <p className="mb-2 text-sm text-muted">
+            Belépési módok: {googleLoginConfigured() ? "Google-fiók" : "Google-belépés még nincs beállítva"}
+            {env.appPassword ? " · családi jelszó (APP_PASSWORD)" : ""}
+          </p>
           <p className="text-xs text-muted">
             Minden oldal és API bejelentkezéshez kötött, a tokenek titkosítva tárolódnak, a keresőmotorok ki vannak zárva. Javasolt: Vercel Deployment Protection is.
           </p>
@@ -152,7 +160,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </div>
 
       <Card className="mt-6 p-5">
-        <SectionTitle icon={<CalendarDays className="h-4 w-4" />} action={<div className="flex gap-2"><SyncButton label="Levelek szinkronja" /><ResyncCalendarButton /></div>}>
+        <SectionTitle icon={<CalendarDays className="h-4 w-4" />} action={google.connected ? <div className="flex gap-2">{google.hasGmail && <SyncButton label="Levelek szinkronja" />}{google.hasCalendar && <ResyncCalendarButton />}</div> : undefined}>
           Szinkron és naptár
         </SectionTitle>
         {sync && (
