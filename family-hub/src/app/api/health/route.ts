@@ -8,7 +8,10 @@ export async function GET() {
     const db = await getDb();
     await db.execute(sql`select 1`);
     return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
-  } catch {
+  } catch (e) {
+    // server log only – the response never reveals details
+    const err = e as { message?: string; code?: string; cause?: { message?: string; code?: string } };
+    console.error("health: database unavailable", err.code ?? err.cause?.code ?? "", (err.message ?? "").slice(0, 300), err.cause?.message?.slice(0, 300) ?? "");
     return NextResponse.json({ ok: false }, { status: 503, headers: { "cache-control": "no-store" } });
   }
 }
