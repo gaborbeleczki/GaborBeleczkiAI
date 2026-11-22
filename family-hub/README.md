@@ -60,6 +60,17 @@ Gmail ──► rule pre-classifier ──► Claude (structured output) ──�
 ## Deploy to Vercel
 
 1. **Database** – any Postgres. Supabase: *Project → Connect → Transaction pooler* URI (port 6543). Neon / Vercel Postgres work too. Migrations run automatically on first request.
+   *Sharing an existing database with another app:* give Family Hub its own schema and login role, then set
+   `DATABASE_SCHEMA=family_hub` and use that role in `DATABASE_URL` (Supabase pooler user `family_hub.<project-ref>`):
+   ```sql
+   create role family_hub login password '…' noinherit connection limit 20;
+   create schema family_hub;
+   revoke all on schema family_hub from public;
+   grant usage, create on schema family_hub to family_hub;
+   grant create on database postgres to family_hub;   -- the migrator issues CREATE SCHEMA IF NOT EXISTS
+   alter role family_hub set search_path = family_hub;
+   ```
+   The schema is not exposed through Supabase's REST API and the API roles get no grants on it.
 2. **Google OAuth client** – [Google Cloud Console](https://console.cloud.google.com/):
    * enable **Gmail API** and **Google Calendar API**;
    * *OAuth consent screen*: External, add your account(s) as test users, scopes `gmail.readonly`, `calendar.events`, `calendar.readonly`;
