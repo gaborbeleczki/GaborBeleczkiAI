@@ -15,6 +15,8 @@ import { addDaysISO, formatHuf, localToDate, todayISO, toLocal } from "../time";
 import { classifyEmail, type Classification } from "./classify";
 import { loadBusy, syncItemCalendar, type CalendarContext } from "./calendar-sync";
 import { getAppUrlSafe } from "./app-url";
+import { ruleExtract } from "../rules/extract";
+import { ruleDigest } from "../rules/digest";
 
 export type SyncStats = {
   listed: number;
@@ -78,15 +80,15 @@ export async function runMailSync(opts: { trigger: string; lookbackDays?: number
     try {
       const conn = await googleConnection();
       if (!conn.connected || !conn.hasGmail) throw new Error("A Gmail nincs összekapcsolva (Beállítások → Kapcsolatok).");
-      if (!aiConfigured()) throw new Error("ANTHROPIC_API_KEY nincs beállítva.");
-
       const [family, prefs] = await Promise.all([getFamily(), getPrefs()]);
+      // Without a Claude key the sync runs on the rule-based Hungarian extractor.
+      const useAI = aiConfigured();
       const db = await getDb();
       const last = await kvGet<{ at: string }>("last_mail_sync");
       const sinceDays = last ? Math.max(2, Math.ceil((Date.now() - Date.parse(last.at)) / 86_400_000) + 1) : prefs.initialSyncDays;
       const lookback = Math.min(opts.lookbackDays ?? sinceDays, 60);
 
-      const ids = await listMessageIds(`newer_than:${lookback}d -in:sent -in:drafts -in:spam -in:trash -in:chats`, 500);
+      const ids = await listMessageIds(`newer_than:${lookback}d -in:sent -in:drafts -in:spam -in:trash -in:chats`, useAI ? 500 : 1500);
       stats.listed = ids.length;
       const seen = new Set<string>();
       for (let i = 0; i < ids.length; i += 200) {
@@ -96,12 +98,12 @@ export async function runMailSync(opts: { trigger: string; lookbackDays?: number
       }
       const fresh = ids.filter((id) => !seen.has(id));
       stats.fresh = fresh.length;
-      const batch = fresh.slice(0, prefs.maxEmailsPerRun);
+      const batch = fresh.slice(0, useAI ? prefs.maxEmailsPerRun : 400);
       stats.remaining = fresh.length - batch.length;
 
       // 1. fetch + classify
       const parsed: { email: ParsedEmail; cls: Classification }[] = [];
-      await mapLimit(batch, 6, async (id) => {
+      await mapLimit(batch, 8, async (id) => {
         try {
           const email = await getMessage(id);
           const cls = classifyEmail(email, family);
@@ -138,6 +140,30 @@ export async function runMailSync(opts: { trigger: string; lookbackDays?: number
       const toExtract = parsed.filter((p) => p.cls.mode === "extract").sort((a, b) => a.email.date.getTime() - b.email.date.getTime());
       for (const { email, cls } of toExtract) {
         try {
+          if (!useAI) {
+            const r = ruleExtract(email, cls, family);
+            const { created, updated } = r.items.length
+              ? await applyDrafts({
+                  drafts: r.items,
+                  emailId: email.id,
+                  contactName: cls.forwardedFrom?.name || cls.contact?.name || email.from.name || email.from.email,
+                  knownKidIds,
+                  minConfidence: prefs.minConfidenceForAuto,
+                  source: "email",
+                })
+              : { created: [] as string[], updated: [] as string[] };
+            const completed = r.paidDomain ? await completeBillsFrom(r.paidDomain, email.date) : [];
+            [...created, ...updated, ...completed].forEach((id) => touched.add(id));
+            stats.created += created.length;
+            stats.updated += updated.length;
+            stats.completed += completed.length;
+            stats.extracted++;
+            await db
+              .update(schema.emails)
+              .set({ status: "processed", summary: r.summary, kidIds: cls.kidIds, itemIds: [...created, ...updated, ...completed], processedAt: new Date(), error: null })
+              .where(eq(schema.emails.id, email.id));
+            continue;
+          }
           const existing = await openItemsBrief(cls.kidIds);
           const result = await extractEmail(email, cls, family, existing);
           const kidIds = result.kid_ids.filter((k) => knownKidIds.includes(k));
@@ -177,7 +203,61 @@ export async function runMailSync(opts: { trigger: string; lookbackDays?: number
 
       // 3. batched triage for newsletters / personal mail
       const toTriage = parsed.filter((p) => p.cls.mode === "triage");
-      for (let i = 0; i < toTriage.length; i += 10) {
+      if (!useAI) {
+        for (const { email, cls } of toTriage) {
+          try {
+            const r = ruleExtract(email, cls, family);
+            const itemIds: string[] = [];
+            if (r.reading) {
+              const [row] = await db
+                .insert(schema.items)
+                .values({
+                  type: "reading",
+                  area: "media",
+                  title: r.reading.title,
+                  details: r.summary,
+                  url: /^https?:\/\//.test(r.reading.url) ? r.reading.url : null,
+                  source: "email",
+                  sourceEmailId: email.id,
+                  sourceContact: r.reading.source,
+                  confidence: 0.6,
+                  date: todayISO(),
+                  meta: { why: r.reading.why, minutes: r.reading.minutes, readingSource: r.reading.source, emailIds: [email.id] },
+                })
+                .returning();
+              itemIds.push(row.id);
+            }
+            if (r.podcast) {
+              const [row] = await db
+                .insert(schema.items)
+                .values({
+                  type: "podcast",
+                  area: "media",
+                  title: r.podcast.episode,
+                  details: r.summary,
+                  url: /^https?:\/\//.test(r.podcast.url) ? r.podcast.url : null,
+                  source: "email",
+                  sourceEmailId: email.id,
+                  sourceContact: r.podcast.show,
+                  confidence: 0.6,
+                  date: todayISO(),
+                  meta: { why: r.podcast.why, show: r.podcast.show, episodeTitle: r.podcast.episode, spotifyQuery: r.podcast.query, worthy: false, emailIds: [email.id] },
+                })
+                .returning();
+              itemIds.push(row.id);
+            }
+            stats.created += itemIds.length;
+            await db
+              .update(schema.emails)
+              .set({ status: "processed", summary: r.summary, itemIds, processedAt: new Date(), error: null })
+              .where(eq(schema.emails.id, email.id));
+            stats.triaged++;
+          } catch (e) {
+            stats.errors.push(`${email.subject}: ${(e as Error).message}`.slice(0, 200));
+          }
+        }
+      }
+      for (let i = 0; useAI && i < toTriage.length; i += 10) {
         const chunk = toTriage.slice(i, i + 10);
         const input: TriageInput[] = chunk.map((p) => ({ email: p.email, excerptChars: p.cls.category === "newsletter" ? 2500 : 3500 }));
         try {
@@ -278,6 +358,24 @@ export async function runMailSync(opts: { trigger: string; lookbackDays?: number
   });
 }
 
+/** A "payment successful" mail closes the latest open bill from the same sender domain. */
+async function completeBillsFrom(domain: string, paidAt: Date): Promise<string[]> {
+  const db = await getDb();
+  const rows = await db
+    .select({ id: schema.items.id, fromEmail: schema.emails.fromEmail, createdAt: schema.items.createdAt })
+    .from(schema.items)
+    .innerJoin(schema.emails, eq(schema.items.sourceEmailId, schema.emails.id))
+    .where(and(eq(schema.items.type, "bill"), inArray(schema.items.status, ["open", "waiting"])))
+    .orderBy(desc(schema.emails.receivedAt));
+  const match = rows.find((r) => (r.fromEmail ?? "").toLowerCase().endsWith(domain.toLowerCase()));
+  if (!match) return [];
+  await db
+    .update(schema.items)
+    .set({ status: "done", paidAt, completedAt: paidAt, updatedAt: new Date() })
+    .where(eq(schema.items.id, match.id));
+  return [match.id];
+}
+
 export async function calendarContext(): Promise<CalendarContext> {
   const [family, prefs, conn] = await Promise.all([getFamily(), getPrefs(), googleConnection()]);
   return { family, prefs, busy: await loadBusy(prefs), appUrl: await getAppUrlSafe(), account: conn.account };
@@ -333,7 +431,6 @@ function itemLine(i: Item, family: Awaited<ReturnType<typeof getFamily>>): strin
 export async function runDigest(opts: { trigger: string; date?: string }): Promise<StoredDigest> {
   const runId = await startRun("digest", opts.trigger);
   try {
-    if (!aiConfigured()) throw new Error("ANTHROPIC_API_KEY nincs beállítva.");
     const date = opts.date ?? todayISO();
     const db = await getDb();
     const [family, prefs, conn] = await Promise.all([getFamily(), getPrefs(), googleConnection()]);
@@ -355,6 +452,7 @@ export async function runDigest(opts: { trigger: string; date?: string }): Promi
       .limit(60);
 
     let agenda = "(naptár nincs összekapcsolva)";
+    let agendaCount = 0;
     if (conn.hasCalendar) {
       try {
         const evs = (
@@ -364,6 +462,7 @@ export async function runDigest(opts: { trigger: string; date?: string }): Promi
             ),
           )
         ).flat();
+        agendaCount = evs.filter((e) => (e.start.dateTime ? toLocal(new Date(e.start.dateTime)).date : e.start.date) === date).length;
         agenda =
           evs
             .map((e) => `- ${e.start.dateTime ? toLocal(new Date(e.start.dateTime)).date + " " + toLocal(new Date(e.start.dateTime)).time : e.start.date + " (egész nap)"} ${e.summary ?? ""}`)
@@ -394,7 +493,18 @@ ${mails.map((m) => `- [email ${m.id}] (${m.category}) ${m.fromName ?? m.fromEmai
 ## Olvasnivaló és podcast jelöltek
 ${media.map((m) => `- [${m.id}] ${m.type} score=${(m.confidence ?? 0).toFixed(2)} ${m.sourceContact ?? ""}: ${m.title} — ${m.meta?.why ?? ""}`).join("\n") || "(nincs)"}`;
 
-    const digest = await writeDigest(input, family);
+    const openAll = Array.from(new Map([...upcoming, ...undated].map((i) => [i.id, i])).values());
+    const digest = aiConfigured()
+      ? await writeDigest(input, family)
+      : ruleDigest({
+          date,
+          family,
+          open: openAll,
+          media,
+          agendaCount,
+          reviewCount: (await listItems({ needsReview: true, statuses: ["open", "waiting"] })).length,
+          unsubscribe: await unsubscribeSuggestions(),
+        });
     const validIds = new Set([...upcoming, ...undated, ...media].map((i) => i.id));
     const validEmails = new Set(mails.map((m) => m.id));
     const stored: StoredDigest = {

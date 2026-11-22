@@ -8,7 +8,6 @@ import { pageContext } from "@/lib/page-context";
 import { listItems } from "@/lib/items/repo";
 import { getDigest, isStale, lastSyncInfo, latestDigest, runMailSync } from "@/lib/sync/run";
 import { listEvents, type GEvent } from "@/lib/google/calendar";
-import { aiConfigured } from "@/lib/ai/client";
 import { addDaysISO, formatHuf, huDate, huGreeting, huRelative, huWeekday, localToDate, mondayOf, todayISO, toLocal, weekdayISO } from "@/lib/time";
 import { KID_STYLES, cx } from "@/lib/ui";
 import type { Item } from "@/lib/db/schema";
@@ -49,7 +48,7 @@ export default async function TodayPage() {
   const unpaid = await listItems({ statuses: ["open"], types: ["payment", "bill"] });
 
   // Opportunistic background sync when the data is older than 30 minutes.
-  if (google.hasGmail && aiConfigured() && isStale(sync?.at, 30)) {
+  if (google.hasGmail && isStale(sync?.at, 30)) {
     after(() => runMailSync({ trigger: "visit" }).then(() => undefined));
   }
 

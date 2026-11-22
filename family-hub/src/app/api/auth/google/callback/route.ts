@@ -1,4 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
+import { runMailSync } from "@/lib/sync/run";
+
+export const maxDuration = 300;
 import { getAppUrl } from "@/lib/app-url";
 import { isAllowed, parseAllowlist, sameEmail } from "@/lib/auth/allowlist";
 import { setSessionCookie } from "@/lib/auth/cookie";
@@ -39,6 +42,8 @@ export async function GET(req: NextRequest) {
         expiresIn: tokens.expires_in,
         scope: tokens.scope,
       });
+      // first import: the last 30 days of mail, processed in the background
+      after(() => runMailSync({ trigger: "connect", lookbackDays: 30 }).then(() => undefined));
       return NextResponse.redirect(`${base}/beallitasok?connected=google`);
     }
 

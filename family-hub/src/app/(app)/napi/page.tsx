@@ -17,7 +17,7 @@ import {
   Sparkles,
   Telescope,
 } from "lucide-react";
-import { Banner, Card, EmptyState, PageHeader, Pill, SectionTitle } from "@/components/ui/primitives";
+import { Card, EmptyState, PageHeader, Pill, SectionTitle } from "@/components/ui/primitives";
 import { SpotifyButton, StatusButton, SyncButton } from "@/components/items/client";
 import { pageContext } from "@/lib/page-context";
 import { getDb, schema } from "@/lib/db";
@@ -76,9 +76,9 @@ export default async function DigestPage({ searchParams }: { searchParams: Promi
         eyebrow={`Napi összefoglaló · ${huDate(digest?.date ?? date, { long: true, weekday: true })}`}
         title={digest?.headline ?? "Még nincs mai összefoglaló"}
         subtitle={digest ? `Készült: ${new Date(digest.generatedAt).toLocaleTimeString("hu-HU", { timeZone: "Europe/Budapest", hour: "2-digit", minute: "2-digit" })}` : "Minden reggel automatikusan elkészül; most is legenerálhatod."}
-        actions={aiConfigured() ? <SyncButton label="Újragenerálás" endpoint="/api/digest" /> : undefined}
+        actions={<SyncButton label="Újragenerálás" endpoint="/api/digest" />}
       />
-      {!aiConfigured() && <Banner tone="warn">Az összefoglalóhoz be kell állítani az ANTHROPIC_API_KEY környezeti változót.</Banner>}
+      {!aiConfigured() && <p className="-mt-4 mb-6 text-xs text-muted">Szabályalapú összefoglaló (AI nélkül): a teendőkből, határidőkből és a hírlevelekből áll össze.</p>}
 
       {digest ? (
         <div className="grid gap-6 lg:grid-cols-3">

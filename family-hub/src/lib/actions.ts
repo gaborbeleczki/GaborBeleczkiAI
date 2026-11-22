@@ -6,6 +6,7 @@ import { requireUser } from "./auth/session";
 import { getDb, schema } from "./db";
 import { aiConfigured } from "./ai/client";
 import { parseQuickAdd } from "./ai/tasks";
+import { ruleQuickAdd } from "./rules/extract";
 import { applyDrafts, deleteItem, getItem, insertItem, updateItem } from "./items/repo";
 import { getFamily, getPrefs, saveFamily, savePrefs } from "./kv";
 import { normalizeFamily } from "./family/normalize";
@@ -124,9 +125,19 @@ export async function quickAdd(text: string): Promise<{ ok: boolean; count: numb
   if (!t) return { ok: false, count: 0 };
   const family = await getFamily();
   if (!aiConfigured()) {
-    await insertItem({ type: "task", area: "home", title: t.slice(0, 140), source: "manual", createdBy: user.email, confidence: 1 });
+    const prefs = await getPrefs();
+    const { created } = await applyDrafts({
+      drafts: [ruleQuickAdd(t, family)],
+      emailId: null,
+      contactName: null,
+      knownKidIds: family.kids.map((k) => k.id),
+      minConfidence: prefs.minConfidenceForAuto,
+      source: "manual",
+      createdBy: user.email,
+    });
+    await maybeCalendar(created);
     refreshAll();
-    return { ok: true, count: 1, message: "AI nélkül, egyszerű teendőként mentve." };
+    return { ok: true, count: created.length };
   }
   try {
     const res = await parseQuickAdd(t, family);

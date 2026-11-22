@@ -122,7 +122,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <ul className="space-y-2 text-sm">
             <li className="flex items-center justify-between">
               <span>Claude API</span>
-              {aiConfigured() ? <Pill tone="emerald">{env.anthropicModel}</Pill> : <Pill tone="red">ANTHROPIC_API_KEY hiányzik</Pill>}
+              {aiConfigured() ? <Pill tone="emerald">{env.anthropicModel}</Pill> : <Pill tone="sky">kikapcsolva – szabályalapú feldolgozás</Pill>}
             </li>
             <li className="flex items-center justify-between">
               <span className="flex items-center gap-1.5">
