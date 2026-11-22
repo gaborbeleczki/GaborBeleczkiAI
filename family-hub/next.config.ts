@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./drizzle/**/*"],
   },
+  // never bundle the local dev database or private seed files
+  outputFileTracingExcludes: {
+    "/**": ["./.data/**/*", "./.local/**/*", "./.env*"],
+  },
   turbopack: {
     rules: {
       "*.css": {

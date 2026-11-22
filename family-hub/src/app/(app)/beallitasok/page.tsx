@@ -7,7 +7,7 @@ import { pageContext } from "@/lib/page-context";
 import { savePreferencesForm } from "@/lib/actions";
 import { aiConfigured } from "@/lib/ai/client";
 import { listCalendars, type CalendarListEntry } from "@/lib/google/calendar";
-import { getDb, schema } from "@/lib/db";
+import { dbMode, getDb, schema } from "@/lib/db";
 import { env, googleLoginConfigured } from "@/lib/env";
 import { spotifyStatus } from "@/lib/spotify";
 import { lastSyncInfo } from "@/lib/sync/run";
@@ -128,7 +128,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <span className="flex items-center gap-1.5">
                 <Database className="h-4 w-4 text-muted" /> Adatbázis
               </span>
-              <Pill tone={env.databaseUrl ? "emerald" : "amber"}>{env.databaseUrl ? "Postgres" : "helyi PGlite (fejlesztés)"}</Pill>
+              <Pill tone={dbMode() === "postgres" ? "emerald" : dbMode() === "ephemeral" ? "red" : "amber"}>
+                {dbMode() === "postgres" ? "Postgres" : dbMode() === "ephemeral" ? "ideiglenes (teszt)" : "helyi PGlite (fejlesztés)"}
+              </Pill>
             </li>
             <li className="flex items-center justify-between">
               <span>Időzített futás (cron)</span>
