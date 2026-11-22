@@ -12,6 +12,7 @@ const ERRORS: Record<string, string> = {
   oauth_failed: "Nem sikerült a Google-bejelentkezés.",
   google_not_configured: "A Google OAuth nincs beállítva (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).",
   bad_password: "Hibás jelszó.",
+  google_secret: "A Google elutasította a kliens titkot – másold be újra a GOOGLE_CLIENT_SECRET értékét a Vercelben (a másolás ikonnal).",
   locked: "Túl sok sikertelen próbálkozás – próbáld újra 15 perc múlva.",
   password_disabled: "A jelszavas belépés nincs bekapcsolva.",
   no_allowlist: "Az ALLOWED_EMAILS nincs beállítva.",

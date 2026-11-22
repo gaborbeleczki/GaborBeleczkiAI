@@ -52,7 +52,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${base}/beallitasok?welcome=1`);
     }
     return NextResponse.redirect(`${base}/`);
-  } catch {
-    return fail("oauth_failed");
+  } catch (e) {
+    const code = (e as { code?: string }).code;
+    console.error("google oauth callback failed:", code ?? "", (e as Error).message?.slice(0, 200));
+    return fail(code === "invalid_client" || code === "unauthorized_client" ? "google_secret" : "oauth_failed");
   }
 }

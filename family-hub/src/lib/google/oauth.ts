@@ -73,7 +73,11 @@ export async function exchangeGoogleCode(code: string, redirectUri: string, code
     }),
   });
   const json = (await res.json()) as TokenResponse;
-  if (!res.ok) throw new GoogleAuthError(json.error_description || json.error || "token exchange failed");
+  if (!res.ok) {
+    const err = new GoogleAuthError(json.error_description || json.error || "token exchange failed");
+    (err as GoogleAuthError & { code?: string }).code = json.error;
+    throw err;
+  }
   return json;
 }
 
