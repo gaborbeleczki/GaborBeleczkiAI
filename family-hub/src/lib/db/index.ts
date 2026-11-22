@@ -26,7 +26,10 @@ async function init(): Promise<DB> {
       ssl: env.databaseUrl.includes("localhost") ? false : "require",
     });
     const db = drizzlePostgres(client, { schema });
-    await migratePostgres(db, { migrationsFolder: MIGRATIONS });
+    // DATABASE_SCHEMA: keep everything (incl. the migrations journal) inside one schema when the
+    // database is shared with another app; the login role's search_path points at it.
+    const dbSchema = process.env.DATABASE_SCHEMA?.trim();
+    await migratePostgres(db, { migrationsFolder: MIGRATIONS, ...(dbSchema ? { migrationsSchema: dbSchema } : {}) });
     return db;
   }
   if (isProd && dbMode() !== "ephemeral") {
