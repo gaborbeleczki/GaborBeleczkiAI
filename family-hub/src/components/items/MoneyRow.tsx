@@ -7,6 +7,7 @@ import { CATEGORY_LABEL, cx } from "@/lib/ui";
 import { KidChips, Pill } from "@/components/ui/primitives";
 import { CopyButton, ItemMenu, PaidToggle } from "./client";
 import { toLite } from "./ItemRow";
+import { SourceQuote } from "./SourceQuote";
 
 export function moneyStatus(i: Item, today = todayISO()): { label: string; tone: "red" | "amber" | "emerald" | "stone" | "sky" } {
   if (i.status === "done") return i.paymentInfo?.method === "csoportos beszedés" ? { label: "Csoportos beszedés", tone: "sky" } : { label: "Fizetve", tone: "emerald" };
@@ -43,6 +44,7 @@ export function MoneyRow({ item, kids, account, calendarEnabled, showKids = true
             </a>
           )}
         </div>
+        <SourceQuote quote={item.sourceQuote} emailId={item.sourceEmailId} contact={item.sourceContact} account={account} compact />
         {!paid && (item.paymentInfo?.account || item.paymentInfo?.reference || item.paymentInfo?.invoiceNumber) && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {item.paymentInfo?.account && <CopyButton value={item.paymentInfo.account} label="Számlaszám" />}

@@ -3,6 +3,7 @@ import { BookOpenCheck, CalendarCheck2, Mail, NotebookPen } from "lucide-react";
 import { AssessmentChip, Card, EmptyState, KidChip, PageHeader, SectionTitle } from "@/components/ui/primitives";
 import { DoneCheckbox, ItemMenu, NewItemButton } from "@/components/items/client";
 import { toLite } from "@/components/items/ItemRow";
+import { SourceQuote } from "@/components/items/SourceQuote";
 import { pageContext } from "@/lib/page-context";
 import { listItems } from "@/lib/items/repo";
 import { gmailUrl } from "@/lib/google/gmail";
@@ -76,6 +77,7 @@ function AssessmentCard({ item, kids, account, calendarEnabled, today }: { item:
           </p>
         )}
         {item.details && !item.topics && <p className="mt-1 line-clamp-2 text-sm text-muted">{item.details}</p>}
+        <SourceQuote quote={item.sourceQuote} emailId={item.sourceEmailId} contact={item.sourceContact} account={account} />
         <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted">
           <span>{fuzzy ? `${huDate(item.date!)} – ${item.endDate ? huDate(item.endDate) : "?"}` : huRelative(item.date!, today)}</span>
           {item.sourceContact && <span>{item.sourceContact}</span>}

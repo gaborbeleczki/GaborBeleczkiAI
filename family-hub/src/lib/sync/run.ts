@@ -83,6 +83,8 @@ export async function runMailSync(opts: { trigger: string; lookbackDays?: number
       const [family, prefs] = await Promise.all([getFamily(), getPrefs()]);
       // Without a Claude key the sync runs on the rule-based Hungarian extractor.
       const useAI = aiConfigured();
+      // EXTRACTION_MODE=external: the scheduled Claude run extracts items; the app only ingests mail.
+      const external = !useAI && process.env.EXTRACTION_MODE === "external";
       const db = await getDb();
       const last = await kvGet<{ at: string }>("last_mail_sync");
       const sinceDays = last ? Math.max(2, Math.ceil((Date.now() - Date.parse(last.at)) / 86_400_000) + 1) : prefs.initialSyncDays;
@@ -123,7 +125,7 @@ export async function runMailSync(opts: { trigger: string; lookbackDays?: number
             kidIds: cls.kidIds,
             attachments: email.attachments,
             links: email.links.slice(0, 20),
-            status: cls.mode === "skip" ? "skipped" : "pending",
+            status: cls.mode === "skip" ? "skipped" : external ? "awaiting_ai" : "pending",
             processedAt: cls.mode === "skip" ? new Date() : null,
           };
           await db.insert(schema.emails).values(row).onConflictDoUpdate({ target: schema.emails.id, set: row });
@@ -137,7 +139,7 @@ export async function runMailSync(opts: { trigger: string; lookbackDays?: number
       const knownKidIds = family.kids.map((k) => k.id);
 
       // 2. detailed extraction for school + finance mail (oldest first so later mails refine earlier ones)
-      const toExtract = parsed.filter((p) => p.cls.mode === "extract").sort((a, b) => a.email.date.getTime() - b.email.date.getTime());
+      const toExtract = parsed.filter((p) => !external && p.cls.mode === "extract").sort((a, b) => a.email.date.getTime() - b.email.date.getTime());
       for (const { email, cls } of toExtract) {
         try {
           if (!useAI) {
@@ -202,7 +204,7 @@ export async function runMailSync(opts: { trigger: string; lookbackDays?: number
       }
 
       // 3. batched triage for newsletters / personal mail
-      const toTriage = parsed.filter((p) => p.cls.mode === "triage");
+      const toTriage = parsed.filter((p) => !external && p.cls.mode === "triage");
       if (!useAI) {
         for (const { email, cls } of toTriage) {
           try {

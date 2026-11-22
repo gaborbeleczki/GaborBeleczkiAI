@@ -6,6 +6,7 @@ import { formatHuf, huDate, huRelative, todayISO } from "@/lib/time";
 import { ASSESSMENT_KIND, CATEGORY_LABEL, cx } from "@/lib/ui";
 import { AssessmentChip, KidChips, Pill, TypeChip } from "@/components/ui/primitives";
 import { DoneCheckbox, ItemMenu, type ItemLite } from "./client";
+import { SourceQuote } from "./SourceQuote";
 
 export function toLite(i: Item): ItemLite {
   return {
@@ -104,6 +105,7 @@ export function ItemRow({
         {!compact && (item.topics || item.details) && (
           <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-muted">{item.type === "assessment" && item.topics ? item.topics : item.details}</p>
         )}
+        <SourceQuote quote={item.sourceQuote} emailId={item.sourceEmailId} contact={item.sourceContact} account={account} compact={compact} />
       </div>
       <ItemMenu item={toLite(item)} kids={kids} calendarEnabled={calendarEnabled} />
     </li>
