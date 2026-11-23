@@ -435,6 +435,15 @@ export async function runDigest(opts: { trigger: string; date?: string }): Promi
   try {
     const date = opts.date ?? todayISO();
     const db = await getDb();
+    // A Claude-authored digest (written by the scheduled morning refresh) is never overwritten
+    // by the rule-based fallback; the user can still force a rebuild from the UI.
+    if (!aiConfigured() && opts.trigger === "cron") {
+      const existing = await getDigest(date);
+      if ((existing as { author?: string } | null)?.author === "claude") {
+        await finishRun(runId, "ok", { note: "claude digest kept" });
+        return existing!;
+      }
+    }
     const [family, prefs, conn] = await Promise.all([getFamily(), getPrefs(), googleConnection()]);
 
     const upcoming = await listItems({ statuses: ["open", "waiting"], from: addDaysISO(date, -14), to: addDaysISO(date, 10), types: ["task", "event", "reminder", "assessment", "payment", "bill"] });
