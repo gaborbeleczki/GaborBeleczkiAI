@@ -1,10 +1,10 @@
+import { normalizeDigest, type StoredDigest } from "../digest-normalize";
 import "server-only";
 import { and, desc, eq, gte, inArray, ne } from "drizzle-orm";
 import { getDb, schema } from "../db";
 import type { Item } from "../db/schema";
 import { aiConfigured } from "../ai/client";
 import { extractEmail, triageEmails, writeDigest, type TriageInput } from "../ai/tasks";
-import type { Digest } from "../ai/schemas";
 import { getMessage, listMessageIds } from "../google/gmail";
 import { googleConnection } from "../google/oauth";
 import { listEvents } from "../google/calendar";
@@ -408,18 +408,18 @@ export async function syncCalendarFor(itemIds?: string[], opts: { force?: boolea
   return n;
 }
 
-export type StoredDigest = Digest & { generatedAt: string; date: string };
+export type { StoredDigest } from "../digest-normalize";
 
 export async function getDigest(date = todayISO()): Promise<StoredDigest | null> {
   const db = await getDb();
   const [row] = await db.select().from(schema.digests).where(eq(schema.digests.date, date)).limit(1);
-  return row ? (row.data as StoredDigest) : null;
+  return row ? normalizeDigest(row.data, row.date) : null;
 }
 
 export async function latestDigest(): Promise<StoredDigest | null> {
   const db = await getDb();
   const [row] = await db.select().from(schema.digests).orderBy(desc(schema.digests.date)).limit(1);
-  return row ? (row.data as StoredDigest) : null;
+  return row ? normalizeDigest(row.data, row.date) : null;
 }
 
 function itemLine(i: Item, family: Awaited<ReturnType<typeof getFamily>>): string {

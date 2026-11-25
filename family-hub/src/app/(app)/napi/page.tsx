@@ -27,8 +27,15 @@ import { gmailUrl } from "@/lib/google/gmail";
 import { spotifySearchUrl, spotifyStatus } from "@/lib/spotify";
 import { aiConfigured } from "@/lib/ai/client";
 import { huDate, isISODate, todayISO } from "@/lib/time";
-import { cx } from "@/lib/ui";
+import { KID_STYLES, cx } from "@/lib/ui";
+import type { Kid } from "@/lib/family/types";
 import type { Item } from "@/lib/db/schema";
+
+function rankGroup(key: string, kids: Kid[]): number {
+  if (key === "csalad") return 1000;
+  const i = kids.findIndex((k) => k.id === key);
+  return i >= 0 ? i : 500;
+}
 
 export const metadata = { title: "Napi összefoglaló" };
 
@@ -174,7 +181,34 @@ export default async function DigestPage({ searchParams }: { searchParams: Promi
           <div className="space-y-6">
             <Card className="p-5">
               <SectionTitle icon={<Telescope className="h-4 w-4" />}>Előre tekintve</SectionTitle>
-              <p className="text-[15px] leading-relaxed text-ink-2">{digest.week_ahead}</p>
+              {digest.week_ahead_groups?.length ? (
+                <div className="space-y-4">
+                  {[...digest.week_ahead_groups]
+                    // family order first, then anything else, "csalad" (whole family) last
+                    .sort((a, b) => rankGroup(a.key, ctx.kids) - rankGroup(b.key, ctx.kids))
+                    .map((g) => {
+                      const kid = ctx.kids.find((k) => k.id === g.key);
+                      return (
+                        <div key={g.key}>
+                          <p className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                            <span className={cx("h-2 w-2 rounded-full", kid ? KID_STYLES[kid.color].dot : "bg-stone-400")} />
+                            {kid?.name ?? (g.key === "csalad" ? "Család" : g.key.charAt(0).toUpperCase() + g.key.slice(1))}
+                          </p>
+                          <ul className="space-y-1 text-sm leading-snug text-ink-2">
+                            {g.lines.map((l, i) => (
+                              <li key={i} className="flex gap-2">
+                                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-line" />
+                                {l}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-2">{digest.week_ahead}</p>
+              )}
             </Card>
 
             {digest.family_tip && (
