@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { ArrowRight, Backpack, CalendarClock, CalendarDays, Inbox, NotebookPen, PiggyBank, Sparkles, Sun, TriangleAlert } from "lucide-react";
 import { Banner, Card, EmptyState, KidChip, KidChips, PageHeader, SectionTitle, StatTile, AssessmentChip } from "@/components/ui/primitives";
 import { ItemRow } from "@/components/items/ItemRow";
+import { MorningHero } from "@/components/home/MorningHero";
 import { NewItemButton, QuickAdd, SyncButton } from "@/components/items/client";
 import { pageContext } from "@/lib/page-context";
 import { listItems } from "@/lib/items/repo";
@@ -38,8 +39,9 @@ export default async function TodayPage() {
   // on Friday–Sunday the next backpack that matters is Monday's
   const bagDay = weekdayISO(tomorrow) >= 6 ? addDaysISO(mondayOf(today), 7) : tomorrow;
 
-  const [open, sync, digestToday, digestLatest] = await Promise.all([
+  const [open, allOpen, sync, digestToday, digestLatest] = await Promise.all([
     listItems({ statuses: ["open", "waiting"], from: addDaysISO(today, -21), to: addDaysISO(today, 14), types: ["task", "event", "reminder", "assessment", "payment", "bill"] }),
+    listItems({ statuses: ["open", "waiting"], types: ["task", "event", "reminder", "assessment", "payment", "bill"] }),
     lastSyncInfo(),
     getDigest(today),
     latestDigest(),
@@ -91,7 +93,7 @@ export default async function TodayPage() {
             {huGreeting()}, {firstName}!
           </>
         }
-        subtitle={digest?.headline ?? `${dueToday.length} tétel ma, ${assessments.length} közelgő számonkérés.`}
+        subtitle={`${dueToday.length} tétel ma, ${assessments.length} közelgő számonkérés.`}
         actions={
           <>
             {google.hasGmail && <SyncButton />}
@@ -106,6 +108,8 @@ export default async function TodayPage() {
         </Banner>
       )}
       {sync?.error && <Banner tone="error">Legutóbbi szinkron hibája: {sync.error}</Banner>}
+
+      <MorningHero items={allOpen} kids={kids} today={today} account={ctx.account} calendarEnabled={ctx.calendarEnabled} headline={digest?.date === today ? digest.headline : null} />
 
       <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Ma" value={dueToday.length + events.length} hint={`${events.length} naptáresemény`} icon={<Sun className="h-4 w-4" />} tone="accent" />

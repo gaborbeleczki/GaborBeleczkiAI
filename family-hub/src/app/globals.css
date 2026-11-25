@@ -130,3 +130,26 @@ dialog::backdrop {
     min-width: 0;
   }
 }
+
+/* Cinematic "morning scan" hero on the home page */
+@keyframes aurora {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6%, -4%, 0) scale(1.15);
+  }
+}
+.aurora {
+  animation: aurora 18s ease-in-out infinite;
+}
+.aurora-slow {
+  animation: aurora 26s ease-in-out infinite reverse;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora,
+  .aurora-slow {
+    animation: none;
+  }
+}

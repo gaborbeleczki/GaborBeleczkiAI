@@ -16,6 +16,7 @@ import { addEpisodeToPlaylist, parsePlaylistId, searchEpisode } from "./spotify"
 import { deleteToken } from "./tokens";
 import { isHHMM, isISODate, todayISO } from "./time";
 import type { Preferences } from "./family/types";
+import type { TriageAction } from "./attention";
 
 function refreshAll() {
   revalidatePath("/", "layout");
@@ -244,6 +245,85 @@ export async function snoozeToTomorrow(id: string) {
   const tomorrow = new Date(Date.now() + 86_400_000);
   const iso = todayISO(tomorrow);
   await updateItem(id, { date: iso, datePrecision: "exact" });
+  await maybeCalendar([id]);
+  refreshAll();
+}
+
+export type TriageSnapshot = {
+  status: string;
+  priority: string;
+  needsReview: boolean;
+  paidAt: string | null;
+  completedAt: string | null;
+  meta: Record<string, unknown>;
+};
+
+/** One swipe in the morning-scan deck. Returns the previous state so the UI can undo it. */
+export async function triageItem(id: string, action: TriageAction): Promise<{ ok: boolean; snapshot?: TriageSnapshot; message?: string }> {
+  await requireUser();
+  const item = await getItem(id);
+  if (!item) return { ok: false, message: "A tétel már nem létezik." };
+  const snapshot: TriageSnapshot = {
+    status: item.status,
+    priority: item.priority,
+    needsReview: item.needsReview,
+    paidAt: item.paidAt ? item.paidAt.toISOString() : null,
+    completedAt: item.completedAt ? item.completedAt.toISOString() : null,
+    meta: { ...(item.meta ?? {}) },
+  };
+  const now = new Date();
+  const triaged = { ...(item.meta ?? {}), triage: { at: now.toISOString(), action } };
+  const money = item.type === "payment" || item.type === "bill";
+  let message: string | undefined;
+
+  switch (action) {
+    case "done":
+    case "paid":
+      await updateItem(id, { status: "done", completedAt: now, paidAt: money ? now : item.paidAt, needsReview: false, meta: triaged });
+      await maybeCalendar([id]);
+      break;
+    case "dismiss":
+      await updateItem(id, { status: "dismissed", needsReview: false, meta: triaged });
+      await maybeCalendar([id]);
+      break;
+    case "star":
+      await updateItem(id, { priority: "high", needsReview: false, meta: triaged });
+      await maybeCalendar([id]);
+      break;
+    case "ack":
+      await updateItem(id, { needsReview: false, meta: triaged });
+      await maybeCalendar([id]);
+      break;
+    case "calendar": {
+      await updateItem(id, { needsReview: false, meta: triaged });
+      const conn = await googleConnection();
+      if (conn.hasCalendar) {
+        try {
+          await syncCalendarFor([id], { force: true });
+        } catch {
+          message = "A naptárba írás nem sikerült – a tételnél látod a hibát.";
+        }
+      }
+      break;
+    }
+    case "later":
+      await updateItem(id, { meta: { ...(item.meta ?? {}), snoozeUntil: todayISO(new Date(now.getTime() + 86_400_000)) } });
+      break;
+  }
+  refreshAll();
+  return { ok: true, snapshot, message };
+}
+
+export async function undoTriage(id: string, s: TriageSnapshot) {
+  await requireUser();
+  await updateItem(id, {
+    status: s.status,
+    priority: s.priority,
+    needsReview: s.needsReview,
+    paidAt: s.paidAt ? new Date(s.paidAt) : null,
+    completedAt: s.completedAt ? new Date(s.completedAt) : null,
+    meta: s.meta,
+  });
   await maybeCalendar([id]);
   refreshAll();
 }
