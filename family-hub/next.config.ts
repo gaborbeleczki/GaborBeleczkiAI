@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     // The repo root holds another project's lockfile; pin the root so Turbopack doesn't watch
     // the parent folder (its own .next/dev log writes caused an endless dev refresh loop).
-    root: __dirname,
+    root: process.cwd(),
     rules: {
       "*.css": {
         loaders: ["@tailwindcss/turbopack"],
