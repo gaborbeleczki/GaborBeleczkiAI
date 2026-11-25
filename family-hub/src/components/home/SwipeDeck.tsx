@@ -6,6 +6,7 @@ import { triageItem, undoTriage, type TriageSnapshot } from "@/lib/actions";
 import type { TriageAction } from "@/lib/attention";
 import type { KidColor } from "@/lib/family/types";
 import { KID_STYLES, cx } from "@/lib/ui";
+import { useDeckCount } from "./DeckCount";
 
 export type DeckKid = { id: string; name: string; color: KidColor };
 
@@ -54,7 +55,7 @@ const DIR_STYLE: Record<Dir, { glow: string; stamp: string; pos: string }> = {
   down: { glow: "shadow-[0_0_80px_-10px_rgba(56,189,248,0.85)]", stamp: "border-sky-500 text-sky-600", pos: "left-1/2 top-6 -translate-x-1/2" },
 };
 
-export function SwipeDeck({ cards, kids, total }: { cards: SwipeCard[]; kids: DeckKid[]; total: number }) {
+export function SwipeDeck({ cards, kids }: { cards: SwipeCard[]; kids: DeckKid[] }) {
   const [gone, setGone] = useState<Set<string>>(new Set());
   const [front, setFront] = useState<string | null>(null);
   const [drag, setDrag] = useState({ x: 0, y: 0, active: false });
@@ -73,8 +74,16 @@ export function SwipeDeck({ cards, kids, total }: { cards: SwipeCard[]; kids: De
     return list;
   }, [cards, gone, front]);
   const top = visible[0];
-  const [deckTotal] = useState(total);
-  const done = Math.max(0, deckTotal - visible.length);
+  // Counts are derived from one place: cards decided in this visit + cards still in the pack.
+  // (After each swipe the server list shrinks too, and newly arrived cards simply add to the total.)
+  const done = gone.size;
+  const remaining = visible.length;
+  const total = done + remaining;
+  const deckCount = useDeckCount();
+  const setRemaining = deckCount?.setRemaining;
+  useEffect(() => {
+    setRemaining?.(remaining);
+  }, [remaining, setRemaining]);
 
   const showToast = useCallback((t: NonNullable<typeof toast>) => {
     setToast(t);
@@ -208,12 +217,12 @@ export function SwipeDeck({ cards, kids, total }: { cards: SwipeCard[]; kids: De
     >
       <div className="mb-3 flex w-full max-w-[440px] items-center justify-between text-xs text-white/60">
         <span>
-          <span className="font-semibold text-white">{done + 1}</span> / {total}
+          <span className="font-semibold text-white tabular-nums">{Math.min(done + 1, total)}</span> / {total}
         </span>
         <div className="mx-3 h-1 flex-1 overflow-hidden rounded-full bg-white/10">
           <div className="h-full rounded-full bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 transition-all duration-500" style={{ width: `${(done / Math.max(total, 1)) * 100}%` }} />
         </div>
-        <span>{visible.length} hátra</span>
+        <span className="tabular-nums">{remaining} hátra</span>
       </div>
 
       <div className="relative h-[400px] w-full max-w-[440px] [perspective:1200px] sm:h-[460px]">

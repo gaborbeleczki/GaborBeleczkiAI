@@ -8,8 +8,10 @@ import { formatHuf, huDate, huRelative } from "@/lib/time";
 import { ASSESSMENT_KIND, KID_STYLES, TYPE_META, cx } from "@/lib/ui";
 import { DoneCheckbox } from "@/components/items/client";
 import { SwipeDeck, type SwipeCard } from "./SwipeDeck";
+import { DeckCountProvider, DeckHeadline } from "./DeckCount";
 
-const DECK_LIMIT = 25;
+/** Safety cap only – the deck renders just the top three cards at a time. */
+const DECK_LIMIT = 150;
 
 function whenLabel(i: Item, today: string): string | null {
   if (!i.date) return null;
@@ -70,6 +72,7 @@ export function MorningHero({
   const deckKids = kids.map((k) => ({ id: k.id, name: k.name, color: k.color }));
 
   return (
+    <DeckCountProvider initial={cards.length}>
     <section className="relative mb-8 overflow-hidden rounded-[28px] bg-[#0b0a12] text-white shadow-2xl ring-1 ring-white/5 sm:rounded-[36px]">
       {/* light & atmosphere */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -93,19 +96,13 @@ export function MorningHero({
             <Sparkles className="h-3.5 w-3.5 text-amber-300" /> Reggeli szkennelés
           </p>
           <h2 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-balance sm:text-5xl">
-            {fresh.length ? (
-              <>
-                <span className="bg-gradient-to-r from-amber-200 via-rose-200 to-violet-200 bg-clip-text text-transparent">{fresh.length}</span> új dolog vár a döntésedre
-              </>
-            ) : (
-              "Minden friss tételről döntöttél"
-            )}
+            <DeckHeadline />
           </h2>
           {headline && <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/70">{headline}</p>}
         </div>
 
         <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
-          <SwipeDeck cards={cards} kids={deckKids} total={cards.length} />
+          <SwipeDeck cards={cards} kids={deckKids} />
         </div>
 
         <div className="min-w-0 lg:col-start-1 lg:row-start-2">
@@ -163,5 +160,6 @@ export function MorningHero({
         </div>
       </div>
     </section>
+    </DeckCountProvider>
   );
 }
